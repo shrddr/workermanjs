@@ -26,7 +26,7 @@ coverage
 
 # workerman
 /data/maptiles/*
-/data/icons/*
+#/data/icons/*
 backup.bat
 deploy.bat
 preview.bat
