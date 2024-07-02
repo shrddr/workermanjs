@@ -1,0 +1,1069 @@
+import {defineStore} from "pinia";
+import {useMarketStore} from './market'
+import {useUserStore} from './user'
+import Heap from 'heap';
+import {formatFixed, extractNumbers, binarySearch} from '../util.js';
+
+export const useGameStore = defineStore({
+  id: "game",
+  state: () => ({
+    ready: false,
+    plantzoneDrops: {},
+    pzdSet: null,
+    plantzoneStatic: {},
+    itemKeys: [],
+    nodes: {},
+    distPerTown: {},
+    distToTown: {},
+    lodgingPerTown: {},
+    houseInfo: {},
+    towns: [],
+    townNames: {},
+    regionGroups: {},
+    loc: {},
+    links: {},
+    icons: {},
+    workerStatic: {},
+    skillData: {},
+    vendorPrices: {},
+  }),
+  
+  actions: {
+    availableSkillPool(haveSkills, skillToChange) {
+      const haveSet = new Set(haveSkills)
+      //console.log(haveSkills)
+      if (skillToChange)
+        haveSet.delete(skillToChange)
+      const ret = this.skillKeys
+        .filter(sk => !(haveSet.has(sk)))
+      //console.log(skillToChange, ret)
+      return ret
+    },
+    randomSkill(haveSkills) {
+      const pool = this.availableSkillPool(haveSkills)
+      const ret = pool[Math.floor(Math.random()*pool.length)]
+      //console.log('random skill', ret)
+      return ret
+    },
+    wspdBonusOnPlantzone(w) {
+      let ret = 0
+      if (!this.ready) return ret
+      w.skills.forEach(sk => {
+        const skillBonuses = this.skillData[sk]
+        if (skillBonuses === undefined)
+          return
+        if ('wspd' in skillBonuses) ret += skillBonuses['wspd']
+        if ('wspd_farm' in skillBonuses) ret += skillBonuses['wspd_farm']
+      })
+      return ret
+    },
+    wspdBonus(w, industry) {
+      let ret = 0
+      if (!this.ready) return ret
+      w.skills.forEach(sk => {
+        const skillBonuses = this.skillData[sk]
+        if (skillBonuses === undefined)
+          return
+        if ('wspd' in skillBonuses) ret += skillBonuses['wspd']
+        if ('wspd_'+industry in skillBonuses) ret += skillBonuses['wspd_'+industry]
+        if ('wspd_refine' in skillBonuses && industry.startsWith('pack_')) ret += skillBonuses['wspd_refine']
+      })
+      //console.log('wspdBonus', w.label, industry, ret)
+      return ret
+    },
+    mspdBonus(w) {
+      let ret = 0
+      if (!this.ready) return ret
+      w.skills.forEach(sk => {
+        const skillBonuses = this.skillData[sk]
+        if (skillBonuses === undefined)
+          return
+        if ('mspd' in skillBonuses) ret += skillBonuses['mspd']
+      })
+      return ret
+    },
+    luckBonus(w) {
+      let ret = 0
+      if (!this.ready) return ret
+      w.skills.forEach(sk => {
+        const skillBonuses = this.skillData[sk]
+        if (skillBonuses === undefined)
+          return
+        if ('luck' in skillBonuses) ret += skillBonuses['luck']
+      })
+      return ret
+    },
+    workerStatsOnPlantzone(w) {
+      if (!this.ready) return {
+        wspd: 0,
+        mspd: 0,
+        luck: 0,
+      }
+      return {
+        wspd: w.wspdSheet + this.wspdBonusOnPlantzone(w),
+        mspd: (this.workerStatic[w.charkey].mspd/100) * ((w.mspdSheet / (this.workerStatic[w.charkey].mspd/100)) + this.mspdBonus(w) / 100),
+        luck: w.luckSheet + this.luckBonus(w)
+      }
+    },
+    workerStatsOnIndustry(w, industry) {
+      if (!this.ready) return {
+        wspd: 0,
+        mspd: 0,
+        luck: 0,
+      }
+      return {
+        wspd: w.wspdSheet + this.wspdBonus(w, industry),
+        mspd: (this.workerStatic[w.charkey].mspd/100) * ((w.mspdSheet / (this.workerStatic[w.charkey].mspd/100)) + this.mspdBonus(w) / 100),
+        luck: w.luckSheet + this.luckBonus(w)
+      }
+    },
+    workerStatsOnCurrentJob(w) {
+      var industry = 'farm'
+      if (this.jobIsWorkshop(w.job)) {
+        const userStore = useUserStore()
+        const hk = w.job.hk
+        if (!(hk in userStore.userWorkshops)) {
+          userStore.userWorkshops[hk] = { ...userStore.defaultUserWorkshop }
+        }
+        industry = userStore.userWorkshops[hk].industry
+      }
+
+      return {
+        wspd: w.wspdSheet + this.wspdBonus(w, industry),
+        mspd: (this.workerStatic[w.charkey].mspd/100) * ((w.mspdSheet / (this.workerStatic[w.charkey].mspd/100)) + this.mspdBonus(w) / 100),
+        luck: w.luckSheet + this.luckBonus(w)
+      }
+    },
+
+    workerStatRank(w) {
+      const oldLevelups = w.level - 1
+      const stat_old = this.workerStatic[w.charkey]
+
+      const wspd_up_lo_old = stat_old.wspd_lo * oldLevelups
+      const wspd_up_hi_old = stat_old.wspd_hi * oldLevelups
+      const wspd_up_range_old = wspd_up_hi_old - wspd_up_lo_old
+      const wspd_up_old = (w.wspdSheet*1E6 - stat_old.wspd)
+      const wspd_rank = ((wspd_up_old - wspd_up_lo_old) / wspd_up_range_old) || 0
+
+      const mspd_up_lo_old = stat_old.mspd_lo * oldLevelups
+      const mspd_up_hi_old = stat_old.mspd_hi * oldLevelups                                           
+      const mspd_up_old = ((w.mspdSheet / (stat_old.mspd/100)) - 1) * 1E6
+      const mspd_rank = ((mspd_up_old - mspd_up_lo_old) / (mspd_up_hi_old - mspd_up_lo_old)) || 0
+      
+      const luck_up_lo_old = stat_old.luck_lo * oldLevelups
+      const luck_up_hi_old = stat_old.luck_hi * oldLevelups
+      const luck_up_old = (w.luckSheet*1E4 - stat_old.luck)
+      const luck_rank = ((luck_up_old - luck_up_lo_old) / (luck_up_hi_old - luck_up_lo_old)) || 0
+
+      return {
+        wspd_rank,
+        mspd_rank,
+        luck_rank,
+      }
+    },
+
+    houseLodging(hk) {
+      const t = this.houseInfo[hk].CraftList[1] ?? 0
+      const v = {0: 0, 1: 1, 2: 2, 3: 4, 4: 6, 5: 8}
+      //console.log(hk, t)
+      return v[t]
+    },
+
+    houseStorage(hk) {
+      const t = this.houseInfo[hk].CraftList[2] ?? 0
+      const v = {0: 0, 1: 3, 2: 5, 3: 8, 4: 12, 5: 16}
+      return v[t]
+    },
+
+    houseCost(hk) {
+      //console.log('houseCost', hk)
+      const t = (this.houseInfo[hk] && this.houseInfo[hk].CP) ?? NaN
+      return t
+    },
+
+    async fetchData() {
+      const start = Date.now()
+
+      // observed
+      this.plantzoneDrops = await (await fetch(`data/manual/plantzone_drops.json`)).json()
+      this.pzdSet = new Set(Object.keys(this.plantzoneDrops).map(x=>+x))
+
+      // from client
+      this.plantzoneStatic = await (await fetch(`data/plantzone.json`)).json()
+
+      // info for sorting
+      this.itemInfo = await (await fetch(`data/manual/item_info.json`)).json()
+      // this could be faster than loading an additional file but includes the Worker Seal
+      //this.itemKeys = Object.keys(this.itemInfo).map((s) => parseInt(s)).sort((a,b)=>a-b)
+
+      // from drops (could have calculated in here)
+      this.itemKeys = await (await fetch(`data/manual/plantzone_uniques.json`)).json()
+
+      // for node parent name (todo: localization)
+      this.nodes = await (await fetch(`data/exploration.json`)).json()
+
+      // for later custom-worker-based profit
+      this.tk2pzk = await (await fetch(`data/distances_tk2pzk.json`)).json()
+      // for distance lookup starting with nearest towns
+      this.pzk2tk = await (await fetch(`data/distances_pzk2tk.json`)).json()
+
+      // for workshop distances (outdated)
+      //this.hk2nk = await (await fetch(`data/hk2nk.json`)).json()
+      // for specific worker show different workshops
+      //this.tk2nk = await (await fetch(`data/distances_tk2nk.json`)).json()
+      
+      // best worker for a workshop
+      //this.hk2tk = await (await fetch(`data/distances_hk2tk.json`)).json()
+      // best workshop for a worker
+      this.tk2hk = await (await fetch(`data/distances_tk2hk.json`)).json()
+
+      // for lodging config
+      this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json()
+      this.houseInfo = await (await fetch(`data/houseinfo.json`)).json()
+
+      // [tnk] for townSet -> homeview node infobox
+      this.towns = [
+        1,301,302,601,61,602,604,608,1002,1101,1141,1301,1314,1319,1343,1380,1604,1623,1649,1691,1750, 
+        1781,1785,1795, 
+        // can provide storage, cannot house workers
+        1727,
+        1834,1843,1850
+        // 1001, lema cannot provide storage and cannot house workers
+      ]
+
+      this.vendorPrices = await (await fetch(`data/manual/vendor_prices.json`)).json()
+      
+      this._tk2tnk = {
+        // self.regions.data[5].waypoint == 1
+        // TODO: read from regiondata.bss -> 
+        // regionkey(tk)=5 wp(tnk)=1
+        
+        5:    1,   
+        32:   301,  
+        52:   302, 
+        77:   601, 
+        88:   61, 
+        107:  602,  
+        120:  604, 
+        126:  608, 
+        182:  1002, 
+        202:  1101,
+        221:  1141,
+        229:  1301,
+        601:  1314,  
+        605:  1319, 
+        619:  1343, 
+        693:  1380,  
+        706:  1604, 
+        735:  1623,
+        873:  1649,
+        955:  1691,
+        1124: 1750,
+
+        1210: 1781,
+        1219: 1785,
+        1246: 1795,
+
+        1000: 1727, // ocean-oquilla
+        181: 1001, // lema
+
+        218: 1834,
+        1375: 1843, // muzgar
+        1382: 1850,
+      }
+      const _tnk2tk = {}
+      for (const [tk, nk] of Object.entries(this._tk2tnk)) {
+        _tnk2tk[nk] = Number(tk)
+      }
+      this._tnk2tk = _tnk2tk
+
+      this.industries = {
+        "unk": "unknown",
+        "jewelry": "jewelry",
+        "mass": "mass production",
+        "weap": "weapon",
+        "tool": "tool",
+        "furn": "furniture",
+        "costume": "costume",
+        "refine": "refine",
+        "siege": "siege",
+        "mount": "mount",
+        "exclus": "exclusive",
+        "pack_produce": "pack_produce",
+        "pack_herb": "pack_herb",
+        "pack_mushr": "pack_mushr",
+        "pack_fish": "pack_fish",
+        "pack_timber": "pack_timber",
+        "pack_ore": "pack_ore",
+      }
+
+      // for modifiers view, calculated from pzStatic
+      const regionGroups = {}
+      for (const [key, value] of Object.entries(this.plantzoneStatic)) {
+        if (key in this.plantzoneDrops) {
+          const rgroup = value.regiongroup
+          if (rgroup in regionGroups)
+            regionGroups[rgroup].push(key)
+          else
+            regionGroups[rgroup] = [key]
+        }
+      }
+      this.regionGroups = regionGroups
+
+      this.skillData = await (await fetch(`data/manual/skills.json`)).json()
+      this.workerStatic = await (await fetch(`data/worker_static.json`)).json()
+      this.loc = await (await fetch(`data/loc.json`)).json()
+      
+      // these are used in dijkstra; deck links are loaded in NodeMap
+      this.links = await (await fetch(`data/links.json`)).json()
+
+      this.ls_lookup = await (await fetch(`data/all_lodging_storage.json`)).json()
+      this.ls_lodgings_sorted = {}
+      for (const [tk, lodging_dict] of Object.entries(this.ls_lookup)) {
+        this.ls_lodgings_sorted[tk] = Object.keys(lodging_dict).sort((a, b) => a - b)
+      }
+
+      this.giantSpecies = new Set([2, 4, 8])
+      this.speciesIcons = {
+        0: '👺',
+        1: '👨',
+        2: '🐢',
+        3: '👺',  // kama
+        4: '🐢',  // kama
+        5: '👺',  // oddy
+        6: '👺',  // lotml
+        7: '👨',  // lotml
+        8: '🐢',  // lotml
+      }
+      this.ready = true
+
+      console.log('fetchGame took', Date.now()-start, 'ms')
+    },
+
+    isGiant(charkey) {
+      if (this.ready) {
+        return this.giantSpecies.has(this.workerStatic[charkey].species)
+      }
+    },
+
+    tk2tnk(tk) {
+      if (this.ready) {
+        if (tk in this._tk2tnk) {
+          return this._tk2tnk[tk]
+        }
+        else {
+          console.log('unknown tk', tk)
+        }
+      }
+    },
+
+    tnk2tk(tnk) {
+      if (this.ready) {
+        return this._tnk2tk[tnk]
+        /*if (tnk in this._tnk2tk) {
+          return this._tnk2tk[tnk]
+        }
+        else {
+          console.log('unknown tnk', tnk)
+        }*/
+      }
+    },
+
+    // unused
+    /*dijTownsInCpRadius(start, cpLimit) {
+      //const ts = Date.now()
+
+      const pathCosts = {[start]: userStore.autotakenNodes.has(start) ? 0 : this.nodes[start].CP}
+      const prev = {[start]: null}
+      const unvisited = new Heap((a, b) => pathCosts[a] - pathCosts[b])  // note order, must have access
+      unvisited.push(start)
+      
+      var current
+      while (unvisited.size()) {
+        current = unvisited.pop()
+        if (pathCosts[current] >= cpLimit)
+          break
+        this.links[current].forEach(neighbor => {
+          const newDistance = pathCosts[current] + this.nodes[neighbor].CP
+          if (neighbor in pathCosts) {
+            // already met before, already in heap
+            if (newDistance < pathCosts[neighbor]) {
+              pathCosts[neighbor] = newDistance
+              needTakes[neighbor] = [...needTakes[current], neighbor]
+            }
+          }
+          else {
+            pathCosts[neighbor] = newDistance
+            needTakes[neighbor] = [...needTakes[current], neighbor]
+            unvisited.push(neighbor)
+          }
+        })
+      }
+
+      const ret = {}
+      this.towns.forEach(tnk => {
+        if (tnk in pathCosts)
+          ret[tnk] = pathCosts[tnk]
+      })
+      //console.log('dijTownsInCpRadius took', Date.now()-ts, 'ms')
+      return ret
+    },*/
+
+    // for sendWorkers & Empire Next
+    dijDiscountedNearestPlantzones(start, pzLimit) {
+      if (!this.ready)
+        return
+      //const ts = Date.now()
+      const userStore = useUserStore()
+      let found = new Set()
+
+      const pathCosts = {[start]: userStore.autotakenNodes.has(start) ? 0 : this.nodes[start].CP}
+      const prev = {[start]: null}
+      const unvisited = new Heap((a, b) => pathCosts[a] - pathCosts[b])  // note order, must have access
+      unvisited.push(start)
+      
+      var current
+      while (unvisited.size()) {
+        current = unvisited.pop()
+        
+        if (this.pzdSet.has(current) && !userStore.autotakenNodes.has(current)) {
+          found.add(current)
+          if (found.size == pzLimit) {
+            break
+          }
+        }
+          
+        this.links[current].forEach(neighbor => {
+          const nbrCost = userStore.autotakenNodes.has(neighbor) ? 0 : this.nodes[neighbor].CP
+          const newDistance = pathCosts[current] + nbrCost
+          if (neighbor in pathCosts) {
+            // already met before, already in heap
+            if (newDistance < pathCosts[neighbor]) {
+              pathCosts[neighbor] = newDistance
+              prev[neighbor] = current
+            }
+          }
+          else {
+            pathCosts[neighbor] = newDistance
+            prev[neighbor] = current
+            unvisited.push(neighbor)  // note order, must have access
+          }
+        })
+      }
+
+      const ret = []
+      found.forEach(nk => {
+        const needTakes = [nk]
+        let cur = nk
+        while (prev[cur] !== null) {
+          needTakes.push(prev[cur])
+          cur = prev[cur]
+        }
+        ret.push([nk, pathCosts[nk], needTakes.reverse()])
+      })
+      //console.log('dijDiscountedNearestPlantzones took', Date.now()-ts, 'ms')
+      //console.log('dijDiscountedNearestPlantzones', ret)
+      return ret
+    },
+
+    // for pzJobs
+    // can't use userStore.autoTaken - dependency loop
+    dijkstraPath(start, finish, takens) {
+      if (!this.ready)
+        return [null, 0]
+      const ts = Date.now()
+
+      const prev = {[start]: null}
+      const pathCosts = {[start]: takens && takens.has(start) ? 0 : this.nodes[start].CP}
+      const unvisited = new Heap((a, b) => pathCosts[a] - pathCosts[b])  // note order, must have access
+      unvisited.push(start)
+      
+      var current
+      while (unvisited.size()) {
+        current = unvisited.pop()
+        if (current == finish)
+          break
+          
+        this.links[current].forEach(neighbor => {
+          //const nbrCost = this.nodes[neighbor].CP
+          if (this.nodes[neighbor] == undefined)
+            console.log('dijkstraPath: no exploration node', neighbor)
+          const nbrCost = takens && takens.has(neighbor) ? 0 : this.nodes[neighbor].CP
+          const newDistance = pathCosts[current] + nbrCost
+          if (neighbor in pathCosts) {
+            // already met before, already in heap
+            if (newDistance < pathCosts[neighbor]) {
+              pathCosts[neighbor] = newDistance
+              prev[neighbor] = current
+            }
+          }
+          else {
+            pathCosts[neighbor] = newDistance
+            prev[neighbor] = current
+            unvisited.push(neighbor)  // note order, must have access
+          }
+        })
+      }
+      //console.log('dijkstraPath took', Date.now()-ts, 'ms')
+      //if (start == 1216)
+        //console.log('dijkstraPath 1216', takens.has(324), needTakes[finish])
+      const needTakes = [finish]
+      let cur = finish
+      while (prev[cur] !== null) {
+        needTakes.push(prev[cur])
+        cur = prev[cur]
+      }
+      return [needTakes.reverse(), pathCosts[finish]]
+    },
+
+
+    // used below
+    dijkstraNearestTowns(start, townLimit, takens, skipAncado) {
+      if (!this.ready)
+        return
+      //const ts = Date.now()
+      let found = new Set()
+
+      const prev = {[start]: null}
+      const pathCosts = {[start]: takens && takens.has(start) ? 0 : this.nodes[start].CP}
+      const unvisited = new Heap((a, b) => pathCosts[a] - pathCosts[b])  // note order, must have access
+      unvisited.push(start)
+      
+      var current
+      while (unvisited.size()) {
+        current = unvisited.pop()
+        
+        if (this.isTown(current)) {
+          if (current != 1343 || !skipAncado) {
+            found.add(current)
+            if (found.size == townLimit) break
+          }
+        }
+
+        this.links[current].forEach(neighbor => {
+          if (this.nodes[neighbor] == undefined)
+            throw Error(`dijkstraNearestTowns: no exploration node ${neighbor}`)
+          const nbrCost = takens && takens.has(neighbor) ? 0 : this.nodes[neighbor].CP
+          const newDistance = pathCosts[current] + nbrCost
+          if (neighbor in pathCosts) {
+            // already met before, already in heap
+            if (newDistance < pathCosts[neighbor]) {
+              pathCosts[neighbor] = newDistance
+              prev[neighbor] = current
+            }
+          }
+          else {
+            pathCosts[neighbor] = newDistance
+            prev[neighbor] = current
+            unvisited.push(neighbor)  // note order, must have access
+          }
+        })
+      }
+
+      const ret = []
+      found.forEach(tnk => {
+        const needTakes = [tnk]
+        let cur = tnk
+        while (prev[cur] !== null) {
+          needTakes.push(prev[cur])
+          cur = prev[cur]
+        }
+        ret.push([tnk, pathCosts[tnk], needTakes])
+      })
+      //if (start == 1630) console.log('dijkstraNearestTowns 1630', ret)
+      //console.log('dijkstraNearestTowns took', Date.now()-ts, 'ms')
+      //console.log('dijkstraNearestTowns', ret)
+      return ret
+    },
+
+    pzSelectionEntry(pzk, lodgingTk, tnk, mapCp, path, worker, statsOnPz, storageTk) {
+      const userStore = useUserStore()
+      const profitData = this.profitPzTownStats(pzk, tnk, statsOnPz.wspd, statsOnPz.mspd, statsOnPz.luck, this.isGiant(worker.charkey))
+      const addInfraInfo = userStore.townInfraAddCost(lodgingTk, 1, this.plantzones[pzk].itemkeys, storageTk)
+      const jobEntry = {
+        pz: this.plantzones[pzk],
+        tnk,
+        mapCp, 
+        path,
+        townCp: addInfraInfo.cost,
+        infraTooltip: addInfraInfo.tooltip,
+        cp: mapCp + addInfraInfo.cost,
+        profit: profitData,
+        w: worker,
+        statsOnPz,
+      }
+
+      jobEntry.dailyPerCp = jobEntry.profit.priceDaily / (mapCp + addInfraInfo.cost)
+      jobEntry.effDelta = userStore.jobEfficiencyDelta(jobEntry.profit.priceDaily, mapCp + addInfraInfo.cost)
+      return jobEntry
+    },
+
+    workshopSelectionEntry(hk, storageTk, tnk, path, worker, mapCp, houseCp) {
+      const userStore = useUserStore()
+      const workshop = userStore.userWorkshops[hk]
+      const profit = this.profitWorkshopWorker(hk, workshop, worker)
+      const addInfraInfo = userStore.townInfraAddCost(storageTk, 1, [])  // no items
+      const totalCp = mapCp + houseCp + addInfraInfo.cost
+      const jobEntry = {
+        hk,
+        tnk,
+        mapCp,
+        houseCp,
+        path,
+        townCp: addInfraInfo.cost,
+        infraTooltip: addInfraInfo.tooltip,
+        cp: totalCp,
+        profit, // {statsOnWs,distance,cyclesDaily,priceDaily}
+        w: worker,
+        workshop
+      }
+      
+      jobEntry.dailyPerCp = jobEntry.profit.priceDaily / totalCp
+      jobEntry.effDelta = userStore.jobEfficiencyDelta(jobEntry.profit.priceDaily, totalCp)
+      return jobEntry
+    },
+
+    addBedInfo(tk) {
+      const userStore = useUserStore()
+      const addInfraInfo = userStore.townInfraAddCost(tk, 1, [])
+      return addInfraInfo
+    },
+
+    farmSelectionEntry(tk) {
+      const userStore = useUserStore()
+      const addInfraInfo = this.addBedInfo(tk)
+      const income = userStore.farmingProfitPerWorker
+      const entry = {
+        income,
+        infraCp: addInfraInfo.cost,
+        infraTooltip: addInfraInfo.tooltip,
+        dailyPerCp: income / addInfraInfo.cost,
+        effDelta: userStore.jobEfficiencyDelta(income, addInfraInfo.cost),
+      }
+      return entry
+    },
+    
+    // return one plantzone specific town profit
+    // used by nearestByCP, by WorkerEditor, ...
+    profitPzTownStats(pzk, tnk, wspd, mspd, luck, is_giant) {
+      if (!(pzk in this.plantzones))
+        return {cycleValue:0, cycleMinutes:NaN, cyclesDaily:NaN, priceDaily:0}
+      const userStore = useUserStore()
+      const marketStore = useMarketStore()
+      const pzd = this.plantzones[pzk]
+      let ret = {
+        dist: this.pzDistance(tnk, pzk),
+        cycleValue: marketStore.priceLerp(
+          is_giant ? pzd.luckyValue_gi: pzd.luckyValue,
+          is_giant ? pzd.unluckyValue_gi : pzd.unluckyValue, 
+          luck
+        ),
+      }
+      ret.cyclesDaily = userStore.calcCyclesDaily(pzd.workload, pzd.regiongroup, wspd, ret.dist, mspd)
+      
+      //if (pzk == '842')
+      //  console.log(pzd.workload, pzd.regiongroup, wspd, ret.dist, mspd, 'cyclesDaily', ret.cyclesDaily)
+
+      ret.priceDaily = ret.cyclesDaily * ret.cycleValue / 1000000
+      return ret
+    },
+
+    profitPzTownArtisans(pzk, tnk, cp) {
+      const pzd = this.plantzones[pzk]
+      let stats = this.medianGoblin(tnk)
+      let profitData = this.profitPzTownStats(pzk, tnk, stats.wspd+5, stats.mspd, stats.luck, false)
+      if (profitData.dist > 1E6) {
+        return {connected: false}
+      }
+      profitData.charkey = stats.charkey
+      profitData.wspd = stats.wspd
+      const workData_gob = {
+        ...pzd,
+        tnk,
+        ...profitData,
+        cp,
+        dailyPerCp: profitData.priceDaily / cp,
+        isGiant: false,
+        kind: 'goblin',
+      }
+
+      stats = this.medianGiant(tnk)
+      profitData = this.profitPzTownStats(pzk, tnk, stats.wspd+5, stats.mspd, stats.luck, true)
+      profitData.charkey = stats.charkey
+      profitData.wspd = stats.wspd
+      const workData_gi = {
+        ...pzd,
+        tnk,
+        ...profitData,
+        cp,
+        dailyPerCp: profitData.priceDaily / cp,
+        isGiant: true,
+        kind: 'giant',
+      }
+      const workData_best = (workData_gi && workData_gi.dailyPerCp > workData_gob.dailyPerCp) ? workData_gi : workData_gob
+
+      const stats2 = this.medianHuman(tnk)
+      profitData = this.profitPzTownStats(pzk, tnk, stats2.wspd+5, stats2.mspd, stats2.luck, false)
+      profitData.charkey = stats2.charkey
+      profitData.wspd = stats2.wspd
+      const workData_hum = {
+        ...pzd,
+        tnk,
+        ...profitData,
+        cp,
+        dailyPerCp: profitData.priceDaily / cp,
+        isGiant: true,
+        kind: 'human',
+      }
+
+      const workData_best2 = (workData_hum && workData_hum.dailyPerCp > workData_best.dailyPerCp) ? workData_hum : workData_best
+
+      const alt_workers_dict = {
+        [workData_gi.charkey]:  workData_gi.priceDaily,
+        [workData_hum.charkey]: workData_hum.priceDaily,
+        [workData_gob.charkey]: workData_gob.priceDaily,
+      }
+      const alt_workers = Object.entries(alt_workers_dict).map(([charkey, priceDaily]) => ({ charkey, priceDaily }))
+      alt_workers.sort((a, b) => a && b && b.priceDaily - a.priceDaily)
+      workData_best2.alt_workers_dict = alt_workers_dict
+      workData_best2.alt_workers = alt_workers
+      workData_best2.connected = true
+      return workData_best2
+    },
+
+    makeMedianChar(charkey) {
+      const ret = {}
+      const stat = this.workerStatic[charkey]
+      let pa_wspd = stat.wspd
+      let pa_mspdBonus = 0
+      let pa_luck = stat.luck
+      for (let i = 2; i <= 40; i++) {
+        pa_wspd += (stat.wspd_lo + stat.wspd_hi) / 2
+        pa_mspdBonus += (stat.mspd_lo + stat.mspd_hi) / 2
+        pa_luck += (stat.luck_lo + stat.luck_hi) / 2
+      }
+
+      let pa_mspd = stat.mspd * (1 + pa_mspdBonus / 1E6)
+
+      ret.wspd = Math.round(pa_wspd / 1E6 * 100) / 100
+      ret.mspd = Math.round(pa_mspd) / 100
+      ret.luck = Math.round(pa_luck / 1E4 * 100) / 100
+      ret.charkey = charkey
+      ret.isGiant = this.isGiant(charkey)
+      return ret
+    },
+
+    medianGoblin(tnk) {
+      if (tnk==1623) return this.makeMedianChar(8003) // grana
+      if (tnk==1604) return this.makeMedianChar(8003) // owt
+      if (tnk==1691) return this.makeMedianChar(8023) // oddy
+      if (tnk==1750) return this.makeMedianChar(8035) // eilton
+      if (tnk==1781) return this.makeMedianChar(8050) // lotml
+      if (tnk==1785) return this.makeMedianChar(8050) // lotml
+      if (tnk==1795) return this.makeMedianChar(8050) // lotml
+      return this.makeMedianChar(7572)
+    },
+
+    medianGiant(tnk) {
+      if (tnk==1623) return this.makeMedianChar(8006) // grana
+      if (tnk==1604) return this.makeMedianChar(8006) // owt
+      if (tnk==1691) return this.makeMedianChar(8027) // oddy
+      if (tnk==1750) return this.makeMedianChar(8039) // eilton
+      if (tnk==1781) return this.makeMedianChar(8058) // lotml
+      if (tnk==1785) return this.makeMedianChar(8058) // lotml
+      if (tnk==1795) return this.makeMedianChar(8058) // lotml
+      return this.makeMedianChar(7571)
+    },
+
+    medianHuman(tnk) {
+      if (tnk==1623) return this.makeMedianChar(8009) // grana
+      if (tnk==1604) return this.makeMedianChar(8009) // owt
+      if (tnk==1691) return this.makeMedianChar(8031) // oddy
+      if (tnk==1750) return this.makeMedianChar(8043) // eilton
+      if (tnk==1781) return this.makeMedianChar(8054) // lotml
+      if (tnk==1785) return this.makeMedianChar(8054) // lotml
+      if (tnk==1795) return this.makeMedianChar(8054) // lotml
+      return this.makeMedianChar(7573)
+    },
+
+    cyclesWorkshopWorker(hk, workshop, worker) {
+      const userStore = useUserStore()
+      const statsOnWs = this.workerStatsOnIndustry(worker, workshop.industry)
+      //console.log('cyclesWorkshopWorker', hk, stats)
+      const distance = this.houseDistance(worker.tnk, hk)
+      const moveMinutes = userStore.calcWalkMinutes(distance, statsOnWs.mspd)
+
+      const workMinutes = Math.ceil(workshop.manualWorkload / statsOnWs.wspd)
+      const cycleMinutes = 5 * workMinutes + moveMinutes
+      const cyclesDaily = 24 * 60 / cycleMinutes  // TODO: afk time
+      return {statsOnWs, distance, cyclesDaily}
+    },
+
+    repeatsWorkshopWorker(w, industry) {
+      let ret = 1
+      if (!this.ready) return ret
+      w.skills.forEach(sk => {
+        const skillBonuses = this.skillData[sk]
+        if (skillBonuses === undefined)
+          return
+        if (industry in skillBonuses) ret += skillBonuses[industry]
+      })
+      //console.log('repeatsWorkshopWorker', w.label, industry, ret)
+      return ret
+    },
+
+    profitWorkshopWorker(hk, workshop, worker) {
+      //dist: this.pzDistance(tnk, pzk),
+      //cycleValue: marketStore.priceLerp(
+      //cyclesDaily = userStore.calcCyclesDaily(pzd.workload, pzd.regiongroup, wspd, ret.dist, mspd)
+      //priceDaily = ret.cyclesDaily * ret.cycleValue / 1000000
+
+      const {statsOnWs, distance, cyclesDaily} = this.cyclesWorkshopWorker(hk, workshop, worker)
+      const repeats = this.repeatsWorkshopWorker(worker, workshop.industry)
+      //console.log('profitWorkshopWorker', workshop.manualWorkload, stats.wspd, workMinutes, stats.mspd, moveMinutes, cycleMinutes)
+      const priceDaily = repeats * cyclesDaily * workshop.manualCycleIncome / 1000000
+      return {
+        statsOnWs,
+        distance,
+        cyclesDaily,
+        priceDaily
+      }
+    },
+
+   
+    isTown(nk) {
+      return this.townSet.has(nk)
+    },
+    //isTown(nk) {
+    //  const townKinds = [1, 2]
+    //  return townKinds.some(x => x == this.nodes[nk].kind)
+    //},
+    isLodgingTown(nk) {
+      if (typeof(nk) === "string") nk = Number(nk)
+      const tnk = this.tnk2tk(nk)
+      return tnk in this.lodgingPerTown
+    },
+    isPlantzone(nk) {
+      return nk in this.plantzoneDrops
+    },
+    isConnectionNode(nk) {
+      return !(this.isLodgingTown(nk)) && !(this.isPlantzone(nk))
+    },
+    itemName(ik) {
+      if (!this.ready) return ik
+      const userStore = useUserStore()
+      if (ik in this.loc[userStore.selectedLang].item)
+        return this.loc[userStore.selectedLang].item[ik]
+      return ik
+    },
+    nodeName(nk) {
+      if (!this.ready) return nk
+      const userStore = useUserStore()
+      return this.loc[userStore.selectedLang].node[nk]
+    },
+    parentNodeName(pzk) {
+      if (this.ready && pzk in this.plantzoneStatic) {
+        const parentKey = this.plantzoneStatic[pzk].parent
+        return this.nodeName(parentKey)
+      }
+      else
+        return pzk
+    },
+    plantzoneName(pzk) {
+      if (this.ready && pzk in this.plantzoneStatic) {
+        const nodeKey = this.plantzoneStatic[pzk].node.key
+        return this.parentNodeName(pzk) + ' ' + this.nodeName(nodeKey)
+      }
+      else
+        return ""
+    },
+    pzDistance(tnk, pzk) {
+      const tkDistancesList = this.pzk2tk[pzk]
+      const tk = this._tnk2tk[tnk]
+      for (let i = 0; i < tkDistancesList.length; i++)
+        if (tkDistancesList[i][0] == tk)
+          return tkDistancesList[i][1]
+      return NaN
+    },
+    houseDistance(tnk, hk) {
+      if (!this.ready) return 0
+      //const hnk = this.hk2nk[hk]
+      const tk = this._tnk2tk[tnk]
+      return this.tk2hk[tk][hk]
+    },
+    isWorkable(nk) {
+      const workables = [4, 6, 7, 8, 9, 14, 15]
+      return workables.some(x => x == this.nodes[nk].kind)
+    },
+
+    jobIsIdle(job) {
+      return job === null
+    },
+    jobIsPz(job) {
+      return (job && typeof(job) == 'object' && 'kind' in job && job.kind == 'plantzone') || typeof(job) == 'number'
+    },
+    jobIsFarming(job) {
+      return job == 'farming'
+    },
+    jobIsCustom(job) {
+      return Array.isArray(job)
+    },
+    jobIsWorkshop(job) {
+      return job && typeof(job) == 'object' && 'kind' in job && job.kind == 'workshop'
+    },
+    jobIcon(job) {
+      if (this.jobIsFarming(job)) return '🌻'
+      if (this.jobIsCustom(job)) return '✍️'
+      if (this.jobIsWorkshop(job)) return '🏭'
+      return ''
+    },
+    workerJobDescription(w, contextTnk) {
+      const job = w.job
+      if (this.jobIsIdle(job)) 
+        return 'idle'
+      if (this.jobIsPz(job)) 
+        return this.uloc.node[job.pzk]
+      if (this.jobIsFarming(job))
+        return '['+this.jobIcon(job)+']'
+      if (this.jobIsCustom(job))
+        return '['+this.jobIcon(job)+'] ' + job[3]
+      if (this.jobIsWorkshop(job)) {
+        const userStore = useUserStore()
+        const houseName = this.uloc.char[job.hk]
+        let houseShort = extractNumbers(houseName)
+        if (contextTnk) {
+          const houseTk = this.houseInfo[job.hk].affTown
+          const houseTnk = this.tk2tnk(houseTk)
+          if (contextTnk != houseTnk) {
+            houseShort = this.nodeName(houseTnk) + ' ' + houseShort
+          }
+        }
+        return '['+this.jobIcon(job)+'] ' + houseShort + ' ' + userStore.userWorkshops[job.hk].label
+      }
+      return 'UNKNOWN_JOBTYPE'
+    },
+
+    lsLookup(tk, wantLodging, wantStorage) {
+      if (!this.ready)
+        return null
+      //const start = performance.now()
+      const towndata = this.ls_lookup[tk]
+      //const result = towndata.find(e => e.lodging >= this.wantLodging && e.storage >= this.wantStorage)
+      let result = { 
+        wantLodging, 
+        wantStorage, 
+        storage: NaN, 
+        cost: NaN,
+        lodging: NaN,
+        success: false, 
+      }
+      for (let lodging_string in towndata) {
+        const lodging = Number(lodging_string)
+        if (lodging >= wantLodging) {
+          const entries = towndata[lodging]
+          const found = binarySearch(entries, (v) => v.storage >= wantStorage)
+          if (found) {
+            if (!result.success) {
+              result = {wantLodging, wantStorage, ...found, lodging, success: true}
+              continue
+            }
+            if (result.success && found.cost < result.cost) {
+              result = {wantLodging, wantStorage, ...found, lodging, success: true}
+              break
+            }
+          }
+        }
+      }
+      const warnL = wantLodging == this.townUpperLimits[tk].lodging
+      const errL = wantLodging > this.townUpperLimits[tk].lodging
+      const warnS = wantStorage == this.townUpperLimits[tk].storage
+      const errS = wantStorage > this.townUpperLimits[tk].storage
+      result = {...result, warnL, errL, warnS, errS }
+      //console.log('lsLookup', tk, wantLodging, wantStorage, result)
+      //console.log('bestLookup', result, 'took', (performance.now()-start).toFixed(1), 'ms')
+      return result
+    },
+
+  },
+
+  getters: {
+    uloc() {
+      const userStore = useUserStore()
+      if (this.ready)
+        return this.loc[userStore.selectedLang]
+      return {town:{}, housetype:{}, char:{}, item:{}, node:{}, skill:{}, skilldesc:{}}
+    },
+    townSet() {
+      return new Set(this.towns)
+    },
+    nearestTown: (state) => (pzk) => {
+      const list = state.pzk2tk[pzk]
+      if (list && list[0])
+        return { tk: list[0][0], dist: list[0][1] }
+      return { tk: 0, dist: NaN }
+    },
+    
+    skillKeys() {
+      return Object.keys(this.skillData).map(Number)
+    },
+
+    housesPerTown() {
+      const ret = {}
+      this.towns.forEach(tnk => ret[this.tnk2tk(tnk)] = [])
+      for (const [hk, house] of Object.entries(this.houseInfo)) {
+        const tk = house.affTown
+        if (!(tk in ret))
+          ret[tk] = []
+        ret[tk].push(Number(hk))
+      }
+      //console.log('housesPerTown', ret)
+      return ret
+    },
+    
+    townUpperLimits() {
+      const ret = {}
+
+      for (const [tk, houses] of Object.entries(this.housesPerTown)) {
+        const townLimits = {cp: 0, storage: 0, lodging: 0}
+        //console.log('tk', tk)
+        for (const hk of houses) {
+          townLimits.cp += this.houseCost(hk)
+          townLimits.storage += this.houseStorage(hk)
+          townLimits.lodging += this.houseLodging(hk)
+        }
+        ret[tk] = townLimits
+      }
+      //console.log('townUpperLimits', ret)
+      return ret
+    },
+
+    plantzones() {
+      if (!this.ready) return {}
+      const start = Date.now()
+      const marketStore = useMarketStore()
+      const userStore = useUserStore()
+      let combined = {}
+
+      for (const [pzk, drop] of Object.entries(this.plantzoneDrops)) {
+        const pzd = { ...drop, ...this.plantzoneStatic[pzk] }
+
+        pzd.name = this.plantzoneName(pzk)
+        const luckyPart = marketStore.priceBunch(pzd.lucky)
+        pzd.unluckyValue = marketStore.priceBunch(pzd.unlucky)
+        pzd.luckyValue = pzd.unluckyValue + luckyPart
+
+        pzd.unluckyValue_gi = marketStore.priceBunch(pzd.unlucky_gi)
+        pzd.luckyValue_gi = pzd.unluckyValue_gi + luckyPart
+        
+        pzd.activeWorkload = pzd.workload * (2 - userStore.productivity(pzd.regiongroup))
+        pzd.itemkeys = new Set([...Object.keys(pzd.unlucky), ...Object.keys(pzd.lucky)])
+
+        combined[pzk] = pzd
+      }
+
+      console.log('plantzones getter took', Date.now()-start, 'ms')
+      return combined
+    },
+
+  },
+});

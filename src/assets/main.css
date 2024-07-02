@@ -1,0 +1,187 @@
+@import "./base.css";
+
+
+#app {
+  margin: 0 auto;
+  padding: 1rem;
+  height: 100%;
+}
+
+#toptext {
+  margin-bottom: 1rem;
+}
+
+.sa {
+  margin-bottom: 1em;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+tr, td, th {
+  padding: 2px;
+  border: 1px solid lightgray;
+}
+
+.borderless tr, .borderless td, .borderless th {
+  border: none;
+}
+
+.center {
+  text-align: center;
+}
+
+.right {
+  text-align: right;
+}
+
+input.mid {
+  width: 6.3em;
+}
+
+input.price {
+  width: 7.3em;
+}
+
+.w5em {
+  width: 5em;
+}
+
+.w42em {
+  width: 4.2em;
+}
+
+.w3em {
+  width: 3em;
+}
+
+input.short {
+  width: 2.5em;
+}
+
+input.float4 {
+  width: 3.8em;
+}
+
+input.float3 {
+  width: 2.5em;
+}
+
+.w2em {
+  width: 2em;
+}
+
+p.todo {
+  font-size: x-small;
+}
+
+.bold {
+  font-weight: 600;
+  font-size: large;
+}
+
+.fsxxs {
+  font-size: xx-small;
+}
+
+.fsxs {
+  font-size: x-small;
+}
+
+.fss {
+  font-size: small;
+}
+
+.greenText {
+  color: green;
+}
+
+.redText {
+  color: red;
+}
+
+.iconitem {
+  width: 22px;
+  height: 22px;
+  vertical-align: bottom;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+@media (min-width: 91024px) {
+  body {
+    display: flex;
+    place-items: center;
+  }
+
+  #app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0 2rem;
+  }
+}
+
+.workshop-label-input {
+  width: 9em;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+button {
+  background-color: var(--color-background-soft);
+  color: var(--color-button);
+  border-radius: 3px;
+  border: 1px solid;
+  border-color: var(--color-border-hover);
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: var(--color-background-mute);
+}
+
+button:disabled {
+  color: var(--vt-c-text-light-2);
+}
+
+button.pressed {
+  border: 1px solid;
+  border-style: inset;
+  font-weight: bold;
+}
+
+table, tr, td, th {
+  border-color: gray;
+}
+
+.vmid {
+  vertical-align: middle;
+}
+
+.warning {
+  background-color: rgba(255, 0, 0, 0.3);
+}
+
+.note {
+  background-color: rgba(255, 192, 0, 0.3);
+}
+
+.spaced-columns {
+  display: flex;
+  justify-content: space-between;
+}
