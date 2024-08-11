@@ -551,7 +551,7 @@ export const useUserStore = defineStore({
         })
       } 
 
-      console.log('autotakenGrindNodes getter', ret)
+      //console.log('autotakenGrindNodes getter', ret)
       return ret
     },
 
@@ -560,64 +560,112 @@ export const useUserStore = defineStore({
         pz: {},
         ws: [],
         map: [],
+        nodeUsedbyJob: {},
       }
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      const localTaken = new Set([...state.autotakenGrindNodes])
+      //const localTaken = new Set([...state.autotakenGrindNodes])
       //if (!gameStore.ready) return ret
+      const routees = []
+
+      this.workingWorkers.forEach(worker => {
+        const routee = {source: worker.tnk}
+        if (gameStore.jobIsPz(worker.job)) {
+          const pzk = worker.job.pzk
+          routee.target = pzk
+        }
+        else if (gameStore.jobIsWorkshop(worker.job)) {
+          const hk = worker.job.hk
+          const houseTk = gameStore.houseInfo[hk].affTown
+          const houseTnk = gameStore.tk2tnk(houseTk)
+          routee.target = houseTnk
+        }
+        else return
+
+        routees.push(routee)
+      })
+
+      const routeInfos = gameStore.route(state.autotakenGrindNodes, routees).routeInfos
+
       this.workingWorkers.forEach(worker => {
         if (gameStore.jobIsPz(worker.job)) {
           const pzk = worker.job.pzk
           if (!pzk) return
           const stats = gameStore.workerStatsOnPlantzone(worker)
           const profit = gameStore.profitPzTownStats(pzk, worker.tnk, stats.wspd, stats.mspd, stats.luck, gameStore.isGiant(worker.charkey))
-          const [usedPath, usedPathCost] = gameStore.dijkstraPath(pzk, worker.tnk, localTaken)
-          if (usedPath) {
-            usedPath.forEach(nk => localTaken.add(nk))
-          }
+          const route = routeInfos[worker.tnk][pzk]
           const job = {
             pzk,
             worker,
             profit,
-            usedPath,
-            usedPathCost,
+            ...route
           }
           ret.pz[pzk] = job
           ret.map.push(job)
         }
-        if (gameStore.jobIsWorkshop(worker.job)) {
+        else if (gameStore.jobIsWorkshop(worker.job)) {
           const hk = worker.job.hk
           const workshop = this.userWorkshops[hk]
           const houseTk = gameStore.houseInfo[hk].affTown
           const houseTnk = gameStore.tk2tnk(houseTk)
           const profit = gameStore.profitWorkshopWorker(hk, workshop, worker)
-          const [usedPath, usedPathCost] = gameStore.dijkstraPath(houseTnk, worker.tnk, localTaken)
-          if (usedPath) {
-            usedPath.forEach(nk => localTaken.add(nk))
-          }
+          const route = routeInfos[worker.tnk][houseTnk]
           const job = {
             hk,
             worker,
             profit,
-            usedPath,
-            usedPathCost,
+            ...route
           }
           ret.ws.push(job)
           ret.map.push(job)
         }
       })
+
+      /*const usualSuspects = [304]    // commonly taken excessive nodes
+      usualSuspects.forEach(nk => {
+        if (nk in ret.nodeUsedbyJob) {
+          const affected = ret.nodeUsedbyJob[nk]
+
+          const altTaken = localTaken.difference(new Set([nk]))
+          let success = true
+          let freed = 0
+          for (const job of affected) {
+            const [newPath, newPathCost] = gameStore.dijkstraPath(job.pzk, job.worker.tnk, altTaken)
+            if (newPath) {
+              job.newPath = newPath
+              job.newPathCost = newPathCost
+              freed += (job.usedPathCost - newPathCost)
+            } else {
+              success = false
+              break
+            }
+          }
+
+          if (success && freed > 0) {
+            console.log(`post-routing: removing ${nk} freed ${freed} CP`)
+            for (const job of affected) {
+              job.usedPath = job.newPath
+              job.usedPathCost = job.newPathCost
+            }
+          }
+        }
+      })*/
+
       //console.log('pzWsJobs getter', ret)
       return ret
     },
 
+    // used EVERYWHERE
     pzJobs(state) {
       return state.pzWsJobs.pz
     },
     
+    // used to display town-remote workshop line
     wsJobs(state) {
       return state.pzWsJobs.ws
     },
 
+    // used to display sharing info in selected node pane and for shared CP calculation
     mapJobs(state) {
       return state.pzWsJobs.map
     },

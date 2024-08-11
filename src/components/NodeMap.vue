@@ -240,9 +240,9 @@ export default {
             }
             if (this.gameStore.jobIsWorkshop(w.job)) {
               // multiple workers can meet this criteria but we only need one
-              const job = this.userStore.wsJobs.find(job => 
-                job.worker.tnk == this.clickedObject.key &&
-                job.hk == w.job.hk
+              const job = this.userStore.wsJobs.find(j => 
+                j.worker.tnk == this.clickedObject.key &&
+                j.hk == w.job.hk
               )
               
               let prev = undefined

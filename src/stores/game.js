@@ -576,6 +576,50 @@ export const useGameStore = defineStore({
       return ret
     },
 
+    // useless, can compute statically and load as json
+    /*minimalSpanningForest() {
+      const forest = {}
+      if (!this.ready)
+        return forest
+      const ts = Date.now()
+
+      const start = 1  // Velia
+      const explored = new Set([])
+
+      const prev = {[start]: null}
+      const pathCosts = {[start]: this.nodes[start].CP}
+      const unexplored = new Heap((a, b) => pathCosts[a] - pathCosts[b])  // note order, must have access
+      unexplored.push(start)
+      
+      var current
+      while (unexplored.size()) {
+        current = unexplored.pop()
+        if (explored.has(current)) continue
+        explored.add(current)
+        const cameFrom = prev[current]
+        
+        if (cameFrom) {
+          if (!(cameFrom in forest)) forest[cameFrom] = []
+          forest[cameFrom].push(current)
+        }
+
+        this.links[current].forEach(neighbor => {
+          if (this.nodes[neighbor] == undefined)
+            console.log('minimalSpanningForest: no exploration node', neighbor)
+
+          if (!explored.has(neighbor)) {
+            prev[neighbor] = current
+            pathCosts[neighbor] = this.nodes[neighbor].CP
+            unexplored.push(neighbor)  // note order, must have access
+          }
+        })
+      }
+      console.log('minimalSpanningForest took', Date.now()-ts, 'ms')
+      //if (start == 1216)
+        //console.log('dijkstraPath 1216', takens.has(324), needTakes[finish])
+      return forest
+    },*/
+
     pzSelectionEntry(pzk, lodgingTk, tnk, mapCp, path, worker, statsOnPz, storageTk) {
       const userStore = useUserStore()
       const profitData = this.profitPzTownStats(pzk, tnk, statsOnPz.wspd, statsOnPz.mspd, statsOnPz.luck, this.isGiant(worker.charkey))
@@ -982,6 +1026,33 @@ export const useGameStore = defineStore({
       //console.log('lsLookup', tk, wantLodging, wantStorage, result)
       //console.log('bestLookup', result, 'took', (performance.now()-start).toFixed(1), 'ms')
       return result
+    },
+
+    route(autotakenGrindNodes, routees) {
+      const ret = {
+        routeInfos: {},
+        totalCost: 0,
+        //nodeContainsRoute: {},
+      }
+      const localTaken = new Set([...autotakenGrindNodes])
+      routees.forEach(routee => {
+        const [usedPath, usedPathCost] = this.dijkstraPath(routee.target, routee.source, localTaken)
+
+        if (!usedPath) return
+
+        usedPath.forEach(nk => localTaken.add(nk))
+        const routeInfo = { usedPath, usedPathCost }
+
+        if (!(routee.source in ret.routeInfos)) ret.routeInfos[routee.source] = {}
+        ret.routeInfos[routee.source][routee.target] = routeInfo
+
+      })
+
+      //console.log('localTaken', localTaken)
+      for (const nk of localTaken) {
+        ret.totalCost += this.nodes[nk].CP
+      }
+      return ret
     },
 
   },

@@ -56,7 +56,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       Connections are resolved in same order the jobs were given. 
       The worker who received the job first doesn't know yet about all others, and builds connection in a beeline.
       Each next worker sees and uses more and more connections made by previous workers in queue.
-      You can push the worker at <strong class="notranslate">B</strong> to the end of queue by restarting his job. 
+      You can push the worker at <strong class="notranslate">B</strong> to the end of queue by restarting his job in workerman (press <strong class="notranslate">stop</strong> and assign again). 
       His connection will then be built last, with full knowledge of previous connections including the one that activated <strong class="notranslate">C</strong>.
     </QnaItem>
     <QnaItem>
@@ -107,6 +107,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
             <li>now head back to Workerman Home page > All towns/workers list > import the json file you just created by running the script</li>
           </ul>
           <li>warning: if the amount of workers you have ingame is outside the F2P town limits, enter P2W lodging in town config <u>before</u> importing, otherwise the housing will not resolve</li>
+          <li>note: the script doesn't really fetch <i>current</i> jobs, but the jobs associated with ingame "restart job" button of each worker. each restartable worker also has a reset button ingame that clears the cached job.</li>
         </ul>
       </li>
       <li>Workloads (and therefore profits) depend on <strong class="notranslate">Modifiers</strong>. 
@@ -349,6 +350,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
 
+    <li>prevent plantzones page trying to use Oquilla as origina</li>
+    <li>for some reason mousemove while hovering a node triggers continuous recalculations</li>
     <li>empire > best untaken > automatically try alternative stashes</li>
     <li>change (again) the job resource sharing principle when negative profit jobs are involved</li>
       <ul>
@@ -424,6 +427,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <p><RouterLink to="/workshops">House Usage</RouterLink></p>
     <p><RouterLink to="/housecraft">HouseCraft Viewer</RouterLink></p>
     <p><RouterLink to="/droprates">Droprates</RouterLink></p>
+    <p><RouterLink to="/routertests">Router Tests</RouterLink></p>
     <p><RouterLink to="/lodging">All Towns Lodging (deprecated)</RouterLink></p>
   </div>
 </template>
