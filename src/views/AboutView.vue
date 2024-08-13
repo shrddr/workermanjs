@@ -79,7 +79,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <ul style="padding-left: 16px;">
       <li>
         <details><summary>Anywhere you see a right facing triangle, click to expand</summary>
-          click again to hide
+          after it turns downwards, click again to hide
         </details>
       </li>
       <li>Also hover over <abbr class="tooltip" title="water is wet">ℹ️</abbr>'s and other <abbr class="tooltip" title="roses are blue">dot-underlined</abbr> things to see useful info</li>
@@ -127,21 +127,22 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
+    <li>custom prices import/export</li>
     <li>workshop tweaks</li>
     <ul>
-      <li>worker packing skills now improve profit (please review $/cycle column in 🏭Workshops config, probaly needs to be reduced accordingly)</li>
+      <li>worker packing skills now improve profit (please review <strong class="notranslate">$/cycle</strong> column in 🏭Workshops config, probaly needs to be reduced accordingly)</li>
       <li>skill #1008 (refining) affects crate packing workspeed</li>
       <li>added intracity distances for workshops (and improved intercity)</li>
       <li>remote town workshop job requires (creates) a connection</li>
-      <li>Home page > selected town has workshop section, sorted by type</li>
+      <li>Home page > selected town pane has workshop section, sorted by type</li>
     </ul>
     <li>fixed unexpected lodging redirect when using "send worker to" dialog > stash dropdown set to a remote town</li>
-    <li>Home > Empire > Daily yields has feed calc at bottom</li>
-    <li>map: a setting to hide all inactive elements</li>
-    <li>if any of jobs originating in a town has negative income, this town lodgage costs will be split between jobs equally (not proportionally) </li>
-    <li>allowed storage use at oquilla, asparkan, velandir, muzgar (the last one is also slightly upgradeable)</li>
+    <li>added feed calc to Home > Empire > Daily yields (bottom)</li>
+    <li>map: added a setting to hide all inactive elements</li>
+    <li>if any of jobs originating in a town has negative income, this town lodgage costs will be split between jobs equally (not proportionally)</li>
+    <li>allowed storage use at oquilla, asparkan, velandir, muzgar (muzgar is also slightly upgradeable)</li>
     <li>updated all trace plantzones to output same amount of item 5960</li>
-    <li>updated sacks 1024 to contain 1x item 5205 and 1026 to contain 1x item 5960</li>
+    <li>updated sack 1024 to contain 1x item 5205 and sack 1026 to contain 1x item 5960</li>
     <li>changed plantzone 1560 to use Lumbering lucky drops despite having Gathering icon, tweaked a couple of trace droprates</li>
     <li>[2023-05-31 patch] new luck drops (current version: 13 aka the final one. data collection stopped)</li>
       <ul>
@@ -350,7 +351,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
 
-    <li>prevent plantzones page trying to use Oquilla as origina</li>
+    <li>prevent plantzones page trying to use Oquilla as origin</li>
     <li>for some reason mousemove while hovering a node triggers continuous recalculations</li>
     <li>empire > best untaken > automatically try alternative stashes</li>
     <li>change (again) the job resource sharing principle when negative profit jobs are involved</li>
@@ -421,7 +422,6 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </ul>
     <li>detect and apply price floors and ceilings (±7.5%)</li>
     <li>show market fetch timestamp</li>
-    <li> </li>
     
     <h2>Misc</h2>
     <p><RouterLink to="/workshops">House Usage</RouterLink></p>

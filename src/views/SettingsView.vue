@@ -30,6 +30,7 @@ export default {
     workerDialogVisible: false,
     workshopsConfigVisible: false,
     highlightPending: false,
+    importDialogVisible: false,
   }),
   watch: {
     'userStore.marketUrl': {
@@ -41,10 +42,12 @@ export default {
   methods: {
     makeIconSrc,
     formatFixed,
+
     reload() {
       this.marketStore.ready = false
       this.marketStore.fetchData()
     },
+
     highlightHash() {
       if (!this.highlightPending)
         return
@@ -59,12 +62,45 @@ export default {
           el.classList.add("anim")
         }
       }
-    }
+    },
+
+    fileParse(event) {
+      let str = event.target.result
+      let json = JSON.parse(str)
+      this.userStore.$patch(json)
+      this.importDialogVisible = false
+    },
+
+    fileImport(event) {
+      if (!event) return
+      const fileList = event.target[0].files
+      if (fileList.length < 1) return
+      const file = fileList[0]
+      console.log('fileImport', file)
+      let reader = new FileReader()
+      reader.onload = this.fileParse
+      reader.readAsText(file)
+    },
+
+    fileExport() {
+      var a = document.createElement("a")
+      let out = { 
+        customPrices: this.userStore.customPrices,
+        keepItems: this.userStore.keepItems,
+      } 
+      const str = JSON.stringify(out)
+      var file = new Blob([str], {type: 'text/plain'});
+      a.href = URL.createObjectURL(file);
+      a.download = 'custom_prices.json';
+      a.click();
+    },
   },
+  
   mounted() {
     this.highlightPending = true
     this.highlightHash()
   },
+
   updated() {
     this.$nextTick(() => {
       this.highlightHash()
@@ -74,6 +110,12 @@ export default {
 </script>
 
 <template>
+  <ModalDialog v-model:show="importDialogVisible">
+    <form @submit.prevent="fileImport($event)">
+      <input type="file" accept=".json" @click="fileImport()" />
+      <button>import</button>
+    </form>
+  </ModalDialog>
   <ModalDialog v-model:show="workerDialogVisible">
     <WorkerEdit 
       :workerEditing="userStore.defaultWorker" 
@@ -216,7 +258,10 @@ export default {
       <span v-else>❌</span>
       &nbsp;<button @click="reload()">reload</button>
       <p>By default everything marketable is supposed to be sold on Central Market (with tax).</p>
-      <p>If the item is for self use, select Keep (=untax) and/or enter Custom price:</p>
+      <p>If the item is for self use, select Keep (=untax) and/or enter Custom price: 
+        <button @click="importDialogVisible = true">import</button>
+        <button @click="fileExport()">export</button>
+      </p>
 
     </div>
     <div class="scrollable">
