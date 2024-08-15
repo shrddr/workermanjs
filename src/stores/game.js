@@ -17,7 +17,8 @@ export const useGameStore = defineStore({
     distToTown: {},
     lodgingPerTown: {},
     houseInfo: {},
-    towns: [],
+    townsWithHousing: [],
+    townsWithStorage: [],
     townNames: {},
     regionGroups: {},
     loc: {},
@@ -221,14 +222,19 @@ export const useGameStore = defineStore({
       this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json()
       this.houseInfo = await (await fetch(`data/houseinfo.json`)).json()
 
-      // [tnk] for townSet -> homeview node infobox
-      this.towns = [
+      this.townsWithHousing = [
         1,301,302,601,61,602,604,608,1002,1101,1141,1301,1314,1319,1343,1380,1604,1623,1649,1691,1750, 
-        1781,1785,1795, 
-        // can provide storage, cannot house workers
-        1727,
-        1834,1843,1850
-        // 1001, lema cannot provide storage and cannot house workers
+        1781,1785,1795,
+        // 1727,1834,1843,1850,  // can provide storage, cannot house workers
+        // 1001, // lema cannot provide storage and cannot house workers
+      ]
+
+      // [tnk] for HomeView node pane
+      this.townsWithStorage = [
+        1,301,302,601,61,602,604,608,1002,1101,1141,1301,1314,1319,1343,1380,1604,1623,1649,1691,1750, 
+        1781,1785,1795,
+        1727,1834,1843,1850,  // can provide storage, cannot house workers
+        // 1001, // lema cannot provide storage and cannot house workers
       ]
 
       this.vendorPrices = await (await fetch(`data/manual/vendor_prices.json`)).json()
@@ -517,7 +523,9 @@ export const useGameStore = defineStore({
     },
 
 
-    // used below
+    // used for:
+    // plantzoneNearestTownsFreeWorkersProfits, workshopNearestTownsFreeWorkersProfits, 
+    // autotakenGrindNodes, allPlantzonesNearestCpTownProfit
     dijkstraNearestTowns(start, townLimit, takens, skipAncado) {
       if (!this.ready)
         return
@@ -533,7 +541,7 @@ export const useGameStore = defineStore({
       while (unvisited.size()) {
         current = unvisited.pop()
         
-        if (this.isTown(current)) {
+        if (this.isTownWithHousing(current)) {
           if (current != 1343 || !skipAncado) {
             found.add(current)
             if (found.size == townLimit) break
@@ -542,7 +550,7 @@ export const useGameStore = defineStore({
 
         this.links[current].forEach(neighbor => {
           if (this.nodes[neighbor] == undefined)
-            throw Error(`dijkstraNearestTowns: no exploration node ${neighbor}`)
+            throw Error(`dijkstraNearestTowns: unknown exploration node ${neighbor}`)
           const nbrCost = takens && takens.has(neighbor) ? 0 : this.nodes[neighbor].CP
           const newDistance = pathCosts[current] + nbrCost
           if (neighbor in pathCosts) {
@@ -874,9 +882,11 @@ export const useGameStore = defineStore({
       }
     },
 
-   
-    isTown(nk) {
-      return this.townSet.has(nk)
+    isTownWithHousing(nk) {
+      return this.townsWithHousingSet.has(nk)
+    },
+    isTownWithStorage(nk) {
+      return this.townsWithStorageSet.has(nk)
     },
     //isTown(nk) {
     //  const townKinds = [1, 2]
@@ -1064,8 +1074,11 @@ export const useGameStore = defineStore({
         return this.loc[userStore.selectedLang]
       return {town:{}, housetype:{}, char:{}, item:{}, node:{}, skill:{}, skilldesc:{}}
     },
-    townSet() {
-      return new Set(this.towns)
+    townsWithHousingSet() {
+      return new Set(this.townsWithHousing)
+    },
+    townsWithStorageSet() {
+      return new Set(this.townsWithStorage)
     },
     nearestTown: (state) => (pzk) => {
       const list = state.pzk2tk[pzk]
@@ -1080,7 +1093,7 @@ export const useGameStore = defineStore({
 
     housesPerTown() {
       const ret = {}
-      this.towns.forEach(tnk => ret[this.tnk2tk(tnk)] = [])
+      this.townsWithStorage.forEach(tnk => ret[this.tnk2tk(tnk)] = [])
       for (const [hk, house] of Object.entries(this.houseInfo)) {
         const tk = house.affTown
         if (!(tk in ret))

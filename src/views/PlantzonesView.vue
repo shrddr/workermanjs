@@ -127,7 +127,7 @@ export default {
     },
     
     townsFilter() {
-      return this.gameStore.towns.map(tnk => tnk == 1343 ? -1 : tnk)
+      return this.gameStore.townsWithHousing.map(tnk => tnk == 1343 ? -1 : tnk)
     }
   },
 

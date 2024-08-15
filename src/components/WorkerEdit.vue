@@ -366,7 +366,7 @@ export default {
           <td>stash:</td>
           <td>
             <select v-model="workerEditing.job.storage">
-              <option v-for="tnk in gameStore.townSet" :value="tnk">
+              <option v-for="tnk in gameStore.townWithStorageSet" :value="tnk">
                 {{ gameStore.uloc.node[tnk] }}
               </option>
             </select>

@@ -40,7 +40,7 @@ export default {
       const gameStore = useGameStore()
       
       let worldList = []
-      this.gameStore.towns.forEach(tnk => {
+      this.gameStore.townsWithHousing.forEach(tnk => {
         // more than needed to discard after sorting
         const townList = this.gameStore.dijDiscountedNearestPlantzones(tnk, 10)
         //if (tnk == 1) console.log(tnk, townList)

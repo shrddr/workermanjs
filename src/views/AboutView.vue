@@ -351,7 +351,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
 
-    <li>prevent plantzones page trying to use Oquilla as origin</li>
+    <li>home > selected plantzone > add "hire and assign" section, which makes clear which race is better</li>
+    <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
     <li>for some reason mousemove while hovering a node triggers continuous recalculations</li>
     <li>empire > best untaken > automatically try alternative stashes</li>
     <li>change (again) the job resource sharing principle when negative profit jobs are involved</li>

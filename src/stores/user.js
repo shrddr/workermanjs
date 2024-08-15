@@ -756,7 +756,7 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      gameStore.towns.forEach(tnk => ret[gameStore.tnk2tk(tnk)] = new Set([]))
+      gameStore.townsWithStorage.forEach(tnk => ret[gameStore.tnk2tk(tnk)] = new Set([]))
       for (const [pzk, w] of Object.entries(state.workingWorkers)) {
         if (gameStore.jobIsPz(w.job)) {
           const tk = gameStore.tnk2tk(w.job.storage)
@@ -841,7 +841,7 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      gameStore.towns.forEach(tnk => {
+      gameStore.townsWithStorage.forEach(tnk => {
         const tk = gameStore.tnk2tk(tnk)
         ret[tk] = this.townInfra(tk, 
           state.townWorkingWorkers(tk).length, 
@@ -856,7 +856,7 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      gameStore.towns.forEach(tnk => ret[gameStore.tnk2tk(tnk)] = [])
+      gameStore.townsWithHousing.forEach(tnk => ret[gameStore.tnk2tk(tnk)] = [])
       for (const [pzk, w] of Object.entries(state.workingWorkers)) {
         const tk = gameStore.tnk2tk(w.tnk)
         ret[tk].push(w)
@@ -875,7 +875,7 @@ export const useUserStore = defineStore({
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
       const townsUntakenJobs = []
-      gameStore.towns.forEach(tnk => {
+      gameStore.townsWithStorage.forEach(tnk => {
         const tk = gameStore.tnk2tk(tnk)
         townsUntakenJobs[tk] = []
         ret[tk] = []
@@ -1081,7 +1081,7 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      gameStore.towns.forEach(
+      gameStore.townsWithHousing.forEach(
         tnk => ret[gameStore.tnk2tk(tnk)] = {income:0, mapCp:0, hasNegativeJob:false}
       )
       for (const [pzk, w] of Object.entries(state.workingWorkers)) {

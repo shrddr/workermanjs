@@ -58,7 +58,7 @@ export default {
       const ret = []
       if (!this.gameStore.ready) return ret
       // first of all, only consider manually assigned as "towns" in game.js
-      for (const tnk of this.gameStore.townSet) {
+      for (const tnk of this.gameStore.townsWithHousingSet) {
         const tk = this.gameStore.tnk2tk(tnk)
         // towns with no houses are not localized -> don't show in dropbox
         if (tk in this.gameStore.uloc.town) {

@@ -157,7 +157,7 @@ export default {
       <div>
         stash:
         <select v-model="selectedRedirect">
-          <option v-for="tnk in gameStore.townSet" :value="tnk">
+          <option v-for="tnk in gameStore.townWithHousingSet" :value="tnk">
             {{ gameStore.uloc.node[tnk] }}
           </option>
         </select>

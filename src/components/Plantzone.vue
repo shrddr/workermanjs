@@ -145,7 +145,7 @@ export default {
       <div v-if="freeWorkers.length && !userStore.workedPlantzones.has(pzk.toString())" style="margin-right: 6px;">stash:
         <select v-model="selectedRedirect">
           <option value="0">worker hometown</option>
-          <option v-for="tnk in gameStore.townSet" :value="tnk">
+          <option v-for="tnk in gameStore.townWithHousingSet" :value="tnk">
             {{ gameStore.uloc.node[tnk] }}
           </option>
         </select>
