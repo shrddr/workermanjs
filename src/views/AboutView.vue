@@ -40,7 +40,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         What does <strong class="notranslate">+efficiency</strong> column mean and why is it always negative for me?
       </template>
       It shows the change in total efficiency (M$/day/CP) of the empire after starting this job with this worker. 
-      It being always negative is good - means you already own all the best nodes, so remaining ones are less efficient.
+      It being negative is good - means you already own all the best nodes, so remaining nodes reduce the current efficiency.
       You want to spend all available CP anyway, so just select those that are least negative (= highest in list).
     </QnaItem>
     <QnaItem>
@@ -127,6 +127,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
+    <li>can assign Personal Items in Muzgar > config (do not enter too much, will show <strong>?</strong> in totals)</li>
+    <li>home > selected plantzone > added "hire+assign" section, which autosuggests best race</li>
     <li>custom prices import/export</li>
     <li>workshop tweaks</li>
     <ul>
@@ -351,7 +353,6 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
 
-    <li>home > selected plantzone > add "hire and assign" section, which makes clear which race is better</li>
     <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
     <li>for some reason mousemove while hovering a node triggers continuous recalculations</li>
     <li>empire > best untaken > automatically try alternative stashes</li>

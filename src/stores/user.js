@@ -736,6 +736,18 @@ export const useUserStore = defineStore({
       return (state.farmingProfit - state.farmingBareProfit) / 10
     },
 
+    
+
+    newWorkerName: (state) => (tk) => {
+      const gameStore = useGameStore()
+      const townName = gameStore.uloc.town[tk]
+        .replace('Город ', '')
+        .replace('Деревня ', '')
+        .substring(0, 3)
+      const numberInTown = state.townWorkers(tk).length + 1
+      return townName+numberInTown
+    },
+
     workerBringsItemkeys: (state) => (w) => {
       const gameStore = useGameStore()
       if (gameStore.jobIsIdle(w.job))
@@ -756,7 +768,7 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      gameStore.townsWithStorage.forEach(tnk => ret[gameStore.tnk2tk(tnk)] = new Set([]))
+      gameStore.townsWithRedirectableStorage.forEach(tnk => ret[gameStore.tnk2tk(tnk)] = new Set([]))
       for (const [pzk, w] of Object.entries(state.workingWorkers)) {
         if (gameStore.jobIsPz(w.job)) {
           const tk = gameStore.tnk2tk(w.job.storage)
@@ -841,7 +853,7 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      gameStore.townsWithStorage.forEach(tnk => {
+      gameStore.townsWithRedirectableStorage.forEach(tnk => {
         const tk = gameStore.tnk2tk(tnk)
         ret[tk] = this.townInfra(tk, 
           state.townWorkingWorkers(tk).length, 
@@ -851,12 +863,16 @@ export const useUserStore = defineStore({
       //console.log('townsInfra', ret)
       return ret
     },
-    
+
+    lodgage(state) {
+      return Object.values(this.townsInfra).reduce((total, ti) => total + ti.cost, 0)
+    },
+
     townsTopIncomeWorkers(state) {
       const ret = {}
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      gameStore.townsWithHousing.forEach(tnk => ret[gameStore.tnk2tk(tnk)] = [])
+      gameStore.townsWithLodging.forEach(tnk => ret[gameStore.tnk2tk(tnk)] = [])
       for (const [pzk, w] of Object.entries(state.workingWorkers)) {
         const tk = gameStore.tnk2tk(w.tnk)
         ret[tk].push(w)
@@ -875,7 +891,7 @@ export const useUserStore = defineStore({
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
       const townsUntakenJobs = []
-      gameStore.townsWithStorage.forEach(tnk => {
+      gameStore.townsWithRedirectableStorage.forEach(tnk => {
         const tk = gameStore.tnk2tk(tnk)
         townsUntakenJobs[tk] = []
         ret[tk] = []
@@ -954,10 +970,6 @@ export const useUserStore = defineStore({
       }
       console.log('townsSteppedInfra took', Date.now()-start, 'ms')
       return ret
-    },
-
-    lodgage(state) {
-      return Object.values(this.townsInfra).reduce((total, ti) => total + ti.cost, 0)
     },
 
     workerIncome: (state) => (w) => {
@@ -1081,7 +1093,7 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      gameStore.townsWithHousing.forEach(
+      gameStore.townsWithLodging.forEach(
         tnk => ret[gameStore.tnk2tk(tnk)] = {income:0, mapCp:0, hasNegativeJob:false}
       )
       for (const [pzk, w] of Object.entries(state.workingWorkers)) {

@@ -105,17 +105,13 @@ export default {
     },
 
     hireRandomArtGob(tk) {
-      const townName = this.gameStore.uloc.town[tk]
-        .replace('Город ', '')
-        .replace('Деревня ', '')
-        .substring(0, 3)
-      const numberInTown = this.userStore.townWorkers(tk).length + 1
+      const label = this.userStore.newWorkerName(tk)
       const charkey = 7572
       let w = {
         tk,
         tnk: this.gameStore.tk2tnk(tk),
         charkey,
-        label: townName+numberInTown,
+        label,
         level: 1,
         wspdSheet: this.gameStore.workerStatic[charkey].wspd / 1E6,
         mspdSheet: this.gameStore.workerStatic[charkey].mspd / 100,
@@ -430,7 +426,7 @@ export default {
           <details>
             <summary>Total workers: {{ userStore.countWorkers }}</summary>
             <p class="fsxs">
-              nodes: {{ userStore.workedPlantzones.size }} <br/> 
+              nodes: {{ userStore.workedPlantzones.size }} <br/>
 
               <template v-if="userStore.workersFarmingCount">
                 <template v-if="!userStore.farmingEnable">
@@ -467,6 +463,7 @@ export default {
               </template>
 
               nodes: {{ userStore.autotakenNodesCP }} <br/>
+              lodging/storage: {{ userStore.lodgage }} <br/>
                 
               <template v-if="userStore.farmingEnable">
                 farming: {{ userStore.farmingCP }} <br/>
@@ -481,10 +478,7 @@ export default {
                 custom:
                 {{ formatFixed(userStore.customTotalCP) }} <br/>
               </template>
-              
-              <template>
-                lodgage: {{ userStore.lodgage }} <br/>
-              </template>
+
             </p>
             
           </details>

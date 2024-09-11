@@ -17,8 +17,9 @@ export const useGameStore = defineStore({
     distToTown: {},
     lodgingPerTown: {},
     houseInfo: {},
-    townsWithHousing: [],
-    townsWithStorage: [],
+    townsWithLodging: [],
+    townsWithRentableStorage: [],
+    townsWithRedirectableStorage: [],
     townNames: {},
     regionGroups: {},
     loc: {},
@@ -218,26 +219,6 @@ export const useGameStore = defineStore({
       // best workshop for a worker
       this.tk2hk = await (await fetch(`data/distances_tk2hk.json`)).json()
 
-      // for lodging config
-      this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json()
-      this.houseInfo = await (await fetch(`data/houseinfo.json`)).json()
-
-      this.townsWithHousing = [
-        1,301,302,601,61,602,604,608,1002,1101,1141,1301,1314,1319,1343,1380,1604,1623,1649,1691,1750, 
-        1781,1785,1795,
-        // 1727,1834,1843,1850,  // can provide storage, cannot house workers
-        // 1001, // lema cannot provide storage and cannot house workers
-      ]
-
-      // [tnk] for HomeView node pane
-      this.townsWithStorage = [
-        1,301,302,601,61,602,604,608,1002,1101,1141,1301,1314,1319,1343,1380,1604,1623,1649,1691,1750, 
-        1781,1785,1795,
-        1727,1834,1843,1850,  // can provide storage, cannot house workers
-        // 1001, // lema cannot provide storage and cannot house workers
-      ]
-
-      this.vendorPrices = await (await fetch(`data/manual/vendor_prices.json`)).json()
       
       this._tk2tnk = {
         // self.regions.data[5].waypoint == 1
@@ -282,6 +263,78 @@ export const useGameStore = defineStore({
         _tnk2tk[nk] = Number(tk)
       }
       this._tnk2tk = _tnk2tk
+
+      // the notion of "town" is highly ambiguous
+      // 1) a node which is activated automatically by visiting (Tarif = yes, Abun = no)
+      // 2) a node that has rentable worker lodging
+      // 3) a node that has rentable item storage
+      // 3a) ..and can be a target of lvl40 worker "stash redirect" feature (will ancado be a valid target when activated?)
+      // 4) a node that has ANY kind of rentable housing (residence, workshop...)
+
+      // town(1+2) 
+      // only these are used for dijkstra
+      // vel, olv, hei, gli, cal, kep
+      // eph, tre, ili, alt, tar, val
+      // sha, baz, anc, are, owt, gra         <-- ancado doesn't match criteria 1
+      // duv, odd,      eil,               but will prob stay for historical reasons
+      // tal, mut, ric, 
+      // 
+      this.townsWithLodging = [
+        1,   61,  301, 302, 601, 602,
+        604, 608, 1002,1101,1141,1301,
+        1314,1319,1343,1380,1604,1623,
+        1649,1691,     1750, 
+        1781,1785,1795,
+        // 1727,1834,1843,1850,  // can provide storage, cannot house workers
+        // 1001, // lema cannot provide storage and cannot house workers
+      ]
+      // only these are displayed at Home > all towns/workers list
+      this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json() // tk-based
+
+
+      // town(3)
+      // has config button where you can enter "Personal items" value
+      // filled manually:
+      // vel, olv, hei, gli, cal, kep
+      // eph, tre, ili, alt, tar, val
+      // sha, baz, anc, are, owt, gra
+      // duv, odd, oqi, eil, 
+      // tal, mut, ric, 
+      //      muz
+
+      this.townsWithRentableStorage = [
+        1,   61,  301, 302, 601, 602,
+        604, 608, 1002,1101,1141,1301,
+        1314,1319,1343,1380,1604,1623,
+        1649,1691,1727,1750, 
+        1781,1785,1795,
+             1843,
+      ]
+
+      // town(3a)
+      // can be a target of lvl40 worker "stash redirect" feature
+      // filled manually:
+      // vel, olv, hei, gli, cal, kep
+      // eph, tre, ili, alt, tar, val
+      // sha, baz, anc, are, owt, gra
+      // duv, odd, oqi, eil, 
+      // tal, mut, ric, 
+      // asf, muz, ber
+
+      this.townsWithRedirectableStorage = [
+        1,   61,  301, 302, 601, 602,
+        604, 608, 1002,1101,1141,1301,
+        1314,1319,1343,1380,1604,1623,
+        1649,1691,1727,1750, 
+        1781,1785,1795,
+        1834,1843,1850,
+      ]
+
+      // town(4) can be extracted from here if needed
+      this.houseInfo = await (await fetch(`data/houseinfo.json`)).json()
+
+
+      this.vendorPrices = await (await fetch(`data/manual/vendor_prices.json`)).json()      
 
       this.industries = {
         "unk": "unknown",
@@ -541,7 +594,7 @@ export const useGameStore = defineStore({
       while (unvisited.size()) {
         current = unvisited.pop()
         
-        if (this.isTownWithHousing(current)) {
+        if (this.townsWithLodgingSet.has(current)) {
           if (current != 1343 || !skipAncado) {
             found.add(current)
             if (found.size == townLimit) break
@@ -784,7 +837,7 @@ export const useGameStore = defineStore({
     },
 
     makeMedianChar(charkey) {
-      const ret = {}
+      const ret = { level: 40 }
       const stat = this.workerStatic[charkey]
       let pa_wspd = stat.wspd
       let pa_mspdBonus = 0
@@ -882,12 +935,6 @@ export const useGameStore = defineStore({
       }
     },
 
-    isTownWithHousing(nk) {
-      return this.townsWithHousingSet.has(nk)
-    },
-    isTownWithStorage(nk) {
-      return this.townsWithStorageSet.has(nk)
-    },
     //isTown(nk) {
     //  const townKinds = [1, 2]
     //  return townKinds.some(x => x == this.nodes[nk].kind)
@@ -1074,11 +1121,14 @@ export const useGameStore = defineStore({
         return this.loc[userStore.selectedLang]
       return {town:{}, housetype:{}, char:{}, item:{}, node:{}, skill:{}, skilldesc:{}}
     },
-    townsWithHousingSet() {
-      return new Set(this.townsWithHousing)
+    townsWithLodgingSet() {
+      return new Set(this.townsWithLodging)
     },
-    townsWithStorageSet() {
-      return new Set(this.townsWithStorage)
+    townsWithRentableStorageSet() {
+      return new Set(this.townsWithRentableStorage)
+    },
+    townsWithRedirectableStorageSet() {
+      return new Set(this.townsWithRedirectableStorage)
     },
     nearestTown: (state) => (pzk) => {
       const list = state.pzk2tk[pzk]
@@ -1093,7 +1143,7 @@ export const useGameStore = defineStore({
 
     housesPerTown() {
       const ret = {}
-      this.townsWithStorage.forEach(tnk => ret[this.tnk2tk(tnk)] = [])
+      this.townsWithRedirectableStorage.forEach(tnk => ret[this.tnk2tk(tnk)] = [])
       for (const [hk, house] of Object.entries(this.houseInfo)) {
         const tk = house.affTown
         if (!(tk in ret))

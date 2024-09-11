@@ -286,7 +286,7 @@ export default {
       const links = this.gameStore.links
 
       const start = 0
-      links[start] = this.gameStore.townsWithHousing
+      links[start] = this.gameStore.townsWithLodging
 
       let unvisited = new Heap((a, b) => pathCosts[a] - pathCosts[b]);
       unvisited.push(start)

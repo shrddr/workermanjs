@@ -135,6 +135,11 @@ export default {
         @editWorker="editWorker"
       />
     </div>
+    <div id="clickedTownInfo" v-else-if="gameStore.townsWithRentableStorageSet.has(clickedNode.key)" class="vscrollable">
+      <button @click="this.$emit('selectHouses', gameStore.tnk2tk(clickedNode.key))" :class="{ 'unresolved': gameStore.ready && userStore.townsInfra[gameStore.tnk2tk(clickedNode.key)].success == false }">
+        config
+      </button>
+    </div>
 
     <div id="clickedNodeName" v-if="gameStore.isConnectionNode(clickedNode.key)">
       <p>
@@ -198,5 +203,8 @@ export default {
 }
 .tooltip {
   cursor: help;
+}
+button.unresolved {
+  border-color: rgba(255, 0, 0, 0.7);
 }
 </style>

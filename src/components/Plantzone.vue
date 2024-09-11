@@ -1,6 +1,7 @@
 <script>
 import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
+import MakeAWorker from '../components/MakeAWorker.vue'
 import {formatFixed,makeIconSrc} from '../util.js'
 
 export default {
@@ -27,7 +28,7 @@ export default {
   ],
 
   components: {
-
+    MakeAWorker,
   },
 
   data: () => ({
@@ -59,12 +60,15 @@ export default {
   computed: {
     freeWorkers() {
       const arr = this.plantzoneNearestTownsFreeWorkersProfits(this.pzk, 99)
-      const filtered = arr.filter((item, index, self) => {
+      const filtered_dist = arr.filter((e) => {
+        return e.profit.dist < 1E6
+      })
+      const filtered_similar = filtered_dist.filter((item, index, self) => {
         return index === self.findIndex(
           needle => needle.tnk === item.tnk && JSON.stringify(needle.statsOnPz) === JSON.stringify(item.statsOnPz)
         )
       })
-      return filtered
+      return filtered_similar
     },
   },
 }
@@ -136,35 +140,36 @@ export default {
 
 
   <div>
+
+
+
     <div class="spaced-columns">
-      <div>Nearest towns with idle workers: 
-        <template v-if="freeWorkers.length == 0">
-          None
-        </template>
+      <div>
+        <h4>Nearest towns with idle workers: <template v-if="freeWorkers.length == 0">None</template></h4>
       </div>
       <div v-if="freeWorkers.length && !userStore.workedPlantzones.has(pzk.toString())" style="margin-right: 6px;">stash:
         <select v-model="selectedRedirect">
           <option value="0">worker hometown</option>
-          <option v-for="tnk in gameStore.townWithHousingSet" :value="tnk">
+          <option v-for="tnk in gameStore.townsWithLodging" :value="tnk">
             {{ gameStore.uloc.node[tnk] }}
           </option>
         </select>
       </div>
     </div>
     
-    <template v-if="freeWorkers.length">
+    <template v-if="freeWorkers.length > 0">
       <table>
         <tr>
           <th>town</th>
           <th>walk</th>
-          <th>worker <abbr title="same town&stat workers are hidden in this view">ℹ️</abbr></th>
+          <th>worker <abbr class="tooltip" title="same town&stat workers are hidden in this view">ℹ️</abbr></th>
           <th>+M$/day</th>
-          <th>+CP</th>
+          <th>+CP <abbr class="tooltip" title="node connection + town housing = total">ℹ️</abbr></th>
           <th>M$/day/CP</th>
           <th>action</th>
         </tr>
         <template v-for="e in freeWorkers">
-          <tr v-if="e.profit.dist < 1E6">
+          <tr>
             <td>{{ gameStore.nodeName(e.tnk) }}</td>
             <td>{{ formatFixed(e.profit.dist) }}</td>
             <td>
@@ -181,13 +186,14 @@ export default {
             <td>
               <abbr class="tooltip" :title="Array.from(e.path, nk => `${userStore.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')">
               {{ e.mapCp }}
-              </abbr>+<abbr class="tooltip" :title="e.infraTooltip">{{ e.townCp }}</abbr>={{ e.cp }}
+              </abbr>+<abbr class="tooltip" :title="e.infraTooltip">{{ formatFixed(e.townCp) }}</abbr>={{ formatFixed(e.cp) }}
             </td>
             <td class="center">
               {{ formatFixed(e.dailyPerCp, 3) }}
             </td>
             <td>
               <button v-if="userStore.workedPlantzones.has(pzk.toString())" title="plantzone already occupied" disabled="true">assign</button>
+              <button v-else-if="isNaN(e.townCp)" title="Can't resolve housing" disabled="true">assign</button>
               <button v-else-if="gameStore.tnk2tk(e.w.tnk) && gameStore.tnk2tk(e.w.tnk) == 619 && !userStore.activateAncado" title="Ancado is not activated, can't house workers" disabled="true">assign</button>
               <button v-else @click="userStore.assignWorker(e.w, {kind: 'plantzone', pzk: e.pz.key, storage: e.tnk})">
                 assign
@@ -198,26 +204,14 @@ export default {
       </table>
     </template>
     
+    
+    <MakeAWorker
+      :pzk="pzk"
+      :redirect="Number(selectedRedirect)"
+    />
 
   </div>
 
-  <template v-if="0">
-    <details>
-      <summary>Same town workers performance</summary>
-      <p>
-        <table>
-          <tr>
-            <th>w</th>
-            <th>a</th>
-          </tr>
-          <tr>
-            <td>1</td>
-            <td>2</td>
-          </tr>
-        </table>
-      </p>
-    </details>
-  </template>
 
 </template>
 

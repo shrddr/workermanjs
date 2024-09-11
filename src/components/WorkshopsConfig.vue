@@ -151,7 +151,7 @@ DO NOT include +1/+3 packing skill, since it's a worker attribute and not a work
         CP
         <abbr title="Full cost of operating the workshop, including:
 1) the workshop itself;
-2) house chain to connect the workshop;
+2) house chain to connect the workshop (*after* autoassigned houses shown in Home > town config > Found cost spoiler);
 3) storage for input/output mats, if not provided by (2).
 The only thing to not include here is lodging for the worker who is going to occupy the workshop.
 However, if your workshop house chain does provide lodging, reduce (2) accordingly. 

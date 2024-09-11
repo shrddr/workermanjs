@@ -142,7 +142,7 @@ export default {
 
   <div id="toptext">
     <p>Productivity modifiers are shown ingame as green bars at world map > resource view.
-      Some green bars are hidden though, for those you can see the current worload in ingame worker assignment panel and calculate the modifier off that.</p>
+      Some green bars are hidden though, for those you can see the current workload for a specific node in ingame worker assignment panel and calculate the modifier off that.</p>
     <p>Low modifier means lots of players are working in the area and workloads are increased (up to 2x of base).</p>
     <p>If unspecified, 0% modifier will be used (= max workload = longest cycle = min cycles per day = min profit)</p>
     
