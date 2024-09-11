@@ -88,7 +88,7 @@ export default {
         <img :src="makeIconSrc(k)" class="iconitem">
       </RouterLink>
       
-      [🍀{{ formatFixed(this.gameStore.plantzones[pzk].lucky ? this.gameStore.plantzones[pzk].luckyValue / this.gameStore.plantzones[pzk].unluckyValue : 1, 2) }}x]
+      [🍀{{ formatFixed(this.gameStore.plantzones[pzk].lucky ? this.gameStore.plantzones[pzk].luckyValue / this.gameStore.plantzones[pzk].unluckyValue : 1, 2) }}<abbr class="tooltip" title="how much more $ a lucky cycle brings vs unlucky">x</abbr>]
     </span>
   </div>
 
@@ -147,7 +147,7 @@ export default {
       <div>
         <h4>Nearest towns with idle workers: <template v-if="freeWorkers.length == 0">None</template></h4>
       </div>
-      <div v-if="freeWorkers.length && !userStore.workedPlantzones.has(pzk.toString())" style="margin-right: 6px;">stash:
+      <div style="margin-right: 6px;">use stash:
         <select v-model="selectedRedirect">
           <option value="0">worker hometown</option>
           <option v-for="tnk in gameStore.townsWithLodging" :value="tnk">
