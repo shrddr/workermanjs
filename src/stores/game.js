@@ -251,12 +251,16 @@ export const useGameStore = defineStore({
         1219: 1785,
         1246: 1795,
 
-        1000: 1727, // ocean-oquilla
+        1000: 1727, // ocean: oquilla
         181: 1001, // lema
 
         218: 1834,
         1375: 1843, // muzgar
         1382: 1850,
+
+        1424: 1857,
+        1444: 1858,
+        1420: 1853,
       }
       const _tnk2tk = {}
       for (const [tk, nk] of Object.entries(this._tk2tnk)) {
@@ -278,7 +282,8 @@ export const useGameStore = defineStore({
       // sha, baz, anc, are, owt, gra         <-- ancado doesn't match criteria 1
       // duv, odd,      eil,               but will prob stay for historical reasons
       // tal, mut, ric, 
-      // 
+      //
+      // yuk, god, buk
       this.townsWithLodging = [
         1,   61,  301, 302, 601, 602,
         604, 608, 1002,1101,1141,1301,
@@ -287,6 +292,7 @@ export const useGameStore = defineStore({
         1781,1785,1795,
         // 1727,1834,1843,1850,  // can provide storage, cannot house workers
         // 1001, // lema cannot provide storage and cannot house workers
+        1853,1857,1858,
       ]
       // only these are displayed at Home > all towns/workers list
       this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json() // tk-based
@@ -300,8 +306,8 @@ export const useGameStore = defineStore({
       // sha, baz, anc, are, owt, gra
       // duv, odd, oqi, eil, 
       // tal, mut, ric, 
-      //      muz
-
+      //      muz,
+      // yuk, god
       this.townsWithRentableStorage = [
         1,   61,  301, 302, 601, 602,
         604, 608, 1002,1101,1141,1301,
@@ -309,6 +315,7 @@ export const useGameStore = defineStore({
         1649,1691,1727,1750, 
         1781,1785,1795,
              1843,
+        1853,1857,
       ]
 
       // town(3a)
@@ -320,7 +327,7 @@ export const useGameStore = defineStore({
       // duv, odd, oqi, eil, 
       // tal, mut, ric, 
       // asf, muz, ber
-
+      // yuk, god, buk
       this.townsWithRedirectableStorage = [
         1,   61,  301, 302, 601, 602,
         604, 608, 1002,1101,1141,1301,
@@ -328,6 +335,7 @@ export const useGameStore = defineStore({
         1649,1691,1727,1750, 
         1781,1785,1795,
         1834,1843,1850,
+        1853,1857,1858,
       ]
 
       // town(4) can be extracted from here if needed
@@ -579,7 +587,7 @@ export const useGameStore = defineStore({
     // used for:
     // plantzoneNearestTownsFreeWorkersProfits, workshopNearestTownsFreeWorkersProfits, 
     // autotakenGrindNodes, allPlantzonesNearestCpTownProfit
-    dijkstraNearestTowns(start, townLimit, takens, skipAncado) {
+    dijkstraNearestTowns(start, townLimit, takens, skipAncado, noOceanCrossing) {
       if (!this.ready)
         return
       //const ts = Date.now()
@@ -604,6 +612,12 @@ export const useGameStore = defineStore({
         this.links[current].forEach(neighbor => {
           if (this.nodes[neighbor] == undefined)
             throw Error(`dijkstraNearestTowns: unknown exploration node ${neighbor}`)
+          if (noOceanCrossing) {
+            if ((current == 1727 && neighbor == 1800) || (current == 1800 && neighbor == 1727)) {
+              //console.log('skipping ocean link')
+              return
+            } 
+          }
           const nbrCost = takens && takens.has(neighbor) ? 0 : this.nodes[neighbor].CP
           const newDistance = pathCosts[current] + nbrCost
           if (neighbor in pathCosts) {
@@ -631,7 +645,7 @@ export const useGameStore = defineStore({
         }
         ret.push([tnk, pathCosts[tnk], needTakes])
       })
-      //if (start == 1630) console.log('dijkstraNearestTowns 1630', ret)
+      //if (start == 1046) console.log(`dijkstraNearestTowns from ${start} ret:`, ret)
       //console.log('dijkstraNearestTowns took', Date.now()-ts, 'ms')
       //console.log('dijkstraNearestTowns', ret)
       return ret
@@ -766,8 +780,7 @@ export const useGameStore = defineStore({
       }
       ret.cyclesDaily = userStore.calcCyclesDaily(pzd.workload, pzd.regiongroup, wspd, ret.dist, mspd)
       
-      //if (pzk == '842')
-      //  console.log(pzd.workload, pzd.regiongroup, wspd, ret.dist, mspd, 'cyclesDaily', ret.cyclesDaily)
+      //if (pzk == '1893') console.log(`profitPzTownStats at pzk=${pzk}`, pzd.workload, pzd.regiongroup, wspd, ret.dist, mspd, 'cyclesDaily', ret.cyclesDaily)
 
       ret.priceDaily = ret.cyclesDaily * ret.cycleValue / 1000000
       return ret
@@ -866,6 +879,9 @@ export const useGameStore = defineStore({
       if (tnk==1781) return this.makeMedianChar(8050) // lotml
       if (tnk==1785) return this.makeMedianChar(8050) // lotml
       if (tnk==1795) return this.makeMedianChar(8050) // lotml
+      if (tnk==1857) return this.makeMedianChar(8050) // lotml2
+      if (tnk==1858) return this.makeMedianChar(8050) // lotml2
+      if (tnk==1853) return this.makeMedianChar(8050) // lotml2
       return this.makeMedianChar(7572)
     },
 
@@ -877,6 +893,9 @@ export const useGameStore = defineStore({
       if (tnk==1781) return this.makeMedianChar(8058) // lotml
       if (tnk==1785) return this.makeMedianChar(8058) // lotml
       if (tnk==1795) return this.makeMedianChar(8058) // lotml
+      if (tnk==1857) return this.makeMedianChar(8058) // lotml2
+      if (tnk==1858) return this.makeMedianChar(8058) // lotml2
+      if (tnk==1853) return this.makeMedianChar(8058) // lotml2
       return this.makeMedianChar(7571)
     },
 
@@ -888,6 +907,9 @@ export const useGameStore = defineStore({
       if (tnk==1781) return this.makeMedianChar(8054) // lotml
       if (tnk==1785) return this.makeMedianChar(8054) // lotml
       if (tnk==1795) return this.makeMedianChar(8054) // lotml
+      if (tnk==1857) return this.makeMedianChar(8054) // lotml2
+      if (tnk==1858) return this.makeMedianChar(8054) // lotml2
+      if (tnk==1853) return this.makeMedianChar(8054) // lotml2
       return this.makeMedianChar(7573)
     },
 
@@ -979,11 +1001,16 @@ export const useGameStore = defineStore({
         return ""
     },
     pzDistance(tnk, pzk) {
-      const tkDistancesList = this.pzk2tk[pzk]
-      const tk = this._tnk2tk[tnk]
-      for (let i = 0; i < tkDistancesList.length; i++)
-        if (tkDistancesList[i][0] == tk)
-          return tkDistancesList[i][1]
+      if (pzk in this.pzk2tk) {
+        const tkDistancesList = this.pzk2tk[pzk]
+        const tk = this._tnk2tk[tnk]
+        for (let i = 0; i < tkDistancesList.length; i++)
+          if (tkDistancesList[i][0] == tk)
+            return tkDistancesList[i][1]
+      }
+      else {
+        throw new Error(`no distances for pzk ${pzk}`)
+      }
       return NaN
     },
     houseDistance(tnk, hk) {
@@ -1048,7 +1075,9 @@ export const useGameStore = defineStore({
       if (!this.ready)
         return null
       //const start = performance.now()
+      //console.log('lsLookup input', this.ls_lookup)
       const towndata = this.ls_lookup[tk]
+      //console.log('lsLookup towndata', towndata)
       //const result = towndata.find(e => e.lodging >= this.wantLodging && e.storage >= this.wantStorage)
       let result = { 
         wantLodging, 

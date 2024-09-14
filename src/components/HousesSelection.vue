@@ -69,9 +69,6 @@ export default {
       // TODO: first by itemType (equipment/material/etc), 
       // then by itemGrade (orange/yellow/blue/green), 
       // and if those are equal then by itemKey (descending)
-      if (workeritems.length) {
-        workeritems.push(1022)
-      }
       workeritems.sort((a, b) => {
         var d = this.gameStore.itemInfo[b].typePriority - this.gameStore.itemInfo[a].typePriority
         if (d) return d
@@ -189,7 +186,7 @@ export default {
           {{ userStore.townsStoreItemkeys[tk] && userStore.townsStoreItemkeys[tk].size }}
           worker items<br/>
           <template v-if="userStore.townsStoreItemkeys[tk] && userStore.townsStoreItemkeys[tk].size > 0">
-            + 1 Seal + 1 Free slot<br/>
+            + 1 Free slot<br/>
           </template>
           + <input type="number"  class="w42em" min="0" max="192" v-model.number="userStore.storagePersonal[tk]">
           Personal items<br/>

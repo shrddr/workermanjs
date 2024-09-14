@@ -126,8 +126,10 @@ export default {
       }
       if (!this.gameStore.ready)
         return ret
-      if (!this.bestLookup.success)
+      if (!this.bestLookup.success) {
+        console.log('bestlookup failed for tk', this.tk)
         return ret
+      }
       for (const hk of this.gameStore.housesPerTown[this.tk]) {
         let treeIter = ret
         for (const chainIter of this.townChains[hk]) {

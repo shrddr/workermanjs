@@ -147,7 +147,7 @@ export default {
       <div>
         <h4>Nearest towns with idle workers: <template v-if="freeWorkers.length == 0">None</template></h4>
       </div>
-      <div style="margin-right: 6px;">use stash:
+      <div style="margin-right: 6px;">stash:
         <select v-model="selectedRedirect">
           <option value="0">worker hometown</option>
           <option v-for="tnk in gameStore.townsWithLodging" :value="tnk">

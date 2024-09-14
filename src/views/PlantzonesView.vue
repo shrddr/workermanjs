@@ -81,16 +81,18 @@ export default {
       for (const pzd of Object.values(this.gameStore.plantzones)) {
         const pzk = pzd.key
 
+        // some mediah nodes need deeper search to prevent suggesting Iliya
         const townLimit = this.mediahNodes.has(pzk) ? 3 : 2
-        let towns = this.gameStore.dijkstraNearestTowns(pzk, townLimit)
+        let towns = this.gameStore.dijkstraNearestTowns(pzk, townLimit, undefined, undefined, true)
         towns.sort((a,b) => a[1]-b[1])
+        //if (pzk == 1046) console.log(`allPlantzonesNearestCpTownProfit pzk=${pzk} towns:`, towns)
         
         let workData = {}
         let alt_towns_dict = {}
         for (let i = 0; i < towns.length; i++) {
           const [tnk, cp] = towns[i]
           const tempData = this.gameStore.profitPzTownArtisans(pzk, tnk, cp)
-          //if (pzk == 1635) console.log('allPlantzonesNearestCpTownProfit1635', tnk, tempData)
+          //if (pzk == 1046) console.log(`allPlantzonesNearestCpTownProfit pzk=${pzk}`, tnk, tempData)
           if (tnk == 1343) continue // skip Ancado
           if (tempData.connected) {
             alt_towns_dict[tempData.tnk] = tempData.dailyPerCp

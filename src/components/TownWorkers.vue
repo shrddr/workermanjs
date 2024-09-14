@@ -39,6 +39,20 @@ export default {
   data: () => ({
   }),
 
+  computed: {
+
+    infra() {
+      if (this.tk in this.userStore.townsInfra) {
+        return this.userStore.townsInfra[this.tk]
+      }
+      else {
+        console.log(this.userStore.townsInfra)
+        throw new Error(`no infra for town: ${this.tk}`)
+      }
+    },
+
+  },
+
   methods: {
     formatFixed,
 
@@ -72,7 +86,7 @@ export default {
     <td class="center">🦶</td>
     <td class="center">🍀</td>
 
-    <td colspan="3" :class="{ 'unresolved': gameStore.ready && userStore.townsInfra[tk].success == false }">
+    <td colspan="3" :class="{ 'unresolved': gameStore.ready && infra.success == false }">
       
       <span @click="$emit('panToPaPos', this.gameStore.nodes[this.gameStore.tk2tnk(tk)].pos)" class="bold clickable">
         {{ gameStore.nodeName(gameStore.tk2tnk(tk)) }}

@@ -236,7 +236,7 @@ export default {
         }
         // remove jobs at unknown pzk's
         if (this.gameStore.jobIsPz(w.job) && !(w.job.pzk in this.gameStore.plantzones)) {
-          console.log(`removing plantzone job of worker ${w.label}: unknown pzk ${w.job}`)
+          console.log(`removing plantzone job of worker ${w.label}: unknown pzk`, w.job)
           w.job = null
         }
       })

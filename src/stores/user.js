@@ -803,7 +803,7 @@ export const useUserStore = defineStore({
       const wantLodging = l
         - state.lodgingP2W[tk]
         - 1
-      const wantStorage = s + (s > 0 ? 2 : 0)
+      const wantStorage = s + (s > 0 ? 1 : 0)
         + state.storagePersonal[tk]
         - state.storageP2W[tk]
         - state.baseStorage
@@ -1085,7 +1085,7 @@ export const useUserStore = defineStore({
         }
         return a.ipc-b.ipc
       })
-      console.log('workersSortedByIncomePerCp took', Date.now()-start, 'ms', ret)
+      //console.log('workersSortedByIncomePerCp took', Date.now()-start, 'ms', ret)
       return ret
     },
 
@@ -1093,9 +1093,14 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      gameStore.townsWithLodging.forEach(
-        tnk => ret[gameStore.tnk2tk(tnk)] = {income:0, mapCp:0, hasNegativeJob:false}
-      )
+      gameStore.townsWithLodging.forEach(tnk => {
+        const tk = gameStore.tnk2tk(tnk)
+        ret[tk] = {
+          income: 0, 
+          mapCp: 0, 
+          hasNegativeJob: false
+        }
+      })
       for (const [pzk, w] of Object.entries(state.workingWorkers)) {
         const tk = gameStore.tnk2tk(w.tnk)
         const workerIncome = state.workerIncome(w)

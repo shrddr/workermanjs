@@ -163,6 +163,7 @@ export default {
         <td>
           <button v-if="userStore.workedPlantzones.has(pzk.toString())" title="plantzone already occupied" disabled="true">hire+assign</button>
           <button v-else-if="isNaN(nt.workerKinds[selectedWorkerIndices[nt.tnk]].PZSE.townCp)" title="Can't find housing, try P2W" disabled="true">hire+assign</button>
+          <button v-else-if="isNaN(nt.workerKinds[selectedWorkerIndices[nt.tnk]].PZSE.profit.dist)" title="No walk path" disabled="true">hire+assign</button>
           <button v-else-if="gameStore.tnk2tk(nt.tnk) && gameStore.tnk2tk(nt.tnk) == 619 && !userStore.activateAncado" title="Ancado is not activated, can't house workers" disabled="true">hire+assign</button>
           <button v-else @click="assignWorker(nt.workerKinds[selectedWorkerIndices[nt.tnk]].PZSE)">
             hire+assign

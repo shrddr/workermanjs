@@ -72,7 +72,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <a href="https://discord.com/channels/371035077037129729/404532586246045696/1126036873450631198">1</a>, 
         <a href="https://discord.com/channels/371035077037129729/404532586246045696/1142011540648763403">2</a>
       </li>
-      Also, it is currently unclear how giant bonus interacts with sacks - giants bring just a bit more (but stastically significant) sacks than theoretically expected, reason unknown
+      Also, it is currently unclear how giant bonus interacts with sacks - giants bring just a bit more (but stastically significant) sacks than theoretically expected, reason unknown<br/>
+      Seoul drops: observed at september 2024.
     </QnaItem>
     
     <h2>Tips & tricks</h2>
@@ -127,6 +128,9 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
+
+    <li>worker seals don't require town storage space anymore</li>
+    <li>[2024-09-12 patch] added Seoul region with 19 nodes and a broken (houseless) town of Bukpo</li>
     <li>can assign Personal Items in Muzgar > config (do not enter too much, will show <strong>?</strong> in totals)</li>
     <li>home > selected plantzone > added "hire+assign" section, which autosuggests best race</li>
     <li>custom prices import/export</li>
@@ -353,6 +357,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
 
+    
     <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
     <li>for some reason mousemove while hovering a node triggers continuous recalculations</li>
     <li>empire > best untaken > automatically try alternative stashes</li>
