@@ -63,17 +63,13 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         Where does the drop data come from and how old?
       </template>
-      Unlucky drops up to Eternal Winter: from an anonymous source somewhere on the internet,
-      timestamped late 2021. I checked ~50 top profit nodes ingame and they matched, so the rest are assumed good. Might have changed in the meantime.<br/>
-      Unlucky drops in Eternal Winter: observed near mid 2022.<br/>
-      Lucky drops across all regions: observed in june 2023.<br/>
-      Morning Land drops: observed at summer 2023 - regular nodes are fine, excavations are approximate, too rare to judge confidently
-      <li>circumstantial evidence added in for more volume:
-        <a href="https://discord.com/channels/371035077037129729/404532586246045696/1126036873450631198">1</a>, 
-        <a href="https://discord.com/channels/371035077037129729/404532586246045696/1142011540648763403">2</a>
-      </li>
-      Also, it is currently unclear how giant bonus interacts with sacks - giants bring just a bit more (but stastically significant) sacks than theoretically expected, reason unknown<br/>
-      Seoul drops: observed at september 2024.
+      1. Unlucky drops up to Eternal Winter: from an anonymous source somewhere on the internet,
+      timestamped late 2021. I checked ~50 top profit nodes ingame and they matched, so the rest are assumed good.<br/>
+      2. Unlucky drops in Eternal Winter: observed near mid 2022.<br/>
+      3. Lucky drops across all regions: observed in june 2023.<br/>
+      4. Morning Land drops: observed at summer 2023 - regular nodes are fine, excavations are approximate, too rare to judge confidently (see <a href="https://discord.com/channels/371035077037129729/404532586246045696/1284834924381212704">table</a>).<br/>
+      5. Seoul drops: observed non-thoroughly in september 2024, when in doubt picked values most similar to existing node drops from (1).<br/>
+      All of the above are adjusted when relevant patchnotes come out (increased yields by X at Y).
     </QnaItem>
     
     <h2>Tips & tricks</h2>
