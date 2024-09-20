@@ -67,6 +67,7 @@ export default {
     fileParse(event) {
       let str = event.target.result
       let json = JSON.parse(str)
+      if ('effectivePrices' in json) delete json.effectivePrices;
       this.userStore.$patch(json)
       this.importDialogVisible = false
     },
@@ -87,6 +88,7 @@ export default {
       let out = { 
         customPrices: this.userStore.customPrices,
         keepItems: this.userStore.keepItems,
+        effectivePrices: this.marketStore.prices,
       } 
       const str = JSON.stringify(out)
       var file = new Blob([str], {type: 'text/plain'});
