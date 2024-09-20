@@ -235,6 +235,8 @@ In this case, use average CP value (sum up all workshop-related CP costs and div
     already in list!
   </span>
 
+  Note that assigning house as workshop does not prevent it from being used for autolodging/autostorage on Home page. You need to manually work around this.
+
 </template>
 
 <style scoped>

@@ -61,6 +61,12 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </QnaItem>
     <QnaItem>
       <template #q>
+        How does the giant bonus work?
+      </template>
+        https://discord.com/channels/371035077037129729/404532586246045696/1124952052892713062
+    </QnaItem>
+    <QnaItem>
+      <template #q>
         Where does the drop data come from and how old?
       </template>
       1. Unlucky drops up to Eternal Winter: from an anonymous source somewhere on the internet,

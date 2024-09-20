@@ -1362,18 +1362,22 @@ export const useUserStore = defineStore({
           for (const [k, q] of Object.entries(pzd.lucky)) {
             if (!(k in ret)) ret[k] = 0
             ret[k] += luck/100 * q * job.profit.cyclesDaily
+            //if (k == "5960") console.log(pzk, 'lucky', luck/100 * q * job.profit.cyclesDaily)
           }
         }
+        // plantzone has no luck information
         if (gameStore.isGiant(job.worker.charkey)) {
           for (const [k, q] of Object.entries(pzd.unlucky_gi)) {
             if (!(k in ret)) ret[k] = 0
             ret[k] += q * job.profit.cyclesDaily
+            //if (k == "5960") console.log(pzk, 'giant', q * job.profit.cyclesDaily)
           }
         }
         else {
           for (const [k, q] of Object.entries(pzd.unlucky)) {
             if (!(k in ret)) ret[k] = 0
             ret[k] += q * job.profit.cyclesDaily
+            //if (k == "5960") console.log(pzk, 'nongiant', q * job.profit.cyclesDaily)
           }
         }
       }
