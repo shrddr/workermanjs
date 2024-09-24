@@ -96,6 +96,11 @@ export default {
       a.download = 'custom_prices.json';
       a.click();
     },
+
+    clearCustomPrices() {
+      this.userStore.customPrices = {}
+      this.userStore.keepItems = {}
+    },
   },
   
   mounted() {
@@ -263,6 +268,7 @@ export default {
       <p>If the item is for self use, select Keep (=untax) and/or enter Custom price: 
         <button @click="importDialogVisible = true">import</button>
         <button @click="fileExport()">export</button>
+        <button @click="clearCustomPrices()">clear</button>
       </p>
 
     </div>
