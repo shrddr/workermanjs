@@ -39,7 +39,7 @@ export const useMarketStore = defineStore({
       //this.calculatedPrices = { 1024: {5201: 0.125, 5203: 0.125, 5205: 0.125, 5207: 0.125, 5209: 0.125, 5211: 0.125, 5213: 0.125, 5215: 0.125, }}
       this.calculatedPrices = await (await fetch(`data/manual/calculated_prices.json`)).json()
 
-      if (4001 in apiPrices) {
+      if (4202 in apiPrices) {
         this.apiPrices = apiPrices
         this.apiDatetime = Date.now()
         this.apiAlive = true

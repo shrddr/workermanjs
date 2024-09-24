@@ -268,7 +268,7 @@ export default {
     </div>
     <div class="scrollable">
       <table>
-        <tr><th>Item</th><th>Market</th><th>Custom</th><th>Keep</th><th>Value</th></tr>
+        <tr><th>Item</th><th>Market</th><th>Custom</th><th>Keep</th><th>Effective</th></tr>
         <tr v-for="ik in gameStore.itemKeys" :id="'item'+ik">
           <td>
             <a :href="this.userStore.itemUrl+ik">
