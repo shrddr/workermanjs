@@ -83,7 +83,7 @@ export default {
 
         // some mediah nodes need deeper search to prevent suggesting Iliya
         const townLimit = this.mediahNodes.has(pzk) ? 3 : 2
-        let towns = this.gameStore.dijkstraNearestTowns(pzk, townLimit, undefined, undefined, true)
+        let towns = this.gameStore.dijkstraNearestTowns(pzk, townLimit, undefined, true, undefined, true)
         towns.sort((a,b) => a[1]-b[1])
         //if (pzk == 1046) console.log(`allPlantzonesNearestCpTownProfit pzk=${pzk} towns:`, towns)
         

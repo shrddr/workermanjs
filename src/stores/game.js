@@ -17,6 +17,7 @@ export const useGameStore = defineStore({
     distToTown: {},
     lodgingPerTown: {},
     houseInfo: {},
+    townsConnectionRoots: new Set(),
     townsWithLodging: [],
     townsWithRentableStorage: [],
     townsWithRedirectableStorage: [],
@@ -274,13 +275,20 @@ export const useGameStore = defineStore({
       // 3) a node that has rentable item storage
       // 3a) ..and can be a target of lvl40 worker "stash redirect" feature (will ancado be a valid target when activated?)
       // 4) a node that has ANY kind of rentable housing (residence, workshop...)
+      // 5) a possible root of connection tree
 
-      // town(1+2) 
-      // only these are used for dijkstra
+      // town(1) can be used as grind node connection root
+      this.townsConnectionRoots = new Set(
+        Object.keys(this.nodes)
+          .filter(sk => this.nodes[sk].kind > 0 && this.nodes[sk].kind < 3 && this.nodes[sk].CP === 0)
+          .map(sk => this.nodes[sk].key)
+      )
+
+      // town(1+2) can be used as plantzone connection root
       // vel, olv, hei, gli, cal, kep
       // eph, tre, ili, alt, tar, val
-      // sha, baz, anc, are, owt, gra         <-- ancado doesn't match criteria 1
-      // duv, odd,      eil,               but will prob stay for historical reasons
+      // sha, baz, anc, are, owt, gra         <-- ancado doesn't match criteria 1, but if you managed to put
+      // duv, odd,      eil,                  a worker there, it is already connected to a proper town
       // tal, mut, ric, 
       //
       // yuk, god, buk
@@ -291,7 +299,7 @@ export const useGameStore = defineStore({
         1649,1691,     1750, 
         1781,1785,1795,
         // 1727,1834,1843,1850,  // can provide storage, cannot house workers
-        // 1001, // lema cannot provide storage and cannot house workers
+        // 1001, // lema costs cp, cannot provide storage, cannot house workers
         1853,1857,1858,
       ]
       // only these are displayed at Home > all towns/workers list
@@ -300,7 +308,6 @@ export const useGameStore = defineStore({
 
       // town(3)
       // has config button where you can enter "Personal items" value
-      // filled manually:
       // vel, olv, hei, gli, cal, kep
       // eph, tre, ili, alt, tar, val
       // sha, baz, anc, are, owt, gra
@@ -340,7 +347,6 @@ export const useGameStore = defineStore({
 
       // town(4) can be extracted from here if needed
       this.houseInfo = await (await fetch(`data/houseinfo.json`)).json()
-
 
       this.vendorPrices = await (await fetch(`data/manual/vendor_prices.json`)).json()      
 
@@ -587,7 +593,7 @@ export const useGameStore = defineStore({
     // used for:
     // plantzoneNearestTownsFreeWorkersProfits, workshopNearestTownsFreeWorkersProfits, 
     // autotakenGrindNodes, allPlantzonesNearestCpTownProfit
-    dijkstraNearestTowns(start, townLimit, takens, skipAncado, noOceanCrossing) {
+    dijkstraNearestTowns(start, townLimit, takens, mustHaveLodging, skipAncado, noOceanCrossing) {
       if (!this.ready)
         return
       //const ts = Date.now()
@@ -602,10 +608,13 @@ export const useGameStore = defineStore({
       while (unvisited.size()) {
         current = unvisited.pop()
         
-        if (this.townsWithLodgingSet.has(current)) {
-          if (current != 1343 || !skipAncado) {
-            found.add(current)
-            if (found.size == townLimit) break
+        // this.townsConnectionRoots ?
+        if (this.townsConnectionRoots.has(current)) {
+          if (!mustHaveLodging || this.townsWithLodgingSet.has(current)) {
+            if (current != 1343 || !skipAncado) {
+              found.add(current)
+              if (found.size == townLimit) break
+            }
           }
         }
 

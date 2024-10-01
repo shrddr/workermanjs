@@ -41,7 +41,7 @@ export default {
 
     plantzoneNearestTownsFreeWorkersProfits(pzk, townsLimit) {
       const townsData = []
-      const tkCpList = this.gameStore.dijkstraNearestTowns(pzk, townsLimit, this.userStore.autotakenNodes)
+      const tkCpList = this.gameStore.dijkstraNearestTowns(pzk, townsLimit, this.userStore.autotakenNodes, true)
       tkCpList.forEach(([tnk, mapCp, path]) => {
         const tk = this.gameStore._tnk2tk[tnk]
         const freeWorkers = this.userStore.getFreeWorkers(tk)

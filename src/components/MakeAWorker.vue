@@ -72,7 +72,7 @@ export default {
     nearestTowns() {
       const townsLimit = 5
       const townsData = []
-      const tkCpList = this.gameStore.dijkstraNearestTowns(this.pzk, townsLimit, this.userStore.autotakenNodes)
+      const tkCpList = this.gameStore.dijkstraNearestTowns(this.pzk, townsLimit, this.userStore.autotakenNodes, true)
       tkCpList.forEach(([tnk, mapCp, path]) => {
         const workerKinds = []
 

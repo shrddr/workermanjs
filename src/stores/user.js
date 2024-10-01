@@ -543,7 +543,7 @@ export const useUserStore = defineStore({
       const gameStore = useGameStore()
       if (gameStore.ready) {
         state.grindTakenList.forEach(pzk => {
-          const paths = gameStore.dijkstraNearestTowns(Number(pzk), 4, ret, true)
+          const paths = gameStore.dijkstraNearestTowns(Number(pzk), 4, ret, false, true)
           const list = paths.sort((a,b)=>a[1]-b[1])
           //console.log('list', list)
           const [tnk, addCp, usedPath] = list[0]
@@ -1145,7 +1145,7 @@ export const useUserStore = defineStore({
       const gameStore = useGameStore()
       if (gameStore.ready) {
         if (state.activateAncado) {
-          const toTowns = gameStore.dijkstraNearestTowns(1343, 4, ret, true)
+          const toTowns = gameStore.dijkstraNearestTowns(1343, 4, ret, false, true)
           const list = toTowns.sort((a,b)=>a[1]-b[1])
           //console.log('list', list)
           const [tnk, addCp, usedPath] = list[0]

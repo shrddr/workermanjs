@@ -44,7 +44,7 @@ export default {
       const houseTnk = this.gameStore.tk2tnk(houseTk)
       const houseCp = this.userStore.userWorkshops[this.hk].manualCp
       const townsData = []
-      const tkCpList = this.gameStore.dijkstraNearestTowns(houseTnk, townsLimit, this.userStore.autotakenNodes)
+      const tkCpList = this.gameStore.dijkstraNearestTowns(houseTnk, townsLimit, this.userStore.autotakenNodes, true)
       tkCpList.forEach(([tnk, mapCp, path]) => {
         const tk = this.gameStore._tnk2tk[tnk]
         const freeWorkers = this.userStore.getFreeWorkers(tk)
