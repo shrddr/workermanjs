@@ -17,6 +17,7 @@ export const useGameStore = defineStore({
     distToTown: {},
     lodgingPerTown: {},
     houseInfo: {},
+    regionInfo: {},
     townsConnectionRoots: new Set(),
     townsWithLodging: [],
     townsWithRentableStorage: [],
@@ -29,6 +30,8 @@ export const useGameStore = defineStore({
     workerStatic: {},
     skillData: {},
     vendorPrices: {},
+    _tk2tnk: {},
+    _tnk2tk: {},
   }),
   
   actions: {
@@ -220,54 +223,13 @@ export const useGameStore = defineStore({
       // best workshop for a worker
       this.tk2hk = await (await fetch(`data/distances_tk2hk.json`)).json()
 
-      
-      this._tk2tnk = {
-        // self.regions.data[5].waypoint == 1
-        // TODO: read from regiondata.bss -> 
-        // regionkey(tk)=5 wp(tnk)=1
-        
-        5:    1,   
-        32:   301,  
-        52:   302, 
-        77:   601, 
-        88:   61, 
-        107:  602,  
-        120:  604, 
-        126:  608, 
-        182:  1002, 
-        202:  1101,
-        221:  1141,
-        229:  1301,
-        601:  1314,  
-        605:  1319, 
-        619:  1343, 
-        693:  1380,  
-        706:  1604, 
-        735:  1623,
-        873:  1649,
-        955:  1691,
-        1124: 1750,
-
-        1210: 1781,
-        1219: 1785,
-        1246: 1795,
-
-        1000: 1727, // ocean: oquilla
-        181: 1001, // lema
-
-        218: 1834,
-        1375: 1843, // muzgar
-        1382: 1850,
-
-        1424: 1857,
-        1444: 1858,
-        1420: 1853,
-      }
-      const _tnk2tk = {}
-      for (const [tk, nk] of Object.entries(this._tk2tnk)) {
-        _tnk2tk[nk] = Number(tk)
-      }
-      this._tnk2tk = _tnk2tk
+      this.regionInfo = await (await fetch(`data/regioninfo.json`)).json()
+      Object.values(this.regionInfo).forEach(({ key, waypoint }) => {
+        if (waypoint !== 0) {
+          this._tk2tnk[key] = waypoint
+          this._tnk2tk[waypoint] = key
+        }
+      })
 
       // the notion of "town" is highly ambiguous
       // 1) a node which is activated automatically by visiting (Tarif = yes, Abun = no)
@@ -275,7 +237,6 @@ export const useGameStore = defineStore({
       // 3) a node that has rentable item storage
       // 3a) ..and can be a target of lvl40 worker "stash redirect" feature (will ancado be a valid target when activated?)
       // 4) a node that has ANY kind of rentable housing (residence, workshop...)
-      // 5) a possible root of connection tree
 
       // town(1) can be used as grind node connection root
       this.townsConnectionRoots = new Set(
@@ -302,12 +263,11 @@ export const useGameStore = defineStore({
         // 1001, // lema costs cp, cannot provide storage, cannot house workers
         1853,1857,1858,
       ]
-      // only these are displayed at Home > all towns/workers list
-      this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json() // tk-based
+      // town(1+2) again, but tk-based (TODO: unify)
+      this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json()
 
 
-      // town(3)
-      // has config button where you can enter "Personal items" value
+      // town(3) has config button where you can enter "Personal items" value
       // vel, olv, hei, gli, cal, kep
       // eph, tre, ili, alt, tar, val
       // sha, baz, anc, are, owt, gra
@@ -325,9 +285,7 @@ export const useGameStore = defineStore({
         1853,1857,
       ]
 
-      // town(3a)
-      // can be a target of lvl40 worker "stash redirect" feature
-      // filled manually:
+      // town(3a) can be a target of lvl40 worker "stash redirect" feature, filled manually
       // vel, olv, hei, gli, cal, kep
       // eph, tre, ili, alt, tar, val
       // sha, baz, anc, are, owt, gra
@@ -608,7 +566,6 @@ export const useGameStore = defineStore({
       while (unvisited.size()) {
         current = unvisited.pop()
         
-        // this.townsConnectionRoots ?
         if (this.townsConnectionRoots.has(current)) {
           if (!mustHaveLodging || this.townsWithLodgingSet.has(current)) {
             if (current != 1343 || !skipAncado) {

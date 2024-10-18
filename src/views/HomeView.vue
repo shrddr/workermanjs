@@ -389,7 +389,7 @@ export default {
         <span v-if="hoverInfo.object.key in this.gameStore.plantzones">
           <img v-for="k in this.gameStore.plantzones[hoverInfo.object.key].itemkeys" :src="makeIconSrc(k)" class="iconitem">
         </span>
-        <span v-if="hoverInfo.object.key in this.gameStore._tnk2tk">
+        <span v-if="this.gameStore.townsConnectionRoots.has(hoverInfo.object.key)">
           <br/>[town {{ this.gameStore._tnk2tk[hoverInfo.object.key] }}]
         </span>
         <br/>
