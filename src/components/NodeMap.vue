@@ -69,6 +69,8 @@ export default {
     hoverInfo: Object,
     panToPzk: String,
     panPaPos: Object,
+    panBbox: Object,
+    highlightNodes: Set,
   },
 
   emits: [
@@ -85,6 +87,7 @@ export default {
     iconData: [],
     iconPositions: {},
     iconLayer: null,
+    highlightedIconLayer: null,
     lineData: [],
     lineLayer: null,
     clickedObject: null,
@@ -150,50 +153,54 @@ export default {
     'linesCalc'(newValue) {
       this.updateLayers()
     },
+    'highlightNodes'(newValue) {
+      //this.updateLayers()  // done via HomeView.$refs.nodeMap.updateLayers()
+    },
     'panPaPos'(newValue) {
       //console.log('panPaPos changed', newValue)
       if (newValue) {
-        const ivsCopy = {...this.initialViewState}
-        ivsCopy.target = [newValue.x, -newValue.z]
-        ivsCopy.zoom = -7
-        ivsCopy.transitionDuration = 100
-        ivsCopy.transitionInterpolator = new LinearInterpolator({transitionProps: ['target', 'zoom']})
-        this.deck.setProps({
-          initialViewState: ivsCopy,
-        })
+        this.panTo(newValue.x, newValue.z, -7)
       }
     },
   },
 
   computed: {
     iconsCalc() {
-      let ret = []
+      const ret = []
       this.hiddenNodesCount = 0
       if (!this.iconData)
         return ret
       // Explicitly reference mapHideInactive to ensure reactivity
       //const { mapHideInactive, autotakenNodes } = this.userStore;
+      const highlighteds = []
       this.iconData.forEach(([key, kind]) => {
         if (key in this.scores.pathCosts) {
           if (this.userStore.mapHideInactive && this.userStore.autotakenNodes.has(key) == false) {
             this.hiddenNodesCount += 1
             //return
           }
-          ret.push({
+          const isHighlighted = this.highlightNodes && this.highlightNodes.has(key)
+          const newIcon = {
             key,
             kind,
             pos: this.iconPositions[key],
             taken: this.userStore.autotakenNodes.has(key),
-            thisCpCost: this.gameStore.nodes[key].CP,
+            isHighlighted,
+            thisCpCost: this.gameStore.ready ? this.gameStore.nodes[key].CP : 0,
             // not displayed:
-            fromTown: this.scores.needTakes[key][0],
-            fromTownCpCost: this.scores.pathCosts[key],
-            fromTownPath: this.scores.needTakes[key],
-          })
+            //fromTown: this.scores.needTakes[key][0],
+            //fromTownCpCost: this.scores.pathCosts[key],
+            //fromTownPath: this.scores.needTakes[key],
+          }
+
+          ret.push({...newIcon, hidden: (this.userStore.mapHideInactive && !newIcon.taken) || isHighlighted})
+          highlighteds.push({...newIcon, hidden: !isHighlighted})
+
         }
       })
+
       console.log('iconsCalc', this.hiddenNodesCount, 'hidden')
-      return ret
+      return { normal: ret, highlighted: highlighteds}
     },
     linesCalc() {
       let ret = []
@@ -376,15 +383,14 @@ export default {
     makeIconsLayer() {
       // https://deck.gl/docs/api-reference/core/layer#updatetriggers
       return new IconLayer({
-        data: this.iconsCalc,
-        pickable: true,
+        data: this.iconsCalc.normal,
         onClick: (info, event) => this.objectClicked(info.object),
         onHover: info => this.$emit('update:hoverInfo', info),
         getPosition: d => d.pos,
-        getColor: d => (this.userStore.mapHideInactive && !d.taken) ? [0, 0, 0, 0] : [0, 0, 0, 255],
+        getColor: d => [66, 66, 66, d.hidden ? 0 : 255],  // r, g, b have no effect, only alpha does
         getIcon: function(d) {
           return {
-            url: d.taken ? `data/icons/node/${d.kind}.png` : `data/icons/node/gray/${d.kind}.png`,
+            url: 'data/icons/node/' + (d.isHighlighted ? 'highlighted/' : '') + (d.taken ? '' : 'gray/') + `${d.kind}.png`,
             width: 256,
             height: 256,
             anchorX: 128,
@@ -392,10 +398,10 @@ export default {
           }
         },
         updateTriggers: {
-          getColor: this.userStore.mapHideInactive  // doesn't work, using watch() instead
+          //getColor: this.userStore.mapHideInactive  // doesn't work, using watch() instead
         },
         transitions: {
-          getColor: 100,
+          getColor: 400,
         },
         modelMatrix: [
           1, 0, 0, 0,
@@ -403,8 +409,45 @@ export default {
           0, 0, 1, 0,
           0, 0, 0, 1
         ],
-        getSize: 30,
+        getSize: d => d.isHighlighted ? 50 : 30,
         autoHighlight: true,
+        pickable: true,
+      })
+    },
+
+    // separate layers are to get nice transitions on show/hide
+    makeHighlightedIconsLayer() {
+      return new IconLayer({
+        id: 'highlighted',
+        data: this.iconsCalc.highlighted,
+        onClick: (info, event) => this.objectClicked(info.object),
+        onHover: info => this.$emit('update:hoverInfo', info),
+        getPosition: d => d.pos,
+        getColor: d => [66, 66, 66, d.hidden ? 0 : 255],
+        getIcon: function(d) {
+          return {
+            url: 'data/icons/node/' + (d.isHighlighted ? 'highlighted/' : '') + (d.taken ? '' : 'gray/') + `${d.kind}.png`,
+            width: 256,
+            height: 256,
+            anchorX: 128,
+            anchorY: 128,
+          }
+        },
+        updateTriggers: {
+          //getColor: this.userStore.mapHideInactive  // doesn't work, using watch() instead
+        },
+        transitions: {
+          getColor: 800,
+        },
+        modelMatrix: [
+          1, 0, 0, 0,
+          0, -1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1
+        ],
+        getSize: d => d.isHighlighted ? 50 : 30,
+        autoHighlight: true,
+        pickable: true,
       })
     },
 
@@ -453,6 +496,7 @@ export default {
       })
       this.lineLayer = this.makeLineLayer()
       this.iconLayer = this.makeIconsLayer()
+      this.highlightedIconLayer = this.makeHighlightedIconsLayer()
       
       return new Deck({
         canvas: 'deck-canvas',
@@ -467,6 +511,7 @@ export default {
           this.tileLayer,
           this.lineLayer,
           this.iconLayer,
+          this.highlightedIconLayer,
         ],
 
         controller: {doubleClickZoom: false},
@@ -485,12 +530,14 @@ export default {
         return
       console.log('updateLayers')
       this.lineLayer = this.makeLineLayer()
+      this.highlightedIconLayer = this.makeHighlightedIconsLayer()
       this.iconLayer = this.makeIconsLayer()
       this.deck.setProps({
         layers: [
           this.tileLayer,
           this.lineLayer,
           this.iconLayer,
+          this.highlightedIconLayer,
         ],
       })
     },
@@ -500,12 +547,14 @@ export default {
         return
       console.log('updateDeck')
       this.lineLayer = this.makeLineLayer()
+      this.highlightedIconLayer = this.makeHighlightedIconsLayer()
       this.iconLayer = this.makeIconsLayer()
       this.deck.setProps({
         layers: [
           this.tileLayer,
           this.lineLayer,
           this.iconLayer,
+          this.highlightedIconLayer,
         ],
         initialViewState: this.initialViewState,
       })
@@ -530,7 +579,45 @@ export default {
       this.initialViewState.target = [x, 0]
       console.log('trying to move to', x)
       console.log(this.deck.viewState)
-    }
+    },
+
+    panToBbox(x1, x2, y1, y2) {
+      //console.log('panToBbox', x1, x2, y1, y2, this.deck.viewManager)
+      const x = (x1 + x2) / 2
+      const y = (y1 + y2) / 2
+      const gameWidth = x2 - x1
+      const gameHeight = y2 - y1
+      if (gameWidth == 0 && gameHeight == 0) {
+        this.panTo(x, y, 7)
+        return
+      }
+
+      let zoom = 6  // start close up and zoom out until fits into view
+      for (; zoom >= 0; zoom--) {
+        const factor = 2**zoom / 16400
+        const pixWidth = gameWidth * factor
+        const pixHeight = gameHeight * factor
+        //console.log(pixWidth.toFixed(0), 'x', pixHeight.toFixed(0), 'at zoom', zoom)
+        if (pixWidth < this.deck.viewManager.width && pixHeight < this.deck.viewManager.height) break
+      }
+      //console.log('panToBbox', dx, dy, '->', x, y, zoom)
+      this.panTo(x, y, zoom-14)
+    },
+
+    panTo(x, y, zoom) {
+      // zoom 7 is 2 nodes
+      // zoom 8 is 10 nodes
+      // ...
+      // zoom 14 is whole map
+      const ivsCopy = {...this.initialViewState}
+      ivsCopy.target = [x, -y]
+      ivsCopy.zoom = zoom
+      ivsCopy.transitionDuration = 100
+      ivsCopy.transitionInterpolator = new LinearInterpolator({transitionProps: ['target', 'zoom']})
+      this.deck.setProps({
+        initialViewState: ivsCopy,
+      })
+    },
 
   },
 }

@@ -57,6 +57,8 @@ export const useUserStore = defineStore({
     },
     
     mapHideInactive: 0,
+
+
   }),
   actions: {
 

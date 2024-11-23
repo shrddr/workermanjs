@@ -106,7 +106,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>pull actual worker stats from your PC (ty @Aman, @Thell, @Sbreeng, @thirtyeight):</li>
           <ul>
             <li>download and install <a href="https://www.python.org/">Python</a> 3.9+</li>
-            <li>download the <a href="https://pastebin.com/yxsQQdxj">Import Script</a>, and run it through Python</li>
+            <li>download the <a href="https://pastebin.com/TmmL2syf">Import Script</a>, and run it through Python</li>
             <li>now head back to Workerman Home page > All towns/workers list > import the json file you just created by running the script</li>
           </ul>
           <li>warning: if the amount of workers you have ingame is outside the F2P town limits, enter P2W lodging in town config <u>before</u> importing, otherwise the housing will not resolve</li>
@@ -131,6 +131,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
 
+    <li>Ctrl+F on Home page searches for items and node names, Esc to remove highlight</li>
+    <li>[2024-11-21 patch] updated Yukjo houses to have more lodging</li>
     <li>worker seals don't require town storage space anymore</li>
     <li>[2024-09-12 patch] added Seoul region with 19 nodes and a broken (houseless) town of Bukpo</li>
     <li>can assign Personal Items in Muzgar > config (do not enter too much, will show <strong>?</strong> in totals)</li>
@@ -359,8 +361,9 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
 
-    
+    <li>[2024-11-21 patch] palace stuff maybe</li>
     <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
+    <li>worker ranks are in linear stat space, shows 98.55 giant as 56% rank when actually it is top 90% in "chance of achieving" space</li>
     <li>for some reason mousemove while hovering a node triggers continuous recalculations</li>
     <li>empire > best untaken > automatically try alternative stashes</li>
     <li>change (again) the job resource sharing principle when negative profit jobs are involved</li>
@@ -419,7 +422,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </li>
     <li>profit calculation: include feed cost</li>
     <li>map: optionally show RegionGroups</li>
-    <li>unify strings - Erdal Farm shows "gathering" while ingame workerlist shows "silk production"</li>
+    <li>unify job description strings - node 1565 shold says "silk production" like ingame workerlist</li>
     <li>introduce skill roll chances somehow</li>
     <ul>
       <li>help decide which skills should and should not be rerolled?</li>

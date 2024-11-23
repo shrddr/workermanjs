@@ -142,24 +142,24 @@ export const useGameStore = defineStore({
     },
 
     workerStatRank(w) {
-      const oldLevelups = w.level - 1
-      const stat_old = this.workerStatic[w.charkey]
+      const levelups = w.level - 1
+      const stat_base = this.workerStatic[w.charkey]
 
-      const wspd_up_lo_old = stat_old.wspd_lo * oldLevelups
-      const wspd_up_hi_old = stat_old.wspd_hi * oldLevelups
-      const wspd_up_range_old = wspd_up_hi_old - wspd_up_lo_old
-      const wspd_up_old = (w.wspdSheet*1E6 - stat_old.wspd)
-      const wspd_rank = ((wspd_up_old - wspd_up_lo_old) / wspd_up_range_old) || 0
+      const wspd_lo_total_base = stat_base.wspd_lo * levelups
+      const wspd_hi_total_base = stat_base.wspd_hi * levelups
+      const wspd_range_base = wspd_hi_total_base - wspd_lo_total_base
+      const wspd_total_cur = (w.wspdSheet*1E6 - stat_base.wspd)
+      const wspd_rank = ((wspd_total_cur - wspd_lo_total_base) / wspd_range_base) || 0
 
-      const mspd_up_lo_old = stat_old.mspd_lo * oldLevelups
-      const mspd_up_hi_old = stat_old.mspd_hi * oldLevelups                                           
-      const mspd_up_old = ((w.mspdSheet / (stat_old.mspd/100)) - 1) * 1E6
-      const mspd_rank = ((mspd_up_old - mspd_up_lo_old) / (mspd_up_hi_old - mspd_up_lo_old)) || 0
+      const mspd_lo_total_base = stat_base.mspd_lo * levelups
+      const mspd_hi_total_base = stat_base.mspd_hi * levelups                                           
+      const mspd_total_cur = ((w.mspdSheet / (stat_base.mspd/100)) - 1) * 1E6
+      const mspd_rank = ((mspd_total_cur - mspd_lo_total_base) / (mspd_hi_total_base - mspd_lo_total_base)) || 0
       
-      const luck_up_lo_old = stat_old.luck_lo * oldLevelups
-      const luck_up_hi_old = stat_old.luck_hi * oldLevelups
-      const luck_up_old = (w.luckSheet*1E4 - stat_old.luck)
-      const luck_rank = ((luck_up_old - luck_up_lo_old) / (luck_up_hi_old - luck_up_lo_old)) || 0
+      const luck_lo_total_base = stat_base.luck_lo * levelups
+      const luck_hi_total_base = stat_base.luck_hi * levelups
+      const luck_total_cur = (w.luckSheet*1E4 - stat_base.luck)
+      const luck_rank = ((luck_total_cur - luck_lo_total_base) / (luck_hi_total_base - luck_lo_total_base)) || 0
 
       return {
         wspd_rank,
@@ -199,11 +199,11 @@ export const useGameStore = defineStore({
 
       // info for sorting
       this.itemInfo = await (await fetch(`data/manual/item_info.json`)).json()
-      // this could be faster than loading an additional file but includes the Worker Seal
-      //this.itemKeys = Object.keys(this.itemInfo).map((s) => parseInt(s)).sort((a,b)=>a-b)
 
       // from drops (could have calculated in here)
       this.itemKeys = await (await fetch(`data/manual/plantzone_uniques.json`)).json()
+      // this could be faster than loading an additional file but includes the Worker Seal
+      //this.itemKeys = Object.keys(this.itemInfo).map((s) => parseInt(s)).sort((a,b)=>a-b)
 
       // for node parent name (todo: localization)
       this.nodes = await (await fetch(`data/exploration.json`)).json()
@@ -1192,6 +1192,20 @@ export const useGameStore = defineStore({
 
       console.log('plantzones getter took', Date.now()-start, 'ms')
       return combined
+    },
+
+    itemkeyPlantzones() {
+      const ret = {}
+      if (!this.ready) return ret
+
+      for (const [pzk, pzd] of Object.entries(this.plantzones)) {
+        pzd.itemkeys.forEach(ik => {
+          if (!(ik in ret)) ret[ik] = new Set([])
+          ret[ik].add(Number(pzk))
+        })
+      }
+      //console.log('itemkeyPlantzones', ret)
+      return ret
     },
 
   },

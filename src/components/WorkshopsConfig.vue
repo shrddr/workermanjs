@@ -145,7 +145,7 @@ also, only Mass Production can employ multiple workers at once.">ℹ️</abbr>
       <th>
         $/cycle 
         <abbr title="use Sho's Workshop Profitability Calculator & gpw Trading/Crates Calculator to find out.
-DO NOT include +1/+3 packing skill, since it's a worker attribute and not a workshop attribute." class="tooltip">ℹ️</abbr>
+For crates, enter profit per 1 crate - if a worker with +1/+3 packing skill occupies this workshop it will be taken into account." class="tooltip">ℹ️</abbr>
       </th>
       <th>
         CP

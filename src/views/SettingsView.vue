@@ -239,7 +239,6 @@ export default {
           </span>
         </div>
 
-
         <div class="settings-tile">
           🏭Workshops
           <div>

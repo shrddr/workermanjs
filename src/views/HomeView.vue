@@ -17,6 +17,8 @@ import MapSelectedInfo from "../components/MapSelectedInfo.vue";
 import EmpireOverview from '../components/EmpireOverview.vue'
 import FloatingModifierEdit from '../components/FloatingModifierEdit.vue'
 import WorkerSelection from '../components/WorkerSelection.vue'
+import SearchBar from '../components/SearchBar.vue'
+import { ref, nextTick } from "vue";
 
 
 export default {
@@ -49,6 +51,7 @@ export default {
     EmpireOverview,
     FloatingModifierEdit,
     WorkerSelection,
+    SearchBar,
   },
 
   data: () => ({
@@ -80,9 +83,13 @@ export default {
 
     prerelease_zerocost: true,
     prerelease_colorGoblins: false,
+    showSearchBar: false,
+    highlightNodes: new Set([]),
   }),
 
   created() {
+    console.log('addEventListener')
+    window.addEventListener("keydown", this.onKeydown);
   },
 
   watch: {
@@ -92,11 +99,52 @@ export default {
     
   },
 
+  mounted() {
+    
+  },
+  beforeUnmount() {
+    window.removeEventListener("keydown", this.onKeydown);
+  },
+
   methods: {
     makeIconSrc,
     formatFixed,
     randBetween,
     levelup,
+
+    onKeydown(event) {
+      if (event.ctrlKey && event.code === "KeyF") {
+        event.preventDefault()
+        this.showSearchBar = true
+        nextTick(() => this.$refs.searchBar.focusInput())
+      }
+      if (event.key === "Escape") {
+        if (this.showSearchBar) this.showSearchBar = false
+        else this.handleSearchSelection(new Set([]))
+      }
+    },
+    handleSearchSelection(pzkList) {
+      //console.log("highlight", pzkList)
+      this.highlightNodes = pzkList
+      
+      nextTick(() => {
+        this.$refs.nodeMap.updateLayers()
+        if (pzkList.size > 0) {
+          let x1 = 1e99
+          let y1 = 1e99
+          let x2 = -1e99
+          let y2 = -1e99
+          pzkList.forEach(pzk => {
+            x1 = Math.min(x1, this.gameStore.nodes[pzk].pos.x)
+            y1 = Math.min(y1, this.gameStore.nodes[pzk].pos.z)
+            x2 = Math.max(x2, this.gameStore.nodes[pzk].pos.x)
+            y2 = Math.max(y2, this.gameStore.nodes[pzk].pos.z)
+          })
+          this.$refs.nodeMap.panToBbox(x1, x2, y1, y2)
+        }
+      })
+      this.showSearchBar = false
+    },
 
     hireWorker(tk) {
       const w = this.userStore.useDefaultWorker ? {...this.userStore.defaultWorker, tnk: this.gameStore.tk2tnk(tk)} : this.hireRandomArtGob(tk)
@@ -377,11 +425,13 @@ export default {
     <div id="canvas-limiter">
 
       <NodeMap 
+        ref="nodeMap"
         v-model:clickedObj="clickedNode" 
         v-model:hoverInfo="hoverInfo" 
         v-model:panToPzk="panToPzk"
         v-model:panPaPos="panPaPos"
         @panAnywhere="panPaPos = null"
+        :highlightNodes="highlightNodes"
       />
 
       <div v-if="hoverInfo && hoverInfo.object" id="tooltip" :style="{left:hoverInfo.x+'px', top:hoverInfo.y+'px'}">
@@ -422,6 +472,14 @@ export default {
       </div>
 
       <div id="rightside">
+
+        <search-bar 
+          ref="searchBar"
+          :visible="showSearchBar" 
+          @close="showSearchBar = false" 
+          @select="handleSearchSelection"
+        />
+
         <div id="totals">
           <details>
             <summary>Total workers: {{ userStore.countWorkers }}</summary>

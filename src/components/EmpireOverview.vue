@@ -137,7 +137,7 @@ export default {
     </tr>
     <tr v-for="{w, i, ipc} in userStore.workersSortedByIncomePerCp">
       <td>
-        <span @click="$emit('panToPaPos', this.gameStore.nodes[w.tnk].pos)" class="clickable">
+        <span @click="$emit('panToPaPos', this.gameStore.nodes[w.tnk].pos, -7)" class="clickable">
           {{ gameStore.uloc.town[gameStore.tnk2tk(w.tnk)] }}
         </span>
       </td>
