@@ -50,6 +50,7 @@ export default {
         }
       }
       count = 0
+      let countk = 0
       for (const [nodeKey, nodeName] of Object.entries(this.gameStore.uloc.node)) {
         if (nodeName.toLowerCase().includes(newQuery.toLowerCase())) {
           if (!(nodeName in this.searchResults)) {
@@ -62,7 +63,21 @@ export default {
           count++
           if (count >= 10) break
         }
+        const nodeKeyStr = `${nodeKey}`
+        if (nodeKeyStr.toLowerCase().includes(newQuery.toLowerCase())) {
+          if (!(nodeKeyStr in this.searchResults)) {
+            this.searchResults[nodeKeyStr] = {
+              type: 'key',
+              hlSet: new Set([]),
+            }
+          }
+          this.searchResults[nodeKeyStr].hlSet.add(Number(nodeKey))
+          count++
+          if (count >= 10) break
+        }
       }
+      
+
       //console.log(this.searchResults)
     },
   },
@@ -126,16 +141,18 @@ export default {
     />
     <button @click="selectItem(emptySet)">reset</button>
     <ul v-if="searchResults">
-      <li v-for="(data, iname) in searchResults" 
+      <li v-for="(data, str) in searchResults" 
           @click="selectItem(data.hlSet)">
 
         <template v-if="data.type == 'dropsItem'">
-          <img :src="makeIconSrc(data.itemKey)" class="iconitem" />
+          <img :src="makeIconSrc(data.itemKey)" class="iconitem" /> {{ str }} ({{ data.hlSet.size }} nodes)
         </template>
-        <template v-else>
-          🗺️
+        <template v-else-if="data.type == 'name'">
+          🗺️ {{ str }}
         </template>
-        {{ iname }} ({{ data.hlSet.size }} nodes)
+        <template v-else-if="data.type == 'key'">
+          🗺️ {{ str }} - {{ gameStore.uloc.node[str] }}
+        </template>
       </li>
     </ul>
   </div>

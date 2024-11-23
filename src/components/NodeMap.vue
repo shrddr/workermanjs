@@ -159,7 +159,7 @@ export default {
     'panPaPos'(newValue) {
       //console.log('panPaPos changed', newValue)
       if (newValue) {
-        this.panTo(newValue.x, newValue.z, -7)
+        if (this.deck) this.panTo(newValue.x, newValue.z, -7)
       }
     },
   },
@@ -588,13 +588,13 @@ export default {
       const gameWidth = x2 - x1
       const gameHeight = y2 - y1
       if (gameWidth == 0 && gameHeight == 0) {
-        this.panTo(x, y, 7)
+        this.panTo(x, y, -9)
         return
       }
 
       let zoom = 6  // start close up and zoom out until fits into view
       for (; zoom >= 0; zoom--) {
-        const factor = 2**zoom / 16400
+        const factor = 2**(zoom-14)
         const pixWidth = gameWidth * factor
         const pixHeight = gameHeight * factor
         //console.log(pixWidth.toFixed(0), 'x', pixHeight.toFixed(0), 'at zoom', zoom)

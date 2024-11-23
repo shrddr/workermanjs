@@ -246,6 +246,17 @@ export default {
           </div>
         </div>
 
+        <div v-if="0" class="settings-tile">
+          🏛️Palace
+          <input type="checkbox" id="pe_t" v-model="userStore.palaceEnable">
+          <label for="pe_t">enable (use 5 CP)</label>
+          <div v-if="userStore.palaceEnable">
+            One worker profit: 
+            <input type="number" class="float4" v-model.number="userStore.palaceProfit">
+            M$/day
+          </div>
+        </div>
+
 
         <div class="settings-tile">
           🗺️ Map
