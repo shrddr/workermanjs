@@ -10,6 +10,7 @@ import WorkshopsView from "../views/WorkshopsView.vue";
 import HouseCraft from "../views/HouseCraft.vue";
 import DropratesView from "../views/DropratesView.vue";
 import RouterTestsView from "../views/RouterTestsView.vue";
+import RegionMapView from "../views/RegionMapView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -60,6 +61,10 @@ const router = createRouter({
     {
       path: '/routertests',
       component: RouterTestsView
+    },
+    {
+      path: '/regionmap',
+      component: RegionMapView
     },
     // deprecated
     {

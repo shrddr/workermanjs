@@ -471,7 +471,7 @@ export default {
       console.log('initializeDeck', this.mapStore.target)
 
       this.tileLayer = new TileLayer({
-        data: 'data/maptiles/{z}/{x}_{y}.webp',
+        data: 'https://shrddr.github.io/maptiles/{z}/{x}_{y}.webp',
         minZoom: 0,
         maxZoom: 7,
         tileSize: 256 * 12800,

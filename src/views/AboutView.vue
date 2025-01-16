@@ -106,7 +106,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>pull actual worker stats from your PC (ty @Aman, @Thell, @Sbreeng, @thirtyeight):</li>
           <ul>
             <li>download and install <a href="https://www.python.org/">Python</a> 3.9+</li>
-            <li>download the <a href="https://pastebin.com/TmmL2syf">Import Script</a>, and run it through Python</li>
+            <li>download the <a href="https://pastebin.com/JahEcXHn">Import Script</a>, and run it through Python</li>
             <li>now head back to Workerman Home page > All towns/workers list > import the json file you just created by running the script</li>
           </ul>
           <li>warning: if the amount of workers you have ingame is outside the F2P town limits, enter P2W lodging in town config <u>before</u> importing, otherwise the housing will not resolve</li>
@@ -131,7 +131,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
 
-    <li>Ctrl+F on Home page searches for items and node names, Esc to remove highlight</li>
+    <li>Ctrl+F on Home page searches for items and node names, Esc to remove highlight. Access builtin Chrome search with F3</li>
     <li>[2024-11-21 patch] updated Yukjo houses to have more lodging</li>
     <li>worker seals don't require town storage space anymore</li>
     <li>[2024-09-12 patch] added Seoul region with 19 nodes and a broken (houseless) town of Bukpo</li>
@@ -440,6 +440,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <p><RouterLink to="/housecraft">HouseCraft Viewer</RouterLink></p>
     <p><RouterLink to="/droprates">Droprates</RouterLink></p>
     <p><RouterLink to="/routertests">Router Tests</RouterLink></p>
+    <p><RouterLink to="/regionmap">Region Map</RouterLink></p>
     <p><RouterLink to="/lodging">All Towns Lodging (deprecated)</RouterLink></p>
   </div>
 </template>

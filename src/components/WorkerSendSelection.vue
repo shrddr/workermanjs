@@ -281,7 +281,7 @@ export default {
       <tr>
         <td>
           ✍️ Custom job
-          <abbr title="enter daily profit and CP cost for this specific job. these are per worker - so for Mass Production, divide by worker count manually" class="tooltip">ℹ️</abbr>
+          <abbr title="enter daily profit and CP cost for this specific job PER ONE WORKER" class="tooltip">ℹ️</abbr>
           <div style="float: right;">
             &nbsp;label: <input v-model="customLabel" class="workshop-label-input"/>
           </div>

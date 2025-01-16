@@ -38,7 +38,9 @@ export default {
     filteredHouses() {
       const ret = {}
       for (const [hk, v] of Object.entries(this.userStore.userWorkshops)) {
-        if (this.gameStore.houseInfo[hk].affTown == this.tk) {
+        const hi = this.gameStore.houseInfo[hk]
+        if (!hi) throw Error(`unknown house ${hk}`)
+        if (hi.affTown == this.tk) {
           if (v.industry in ret)
             ret[v.industry][hk] = v
           else
