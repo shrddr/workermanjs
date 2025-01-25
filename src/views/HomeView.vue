@@ -245,12 +245,20 @@ export default {
       let str = event.target.result
       let json = JSON.parse(str)
       
+      // Remove workers with unknown charkeys
+      for (let i = json.userWorkers.length - 1; i >= 0; i--) {
+        const charkey = json.userWorkers[i].charkey
+        if (!(charkey in this.gameStore.workerStatic)) {
+          console.log(`unknown charkey ${charkey} - discarded`)
+          json.userWorkers.splice(i, 1)
+        }
+      }
+
       // migrate from old formats
       json.userWorkers.forEach(w => {
         // remove unused values
         delete w.tk
         const stat = this.gameStore.workerStatic[w.charkey]
-        if (!stat) throw Error(`unknown charkey ${w.charkey}`)
         // convert sheetStats to lvlupStats
         if ('wspdLvlup' in w) {
           const wspdSheet = (stat.wspd + w.wspdLvlup)/1E6

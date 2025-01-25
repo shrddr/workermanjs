@@ -1075,7 +1075,7 @@ export const useGameStore = defineStore({
       const warnS = wantStorage == this.townUpperLimits[tk].storage
       const errS = wantStorage > this.townUpperLimits[tk].storage
       result = {...result, warnL, errL, warnS, errS }
-      //console.log('lsLookup', tk, wantLodging, wantStorage, result)
+      //console.log('lsLookup', tk, wantLodging, wantStorage, this.townUpperLimits[tk].storage, result)
       //console.log('bestLookup', result, 'took', (performance.now()-start).toFixed(1), 'ms')
       return result
     },

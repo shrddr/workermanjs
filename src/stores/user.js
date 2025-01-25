@@ -773,12 +773,12 @@ export const useUserStore = defineStore({
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
       gameStore.townsWithRedirectableStorage.forEach(tnk => ret[gameStore.tnk2tk(tnk)] = new Set([]))
-      for (const [pzk, w] of Object.entries(state.workingWorkers)) {
+      state.workingWorkers.forEach(w => {
         if (gameStore.jobIsPz(w.job)) {
           const tk = gameStore.tnk2tk(w.job.storage)
           ret[tk] = new Set([...ret[tk], ...gameStore.plantzones[w.job.pzk].itemkeys])
         }
-      }
+      })
       //console.log('townsStoreItemkeys', ret)
       return ret
     },

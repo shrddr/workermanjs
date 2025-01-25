@@ -109,8 +109,9 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
             <li>download the <a href="https://pastebin.com/JahEcXHn">Import Script</a>, and run it through Python</li>
             <li>now head back to Workerman Home page > All towns/workers list > import the json file you just created by running the script</li>
           </ul>
-          <li>warning: if the amount of workers you have ingame is outside the F2P town limits, enter P2W lodging in town config <u>before</u> importing, otherwise the housing will not resolve</li>
-          <li>note: the script doesn't really fetch <i>current</i> jobs, but the jobs associated with ingame "restart job" button of each worker. each restartable worker also has a reset button ingame that clears the cached job.</li>
+          <li>warning: if the totals in top right corner show ? after the import, you probably exceeded the F2P town limits for lodging/storage. look for towns marked red in <strong class="notranslate">All towns/workers</strong> list and adjust their <strong class="notranslate">config > P2W</strong> numbers</li>
+          <li>note: the script doesn't really fetch <i>current</i> jobs, but the jobs associated with ingame "restart job" button of each worker. even if the worker is stopped but has "restart job" and "clear restart" buttons ingame, his job is cached.</li>
+          <li>even after firing/selling the worker, the job remains in the cache. the way to get rid of these remnant jobs is delete the worker.cache file and wait until it's created again.</li>
         </ul>
       </li>
       <li>Workloads (and therefore profits) depend on <strong class="notranslate">Modifiers</strong>. 
@@ -131,6 +132,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
 
+    <li>Town config storage view shows item source on mouseover</li>
     <li>Ctrl+F on Home page searches for items and node names, Esc to remove highlight. Access builtin Chrome search with F3</li>
     <li>[2024-11-21 patch] updated Yukjo houses to have more lodging</li>
     <li>worker seals don't require town storage space anymore</li>
@@ -446,6 +448,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 </template>
 
 <style scoped>
+summary {
+  cursor: pointer;
+}
+
 strong {
   font-weight: 600;
 }

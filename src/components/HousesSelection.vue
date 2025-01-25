@@ -66,7 +66,7 @@ export default {
 
     ingameSortedItems() {
       const workeritems = [...this.userStore.townsStoreItemkeys[this.tk]]
-      // TODO: first by itemType (equipment/material/etc), 
+      // first by itemType (equipment/material/etc), 
       // then by itemGrade (orange/yellow/blue/green), 
       // and if those are equal then by itemKey (descending)
       workeritems.sort((a, b) => {
@@ -99,6 +99,23 @@ export default {
         ret.push(icon + this.gameStore.uloc.char[hk])
       })
       return ret.join('\n')
+    },
+
+    itemTooltip(tk, ik) {
+      const head = ik + ' ' + this.gameStore.uloc.item[ik]
+      let from = ""
+      this.userStore.workingWorkers.forEach(worker => {
+        if (this.gameStore.jobIsPz(worker.job)) {
+          const wstk = this.gameStore.tnk2tk(worker.job.storage)
+          const witemkeys = this.gameStore.plantzones[worker.job.pzk].itemkeys
+          if (wstk == tk && witemkeys.has(ik)) {
+            const pzk = worker.job.pzk
+            if (from.length == 0) from += " from:\n"
+            from += `${this.gameStore.parentNodeName(pzk)}\n`
+          }
+        }
+      })
+      return head + from
     },
   },
   
@@ -198,7 +215,7 @@ export default {
           <span v-if="userStore.townsInfra[tk].errS" class="red">← too much!</span>
           <br/>
           <strong>{{ userStore.townsInfra[tk].storage }} found</strong>
-          →
+          → {{ userStore.townsInfra[tk] }}
           {{ userStore.townsInfra[tk].storage - userStore.townsInfra[tk].wantStorage }} <span class="markExtra underline">extra</span>
           
         </div>
@@ -213,7 +230,7 @@ export default {
             }">
               <span class="textItem" v-if="n-1 > ingameSortedItems.length"></span>
               <span class="textItem" v-else-if="isNaN(ingameSortedItems[n-1])">{{ ingameSortedItems[n-1] }}</span>
-              <abbr v-else :title="ingameSortedItems[n-1] + ' ' + gameStore.uloc.item[ingameSortedItems[n-1]]">
+              <abbr v-else :title="itemTooltip(tk, ingameSortedItems[n-1])">
                 <img :src="makeIconSrc(ingameSortedItems[n-1])" class="iconitem">
               </abbr>
               

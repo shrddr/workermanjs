@@ -2,9 +2,8 @@
 import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
 import {Deck, OrthographicView, COORDINATE_SYSTEM} from '@deck.gl/core';
-import {BitmapLayer, SolidPolygonLayer} from '@deck.gl/layers';
+import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
-import {ContourLayer} from '@deck.gl/aggregation-layers';
 
 export default {
   setup() {
@@ -21,7 +20,7 @@ export default {
     return {
       deck: null,
       tileLayer: null,
-      contourLayer: null,
+      geoLayer: null,
       polygonLayer: null,
       initialViewState: {
         target: [0, 0],
@@ -80,7 +79,7 @@ export default {
         //data: 'data/poly_2024-06.json',
         //data: 'data/poly_2025-01.json',
         data: 'data/poly_2025-01_rg.json',
-        //data: 'data/fish.json',
+        
         
         /* props from SolidPolygonLayer class */
         
@@ -125,6 +124,38 @@ export default {
       })
       
       
+      this.geoLayer = new GeoJsonLayer({
+        id: 'GeoJsonLayer',
+        data: 'data/poly_2025-01_rg.geojson',
+
+        stroked: false,  // default: true
+        getLineWidth: 50,  
+        //lineWidthUnits: 'pixels',  // default: meters
+        lineWidthMinPixels: 1,
+        getLineColor: [255, 255, 255],
+        //filled: false,
+        getFillColor: f => f.properties.c,
+        //pointType: 'circle+text',
+        pickable: true,
+        //getPointRadius: 4,
+        //getText: f => f.properties.c,
+        //getTextSize: 12,
+
+        /* props inherited from Layer class */
+
+        autoHighlight: true,
+        coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
+        //highlightColor: [0, 0, 128, 128],
+        modelMatrix: [
+          301.1765,        0, 0, 0,
+                 0, 301.1765, 0, 0,
+                 0,        0, 1, 0,
+          -2048000, -2048000, 0, 1
+        ],
+        opacity: 0.1,
+        // visible: true,
+        // wrapLongitude: false,
+      })
 
 
       const deckInstance = new Deck({
@@ -138,12 +169,12 @@ export default {
         
         layers: [
           this.tileLayer,
-          //this.contourLayer,
-          this.polygonLayer,
+          //this.polygonLayer,
+          this.geoLayer,
         ],
 
         controller: {doubleClickZoom: false},
-        getTooltip: ({object}) => object && `i${object.i} ci${object.ci} `,
+        getTooltip: ({object}) => object && `RG${object.properties.ci}`,
 
         views: [
           new OrthographicView({
@@ -178,7 +209,7 @@ export default {
       <canvas id="deck-canvas" ref="canvas"></canvas>
       
       <div id="coords">
-        x: {{ hoverx }} y: {{ hovery }}
+        x: {{ hoverx }} y: {{ -hovery }}
       </div>
       
     </div>
