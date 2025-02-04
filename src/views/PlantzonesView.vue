@@ -184,7 +184,12 @@ export default {
         <tr>
           <!--Node-->
           <th>unlucky <span class="fss">[<input type="checkbox" v-model="isGiant"> with giant bonus]</span></th>
-          <th>lucky</th>
+          <th>
+            lucky
+            <abbr title="you always get unlucky items;
+these are in addition to those,
+only on cycles when 🍀 procs" class="tooltip">ℹ️</abbr>
+          </th>
           <th>$ value</th>
           <th>name</th>
           <th>walk</th>

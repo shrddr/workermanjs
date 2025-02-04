@@ -215,7 +215,6 @@ export default {
           <span v-if="userStore.townsInfra[tk].errS" class="red">← too much!</span>
           <br/>
           <strong>{{ userStore.townsInfra[tk].storage }} found</strong>
-          → {{ userStore.townsInfra[tk] }}
           {{ userStore.townsInfra[tk].storage - userStore.townsInfra[tk].wantStorage }} <span class="markExtra underline">extra</span>
           
         </div>

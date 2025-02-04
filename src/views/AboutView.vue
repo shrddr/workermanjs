@@ -13,7 +13,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         What is the purpose of this project?
       </template>
-      Optimize your <a href="https://discord.com/channels/371035077037129729/404532586246045696">#worker-empire</a> to bring more silver.
+      Optimize your <a href="https://discord.gg/xs6Bf9w5">#worker-empire</a> to bring more silver.
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -67,6 +67,14 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </QnaItem>
     <QnaItem>
       <template #q>
+        What are stat ranks?
+      </template>
+      If levelup range for a given stat is 1.0-2.0, rolling 1.4 is 40% rank, and rolling 1.9 is 90% rank.
+      Rank 100% level 40 worker means 39 max rolls in a row (39*2=78).<br/>
+      "Stat per level" skills are not accounted for, but they do modify the "sheet" value so you can get >100% rank.
+    </QnaItem>
+    <QnaItem>
+      <template #q>
         Where does the drop data come from and how old?
       </template>
       1. Unlucky drops up to Eternal Winter: from an anonymous source somewhere on the internet,
@@ -77,7 +85,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       5. Seoul drops: observed non-thoroughly in september 2024, when in doubt picked values most similar to existing node drops from (1).<br/>
       All of the above are adjusted when relevant patchnotes come out (increased yields by X at Y).
     </QnaItem>
-    
+
     <h2>Tips & tricks</h2>
     <ul style="padding-left: 16px;">
       <li>
@@ -110,20 +118,24 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
             <li>now head back to Workerman Home page > All towns/workers list > import the json file you just created by running the script</li>
           </ul>
           <li>warning: if the totals in top right corner show ? after the import, you probably exceeded the F2P town limits for lodging/storage. look for towns marked red in <strong class="notranslate">All towns/workers</strong> list and adjust their <strong class="notranslate">config > P2W</strong> numbers</li>
-          <li>note: the script doesn't really fetch <i>current</i> jobs, but the jobs associated with ingame "restart job" button of each worker. even if the worker is stopped but has "restart job" and "clear restart" buttons ingame, his job is cached.</li>
-          <li>even after firing/selling the worker, the job remains in the cache. the way to get rid of these remnant jobs is delete the worker.cache file and wait until it's created again.</li>
+          <li>note: the script doesn't really fetch <i>current</i> jobs, but the jobs associated with ingame "restart job" button of each worker.</li>
+          <ul>
+            <li>even if the worker is stopped but has "restart job" and "clear restart" buttons ingame active, his job is cached.</li>
+            <li>you can have two ingame workers with same cached job (but only one actually working). there is zero protection against that in workerman. don't leave dangling jobs - use "clear restart" ingame button.</li>
+            <li>even after firing/selling the ingame worker, his job remains cached. the way to get rid of these remnant jobs is to clear the cache and wait until it's filled again.</li>
+          </ul>
         </ul>
       </li>
       <li>Workloads (and therefore profits) depend on <strong class="notranslate">Modifiers</strong>. 
         The default value works well for highly contested nodes (they are popular for a reason - you probably want them too).
         Some niche nodes however can report up to 2x higher profit if you enter their real Modifiers.
         <ul>
-          <li>Each green bar ingame does not belong to single resource node, but to a piece of land (aka RegionGroup), which may can contain multiple resource nodes, so they share the modifier</li>
-          <li>If you want to be really meticulous about it, switch to floating modifiers (in Modifiers > Advanced) and track the ingame modifiers change over time. More observations - more accuracy</li>
+          <li>Each green bar ingame does not belong to single resource node, but to a piece of land (aka RegionGroup), which may can contain multiple resource nodes, so they share the modifier.</li>
+          <li>If you want to be really meticulous about it, switch to floating modifiers (in Modifiers > Advanced) and track the ingame modifiers change over time. More observations - more accuracy.</li>
           <ul>
-            <li>With floating modifier, daily profit is calculated via the chance of reaching relevant workload breakpoints on each cycle. Detailed view available in edit worker dialog</li>
-            <li>Workloads shown in ~XXX format refer to median (50% chance) value. This is for reference only and is not used in profit calculations, the whole dataset is</li>
-            <li>You can specify to use either constant or floating modifier for each RegionGroup</li>
+            <li>With floating modifier, daily profit is calculated via the chance of reaching relevant workload breakpoints on each cycle. Detailed view available in edit worker dialog.</li>
+            <li>Workloads shown in ~XXX format refer to median (50% chance) value. This is for reference only and is not used in profit calculations, the whole dataset is.</li>
+            <li>You can specify to use either constant or floating modifier for each RegionGroup.</li>
           </ul>
         </ul>
       </li>
