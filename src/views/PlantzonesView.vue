@@ -32,6 +32,7 @@ export default {
     mediahNodes: new Set([1210,1212,1215,1216,1219,1217,1213,1220,1205,1218]),  // these have routing overridden
     towns: [-1],
     filterTown: -1,
+    hideTaken: false,
   }),
   methods: {
     makeIconSrc,
@@ -117,7 +118,11 @@ export default {
     },
 
     allPlantzonesNearestCpTownProfit_sorted() {
-      const ret = this.allPlantzonesNearestCpTownProfit.filter(workData => (this.filterTown == -1) || workData.tnk == this.filterTown)
+      const ret = this.allPlantzonesNearestCpTownProfit.filter(e => {
+        if ((this.filterTown != -1) && e.tnk != this.filterTown) return false
+        if (this.hideTaken && this.userStore.workedPlantzones.has(e.key.toString())) return false
+        return true
+      })
       ret.sort((a,b) => {
         if(isFinite(b.dailyPerCp-a.dailyPerCp)) { // desc
           return b.dailyPerCp-a.dailyPerCp; 
@@ -166,6 +171,7 @@ export default {
       <select v-model="filterTown">
         <option v-for="tnk in townsFilter" :value="tnk">{{ tnk>=0 ? gameStore.nodeName(tnk) : 'any'}}</option>
       </select>
+      hide taken <input type="checkbox" v-model="hideTaken">
     </div>
 
     <div class="scroll">

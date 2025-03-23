@@ -143,10 +143,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
-
-    <li>In <strong class="notranslate">Empire > Best untaken</strong> and selected Plantzone pane, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">cheapest storage 🧊</strong> option.</li>
+    <li>Plantzones page > <strong class="notranslate">hide taken</strong> checkbox</li>
+    <li>In Empire > Best untaken and selected Plantzone pane, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">cheapest storage 🧊</strong> option.</li>
     <ul>
-      <li>it does apply to <strong class="notranslate">assign</strong> action, but is frozen in a sense that it means cheapest at this point of time, and not a commitment to keep it cheapest going forward (after adding more jobs).</li>
+      <li>it does apply to <strong class="notranslate">assign</strong> action, but is frozen in a sense that it means cheapest at this point in time, and not a commitment to keep it cheapest going forward (after adding more jobs).</li>
     </ul>
     <li><strong class="notranslate">Town config > storage</strong> view shows item source on mouseover</li>
     <li>Ctrl+F on <strong class="notranslate">Home</strong> page searches for items and node names, Esc to remove highlight. If you need builtin Chrome search it is still accessible through F3</li>
