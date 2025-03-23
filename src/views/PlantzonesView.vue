@@ -28,7 +28,7 @@ export default {
     wspd: 150,
     mspd: 10,
     luck: 10,
-    isGiant: false,
+    showGiantValues: false,
     mediahNodes: new Set([1210,1212,1215,1216,1219,1217,1213,1220,1205,1218]),  // these have routing overridden
     towns: [-1],
     filterTown: -1,
@@ -178,7 +178,7 @@ export default {
       <table>
         <tr>
           <th rowspan="2">Node</th>
-          <th colspan="3">cycle drops</th>
+          <th colspan="3">cycle drops <span class="fss">[<input type="checkbox" v-model="showGiantValues"> as giant]</span></th>
           <th colspan="3">best town</th>
           <th colspan="2">best worker</th>
           <th rowspan="2">workload</th>
@@ -189,7 +189,7 @@ export default {
         </tr>
         <tr>
           <!--Node-->
-          <th>unlucky <span class="fss">[<input type="checkbox" v-model="isGiant"> with giant bonus]</span></th>
+          <th>unlucky</th>
           <th>
             lucky
             <abbr title="you always get unlucky items;
@@ -223,7 +223,7 @@ only on cycles when 🍀 procs" class="tooltip">ℹ️</abbr>
                   {{ gameStore.uloc.item[k] }}
                 </span>
               </RouterLink>
-              <span class="fss" v-if="isGiant"> [{{ formatDropQty(e.unlucky_gi[k]) }}] </span>
+              <span class="fss" v-if="showGiantValues"> [{{ formatDropQty(e.unlucky_gi[k]) }}] </span>
             </div>
           </td>
           <td class="tac">
@@ -233,7 +233,15 @@ only on cycles when 🍀 procs" class="tooltip">ℹ️</abbr>
               </RouterLink>
             </div>
           </td>
-          <td class="tac">{{ formatFixed(e.cycleValue, 0) }}</td>
+          <td class="tac">
+            <div v-if="showGiantValues">
+              {{ formatFixed(e.cycleValue_gob, 0) }}
+              <span class="fss">[{{ formatFixed(e.cycleValue_gi, 0) }}]</span>
+            </div>
+            <div v-else>
+              {{ formatFixed(e.cycleValue, 0) }}
+            </div>
+          </td>
           <td class="tac">
             <abbr class="tooltip nound" :title="e.alt_towns.map(obj => `${gameStore.nodeName(obj.tnk)}: ${formatFixed(obj.dailyPerCp, 2)} M$/day/CP → ${formatFixed(100*obj.dailyPerCp/e.dailyPerCp)}%`).join('\n')">{{ gameStore.nodeName(e.tnk) }}</abbr>
           </td>

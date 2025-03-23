@@ -812,6 +812,8 @@ export const useGameStore = defineStore({
       workData_best2.alt_workers_dict = alt_workers_dict
       workData_best2.alt_workers = alt_workers
       workData_best2.connected = true
+      workData_best2.cycleValue_gob = workData_gob.cycleValue
+      workData_best2.cycleValue_gi = workData_gi.cycleValue
       return workData_best2
     },
 
