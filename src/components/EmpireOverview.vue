@@ -25,6 +25,7 @@ export default {
 
   data: () => ({
     activeTab: 'daily',
+    selectedRedirect: -1,
   }),
 
   methods: {
@@ -42,7 +43,7 @@ export default {
       let worldList = []
       this.gameStore.townsWithLodging.forEach(tnk => {
         // more than needed, discard after sorting
-        const townList = this.gameStore.dijDiscountedNearestPlantzones(tnk, 10)
+        const townList = this.gameStore.dijDiscountedNearestPlantzones(tnk, 12)
         //if (tnk == 1) console.log(tnk, townList)
         worldList[tnk] = townList
       })
@@ -60,7 +61,9 @@ export default {
           }
           workData.path = path
           const tk = gameStore.tnk2tk(tnk)
-          const addInfraInfo = userStore.townInfraAddCost(tk, 1, gameStore.plantzones[pzk].itemkeys)
+          const storageTk = this.selectedRedirect == -1 ? tk : gameStore.tnk2tk(this.selectedRedirect)  // sets to undefined if not found
+          // if (selectedRedirect == 0) storageTk = undefined
+          const addInfraInfo = userStore.townInfraAddCost(tk, 1, gameStore.plantzones[pzk].itemkeys, storageTk)
           workData.townCp = addInfraInfo.cost
           workData.townCpTooltip = addInfraInfo.tooltip
           workData.dailyPerCp = workData.priceDaily / (workData.cp + workData.townCp)
@@ -168,11 +171,23 @@ export default {
   </table>
 
   <template v-if="activeTab == 'best'">
-    <span class="fsxs">Compares 10 nearest (by CP) untaken nodes of each town. Uses stats of median 40lvl artisans. Stash at worker hometown (maybe not ideal)</span>
+    <span class="fsxs">
+      Compares 12 nearest (by CP) untaken nodes of each town. 
+      Uses stats of median 40lvl artisans. 
+      Stash at:
+      <select v-model="selectedRedirect" class="fsxs">
+        <option value="-1">worker hometown</option>
+        <option value="0">cheapest storage 🧊</option>
+        <option v-for="tnk in gameStore.townsWithRedirectableStorage" :value="tnk">
+          {{ gameStore.uloc.node[tnk] }}
+        </option>
+      </select>
+    </span>
+
     <table>
       
       <tr>
-        <th>town</th>
+        <th>🛏️town</th>
         <th>job</th>
         <th>worker</th>
         <th>+M$/day</th>

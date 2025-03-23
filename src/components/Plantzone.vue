@@ -1,6 +1,7 @@
 <script>
 import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
+import {useMarketStore} from '../stores/market'
 import MakeAWorker from '../components/MakeAWorker.vue'
 import {formatFixed,makeIconSrc} from '../util.js'
 
@@ -8,6 +9,7 @@ export default {
   setup() {
     const gameStore = useGameStore()
     const userStore = useUserStore()
+    const marketStore = useMarketStore()
 
     /*userStore.$subscribe((mutation, state) => {
       const start = Date.now()
@@ -15,7 +17,7 @@ export default {
       console.log('userStore subscription took', Date.now()-start, 'ms')
     })*/
 
-    return { gameStore, userStore }
+    return { gameStore, userStore, marketStore }
   },
 
   props: {
@@ -32,7 +34,7 @@ export default {
   },
 
   data: () => ({
-    selectedRedirect: 0,
+    selectedRedirect: -1,
   }),
 
   methods: {
@@ -41,15 +43,17 @@ export default {
 
     plantzoneNearestTownsFreeWorkersProfits(pzk, townsLimit) {
       const townsData = []
-      const tkCpList = this.gameStore.dijkstraNearestTowns(pzk, townsLimit, this.userStore.autotakenNodes, true)
-      tkCpList.forEach(([tnk, mapCp, path]) => {
-        const tk = this.gameStore._tnk2tk[tnk]
-        const freeWorkers = this.userStore.getFreeWorkers(tk)
+      const homeTnkList = this.gameStore.dijkstraNearestTowns(pzk, townsLimit, this.userStore.autotakenNodes, true)
+      homeTnkList.forEach(([homeTnk, mapCp, path]) => {
+        const homeTk = this.gameStore._tnk2tk[homeTnk]
+        const freeWorkers = this.userStore.getFreeWorkers(homeTk)
         
-        const storageTk = this.selectedRedirect > 0 ? this.gameStore._tnk2tk[this.selectedRedirect] : tk
         freeWorkers.forEach(w => {
           const stats = this.gameStore.workerStatsOnPlantzone(w)
-          townsData.push(this.gameStore.pzSelectionEntry(pzk, tk, tnk, mapCp, path, w, stats, storageTk))
+          const storageTk = this.selectedRedirect == -1 ? homeTk : this.gameStore.tnk2tk(this.selectedRedirect)  // sets to undefined if not found
+          const workerEntry = this.gameStore.pzSelectionEntry(pzk, homeTk, homeTnk, mapCp, path, w, stats, storageTk)
+          
+          townsData.push(workerEntry)
         })
       })
       townsData.sort((a,b)=>b.dailyPerCp-a.dailyPerCp)  // desc
@@ -60,14 +64,17 @@ export default {
   computed: {
     freeWorkers() {
       const arr = this.plantzoneNearestTownsFreeWorkersProfits(this.pzk, 99)
+      //console.log('arr', arr)
       const filtered_dist = arr.filter((e) => {
         return e.profit.dist < 1E6
       })
+      //console.log('filtered_dist', filtered_dist)
       const filtered_similar = filtered_dist.filter((item, index, self) => {
         return index === self.findIndex(
           needle => needle.tnk === item.tnk && JSON.stringify(needle.statsOnPz) === JSON.stringify(item.statsOnPz)
         )
       })
+      //console.log('filtered_similar', filtered_similar)
       return filtered_similar
     },
   },
@@ -85,7 +92,9 @@ export default {
 
     <span v-if="pzk in this.gameStore.plantzones">
       <RouterLink v-for="k in this.gameStore.plantzones[pzk].itemkeys" tag="a" :to="{path: './settings', hash: '#item' + k}">
-        <img :src="makeIconSrc(k)" class="iconitem">
+        <abbr :title="gameStore.itemName(k) + ' ' + formatFixed(marketStore.prices[k]) + '$'">
+          <img :src="makeIconSrc(k)" class="iconitem">
+        </abbr>
       </RouterLink>
       
       [🍀{{ formatFixed(this.gameStore.plantzones[pzk].lucky ? this.gameStore.plantzones[pzk].luckyValue / this.gameStore.plantzones[pzk].unluckyValue : 1, 2) }}<abbr class="tooltip" title="how much more $ a lucky cycle brings vs unlucky">x</abbr>]
@@ -147,10 +156,11 @@ export default {
       <div>
         <h4>Nearest towns with idle workers: <template v-if="freeWorkers.length == 0">None</template></h4>
       </div>
-      <div style="margin-right: 6px;">stash:
+      <div style="margin-right: 6px;">stash at:
         <select v-model="selectedRedirect">
-          <option value="0">worker hometown</option>
-          <option v-for="tnk in gameStore.townsWithLodging" :value="tnk">
+          <option value="-1">worker hometown</option>
+          <option value="0">cheapest storage 🧊</option>
+          <option v-for="tnk in gameStore.townsWithRedirectableStorage" :value="tnk">
             {{ gameStore.uloc.node[tnk] }}
           </option>
         </select>
@@ -195,7 +205,7 @@ export default {
               <button v-if="userStore.workedPlantzones.has(pzk.toString())" title="plantzone already occupied" disabled="true">assign</button>
               <button v-else-if="isNaN(e.townCp)" title="Can't resolve housing" disabled="true">assign</button>
               <button v-else-if="gameStore.tnk2tk(e.w.tnk) && gameStore.tnk2tk(e.w.tnk) == 619 && !userStore.activateAncado" title="Ancado is not activated, can't house workers" disabled="true">assign</button>
-              <button v-else @click="userStore.assignWorker(e.w, {kind: 'plantzone', pzk: e.pz.key, storage: e.tnk})">
+              <button v-else @click="userStore.assignWorker(e.w, {kind: 'plantzone', pzk: e.pz.key, storage: e.storageTnk})">
                 assign
               </button>
             </td>

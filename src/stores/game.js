@@ -2,7 +2,7 @@ import {defineStore} from "pinia";
 import {useMarketStore} from './market'
 import {useUserStore} from './user'
 import Heap from 'heap';
-import {formatFixed, extractNumbers, binarySearch} from '../util.js';
+import {extractNumbers, binarySearch} from '../util.js';
 
 export const useGameStore = defineStore({
   id: "game",
@@ -285,7 +285,7 @@ export const useGameStore = defineStore({
         1853,1857,
       ]
 
-      // town(3a) can be a target of lvl40 worker "stash redirect" feature, filled manually
+      // town(3a) can be a target of "stash redirect" feature, filled manually
       // vel, olv, hei, gli, cal, kep
       // eph, tre, ili, alt, tar, val
       // sha, baz, anc, are, owt, gra

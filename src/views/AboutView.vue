@@ -99,7 +99,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <li>Use <strong class="notranslate">optimize</strong> button inside a working worker's editor and see what skills to roll to maximize profit, then <strong class="notranslate">revert</strong> back</li>
         <ul>
           <li>if you're not max level though, level up with 🠕 button first to see what the "endgame" optimal skills are as opposed to currently optimal skills</li>
-          <li>you can also change the type of worker here and the stats will be recalculated as if levelled from scratch with same stat rolls</li>
+          <li>you can also change the type of worker (expert↔artisan or even goblin↔giant) here and the stats will be recalculated as if levelled from scratch with same stat rolls</li>
         </ul>
       <li>If you have nodes invested for grinding, mark them with <strong class="notranslate">zero-cost connection</strong> checkbox - this will make nearby plantzones more desirable</li>
         <ul>
@@ -135,7 +135,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <ul>
             <li>With floating modifier, daily profit is calculated via the chance of reaching relevant workload breakpoints on each cycle. Detailed view available in edit worker dialog.</li>
             <li>Workloads shown in ~XXX format refer to median (50% chance) value. This is for reference only and is not used in profit calculations, the whole dataset is.</li>
-            <li>You can specify to use either constant or floating modifier for each RegionGroup.</li>
+            <li>You can opt in to use floating modifier only for specific RegionGroups.</li>
           </ul>
         </ul>
       </li>
@@ -144,12 +144,16 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
 
-    <li>Town config storage view shows item source on mouseover</li>
-    <li>Ctrl+F on Home page searches for items and node names, Esc to remove highlight. Access builtin Chrome search with F3</li>
+    <li>In <strong class="notranslate">Empire > Best untaken</strong> and selected Plantzone pane, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">cheapest storage 🧊</strong> option.</li>
+    <ul>
+      <li>it does apply to <strong class="notranslate">assign</strong> action, but is frozen in a sense that it means cheapest at this point of time, and not a commitment to keep it cheapest going forward (after adding more jobs).</li>
+    </ul>
+    <li><strong class="notranslate">Town config > storage</strong> view shows item source on mouseover</li>
+    <li>Ctrl+F on <strong class="notranslate">Home</strong> page searches for items and node names, Esc to remove highlight. If you need builtin Chrome search it is still accessible through F3</li>
     <li>[2024-11-21 patch] updated Yukjo houses to have more lodging</li>
     <li>worker seals don't require town storage space anymore</li>
-    <li>[2024-09-12 patch] added Seoul region with 19 nodes and a broken (houseless) town of Bukpo</li>
-    <li>can assign Personal Items in Muzgar > config (do not enter too much, will show <strong>?</strong> in totals)</li>
+    <li>[2024-09-12 patch] added Seoul region with 19 nodes</li>
+    <li>can assign Personal Items in Muzgar > config (do not enter too much, will show <strong class="notranslate">?</strong> in totals)</li>
     <li>home > selected plantzone > added "hire+assign" section, which autosuggests best race</li>
     <li>custom prices import/export</li>
     <li>workshop tweaks</li>
@@ -377,7 +381,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <li>[2024-11-21 patch] palace stuff maybe</li>
     <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
-    <li>worker ranks are in linear stat space, shows 98.55 giant as 56% rank when actually it is top 90% in "chance of achieving" space</li>
+    <li>worker ranks are in linear stat space, shows 98.55 giant as 56% rank when actually it is top 10% in "chance of achieving" space</li>
     <li>for some reason mousemove while hovering a node triggers continuous recalculations</li>
     <li>empire > best untaken > automatically try alternative stashes</li>
     <li>change (again) the job resource sharing principle when negative profit jobs are involved</li>
@@ -436,7 +440,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </li>
     <li>profit calculation: include feed cost</li>
     <li>map: optionally show RegionGroups</li>
-    <li>unify job description strings - node 1565 shold says "silk production" like ingame workerlist</li>
+    <li>unify job description strings - node 1565 should say "silk production" like ingame workerlist</li>
     <li>introduce skill roll chances somehow</li>
     <ul>
       <li>help decide which skills should and should not be rerolled?</li>

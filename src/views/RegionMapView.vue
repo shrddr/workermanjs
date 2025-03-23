@@ -126,7 +126,7 @@ export default {
       
       this.geoLayer = new GeoJsonLayer({
         id: 'GeoJsonLayer',
-        data: 'data/poly_2025-01_rg.geojson',
+        data: 'data/poly_2025-01_rg_s3.geojson',
 
         stroked: false,  // default: true
         getLineWidth: 50,  

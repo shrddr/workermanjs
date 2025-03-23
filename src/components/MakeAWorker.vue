@@ -36,16 +36,15 @@ export default {
     },
 
     profitTownStats(tnk, stats) {
-      const tk = this.gameStore._tnk2tk[tnk]
-      const storageTk = this.redirect > 0 ? this.gameStore._tnk2tk[this.redirect] : tk
       const profitData = this.gameStore.profitPzTownStats(this.pzk, tnk, stats.wspd+5, stats.mspd, stats.luck, stats.isGiant)
       return profitData
     },
 
     assignWorker(PZSE) {
+      if (!PZSE.storageTnk) throw Error('no storage')
       const w = JSON.parse(JSON.stringify(PZSE.w))
       this.userStore.userWorkers.push(w)
-      this.userStore.assignWorker(w, {kind: 'plantzone', pzk: PZSE.pz.key, storage: PZSE.tnk})
+      this.userStore.assignWorker(w, {kind: 'plantzone', pzk: PZSE.pz.key, storage: PZSE.storageTnk})
     },
   },
 
@@ -72,19 +71,23 @@ export default {
     nearestTowns() {
       const townsLimit = 5
       const townsData = []
-      const tkCpList = this.gameStore.dijkstraNearestTowns(this.pzk, townsLimit, this.userStore.autotakenNodes, true)
-      tkCpList.forEach(([tnk, mapCp, path]) => {
+      const lodgingTnkList = this.gameStore.dijkstraNearestTowns(this.pzk, townsLimit, this.userStore.autotakenNodes, true)
+      lodgingTnkList.forEach(([lodgingTnk, mapCp, path]) => {
         const workerKinds = []
 
-        for (const kind of ['gia', 'hum', 'gob']) {
-          const stats = this.workerStats(kind, tnk)
+        const lodgingTk = this.gameStore._tnk2tk[lodgingTnk]
+        const storageTk = this.redirect == -1 ? lodgingTk : this.gameStore.tnk2tk(this.redirect)  // sets to undefined if not found
+        const addInfraInfo = this.userStore.townInfraAddCost(lodgingTk, 1, this.gameStore.plantzones[this.pzk].itemkeys, storageTk)
+        //console.log(`nearestTowns::addInfraInfo(${lodgingTnk}, ${storageTk}) = `, addInfraInfo)
 
-          const tk = this.gameStore._tnk2tk[tnk]
+        for (const kind of ['gia', 'hum', 'gob']) {
+          const stats = this.workerStats(kind, lodgingTnk)
+
           const w = {
-            tk,
-            tnk: this.gameStore.tk2tnk(tk),
+            tk: lodgingTk,
+            tnk: lodgingTnk,
             charkey: stats.charkey,
-            label: this.userStore.newWorkerName(tk),
+            label: this.userStore.newWorkerName(lodgingTk),
             level: stats.level,
             wspdSheet: stats.wspd,
             mspdSheet: stats.mspd,
@@ -93,10 +96,28 @@ export default {
             job: null,
           }
           w.skills.push(1011)
-          const storageTk = this.redirect > 0 ? this.gameStore._tnk2tk[this.redirect] : tk
+          
           const statsOnPz = this.gameStore.workerStatsOnPlantzone(w)
-          const PZSE = this.gameStore.pzSelectionEntry(this.pzk, tk, tnk, mapCp, path, w, statsOnPz, storageTk)
-          if (PZSE.profit.dist > 1E6) return
+
+          //const PZSE = this.gameStore.pzSelectionEntry(this.pzk, lodgingTk, lodgingTnk, mapCp, path, w, statsOnPz, storageTk)
+
+          const profitData = this.gameStore.profitPzTownStats(this.pzk, lodgingTnk, statsOnPz.wspd, statsOnPz.mspd, statsOnPz.luck, this.gameStore.isGiant(w.charkey))
+          if (profitData.dist > 1E6) return
+          const PZSE = {
+            pz: this.gameStore.plantzones[this.pzk],
+            tnk: lodgingTnk,
+            mapCp, 
+            path,
+            townCp: addInfraInfo.cost,
+            infraTooltip: addInfraInfo.tooltip,
+            cp: mapCp + addInfraInfo.cost,
+            profit: profitData,
+            w,
+            statsOnPz,
+            storageTnk: this.gameStore.tk2tnk(addInfraInfo.storageTk),
+          }
+          PZSE.dailyPerCp = PZSE.profit.priceDaily / (mapCp + addInfraInfo.cost)
+          PZSE.effDelta = this.userStore.jobEfficiencyDelta(PZSE.profit.priceDaily, mapCp + addInfraInfo.cost)
 
           const t = {
             kind,
@@ -108,10 +129,10 @@ export default {
 
         if (workerKinds.length == 0) return
         workerKinds.sort((a,b)=>b.PZSE.profit.priceDaily-a.PZSE.profit.priceDaily)  // desc
-        this.selectedWorkerIndices[tnk] = 0
+        this.selectedWorkerIndices[lodgingTnk] = 0
         
         townsData.push({
-          tnk,
+          tnk: lodgingTnk,
           workerKinds
         })
       })
@@ -127,11 +148,10 @@ export default {
 <template>
   <div>
     <h4>Nearest towns with hireable workers:</h4>
-    {{ 1?'':workerKinds }}
-    {{ 1?'':nearestTowns }}
+    
     <table v-if="this.nearestTowns">
       <tr>
-        <th>town</th>
+        <th>🛏️town</th>
         <th>walk</th>
         <th>make new level 40 artisan <abbr class="tooltip" title="with median stats and a single +5🔨 skill">ℹ️</abbr></th>
         <th>+CP <abbr class="tooltip" title="node connection + town housing = total">ℹ️</abbr></th>

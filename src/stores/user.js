@@ -548,7 +548,7 @@ export const useUserStore = defineStore({
       if (gameStore.ready) {
         state.grindTakenList.forEach(pzk => {
           const paths = gameStore.dijkstraNearestTowns(Number(pzk), 4, ret, false, true)
-          const list = paths.sort((a,b)=>a[1]-b[1])
+          const list = paths.sort((a,b)=>a[1]-b[1])  // from lowest to highest CP
           //console.log('list', list)
           const [tnk, addCp, usedPath] = list[0]
           usedPath.forEach(nk => ret.add(nk))
@@ -819,28 +819,13 @@ export const useUserStore = defineStore({
     },
 
     townInfraAddCost: (state) => (lodgingTk, dl, itemkeys, storageTk) => {
-      // cost and specifics of adding 
-      // `dl` additional lodging slots 
-      // and storage for additional `itemkeys` 
-      // to town `tk` with current user settings
-      if (storageTk && lodgingTk != storageTk) {
-        const storageOldInfra = state.townsInfra[storageTk]
-        const storageNewStorageSlots = new Set([...state.townsStoreItemkeys[storageTk], ...itemkeys]).size
-        const storageNewInfra = state.townInfra(storageTk, state.townWorkingWorkers(storageTk).length, storageNewStorageSlots)
-        const lodgingOldInfra = state.townsInfra[lodgingTk]
-        const lodgingOldStorageSlots = state.townsStoreItemkeys[lodgingTk].size
-        const lodgingNewInfra = state.townInfra(lodgingTk, state.townWorkingWorkers(lodgingTk).length+dl, lodgingOldStorageSlots)
-        const gameStore = useGameStore()
-        const infraTooltip = gameStore.uloc.town[lodgingTk] + 
-          ` housing:\nold: ${Math.max(0, lodgingOldInfra.wantLodging)}🛏️ + ${Math.max(0, lodgingOldInfra.wantStorage)}📦 = ${formatFixed(lodgingOldInfra.cost)} CP\nnew: ${Math.max(0, lodgingNewInfra.wantLodging)}🛏️ + ${Math.max(0, lodgingNewInfra.wantStorage)}📦 = ${formatFixed(lodgingNewInfra.cost)} CP` + "\n" +
-          gameStore.uloc.town[storageTk] +
-          ` housing:\nold: ${Math.max(0, storageOldInfra.wantLodging)}🛏️ + ${Math.max(0, storageOldInfra.wantStorage)}📦 = ${formatFixed(storageOldInfra.cost)} CP\nnew: ${Math.max(0, storageNewInfra.wantLodging)}🛏️ + ${Math.max(0, storageNewInfra.wantStorage)}📦 = ${formatFixed(storageNewInfra.cost)} CP`
-        return {
-          cost: storageNewInfra.cost - storageOldInfra.cost + lodgingNewInfra.cost - lodgingOldInfra.cost,
-          tooltip: infraTooltip,
-        }
-      } else {
-        const tk = lodgingTk  // == storageTk
+      // cost and specifics of adding `dl` additional lodging slots 
+      // and storage for additional `itemkeys` to town `storageTk` with current user settings;
+      // if `storageTk` is undefined, search for cheapest town
+
+      //console.log('townInfraAddCost', lodgingTk, dl, itemkeys, storageTk)
+      if (storageTk && lodgingTk == storageTk) {
+        const tk = lodgingTk  
         const oldInfra = state.townsInfra[tk]
         const newStorage = new Set([...state.townsStoreItemkeys[tk], ...itemkeys]).size
         const newInfra = state.townInfra(tk, state.townWorkingWorkers(tk).length+dl, newStorage)
@@ -849,6 +834,54 @@ export const useUserStore = defineStore({
         return {
           cost: newInfra.cost - oldInfra.cost,
           tooltip: infraTooltip,
+          storageTk,
+        }
+      } else {  // !storageTk || lodgingTk != storageTk
+        const lodgingOldInfra = state.townsInfra[lodgingTk]
+        const lodgingOldStorageSlots = state.townsStoreItemkeys[lodgingTk].size
+        const lodgingNewInfra = state.townInfra(lodgingTk, state.townWorkingWorkers(lodgingTk).length+dl, lodgingOldStorageSlots)
+
+        const townsStorageInfras = []
+        const storTks = []
+        const inner = {}
+        if (!storageTk) {  // try sameTown, then compare with best of the rest
+          inner.sameTown = state.townInfraAddCost(lodgingTk, dl, itemkeys, lodgingTk)
+          for (const tk of Object.keys(state.townsInfra)) {
+            if (tk != lodgingTk) storTks.push(tk)
+          }
+        }
+        else { // lodgingTk != storageTk: only search one town for storage
+          storTks.push(storageTk)  
+        }
+
+        for (const storTk of storTks) {
+          const storageOldInfra = state.townsInfra[storTk]
+          const storageNewStorageSlots = new Set([...state.townsStoreItemkeys[storTk], ...itemkeys]).size
+          const storageNewInfra = state.townInfra(storTk, state.townWorkingWorkers(storTk).length+dl, storageNewStorageSlots)
+          if (storageNewInfra.errL || storageNewInfra.errS) continue
+          const storageCostDelta = isNaN(storageNewInfra.cost) ? Number.POSITIVE_INFINITY : storageNewInfra.cost - storageOldInfra.cost
+          townsStorageInfras.push({storTk, storageOldInfra, storageNewInfra, storageCostDelta})
+          if (storageCostDelta == 0) break  // can't do better
+          // TODO: out of zeros, further improve by most item intersection
+        }
+        townsStorageInfras.sort((a,b) => a.storageCostDelta-b.storageCostDelta)
+        //console.log('townsNewInfras', townsNewInfras)
+        const {storTk, storageOldInfra, storageNewInfra, storageCostDelta} = townsStorageInfras[0]
+        const foundTotalCost = storageCostDelta + lodgingNewInfra.cost - lodgingOldInfra.cost
+
+        const gameStore = useGameStore()
+        if (inner.sameTown && inner.sameTown.cost <= foundTotalCost) {
+          //console.log('sameTown < foundTotalCost', inner.sameTown.cost, foundTotalCost)
+          return inner.sameTown
+        }
+        const tooltip = gameStore.uloc.town[lodgingTk] + 
+          ` lodging:\nold: ${Math.max(0, lodgingOldInfra.wantLodging)}🛏️ + ${Math.max(0, lodgingOldInfra.wantStorage)}📦 = ${formatFixed(lodgingOldInfra.cost)} CP\nnew: ${Math.max(0, lodgingNewInfra.wantLodging)}🛏️ + ${Math.max(0, lodgingNewInfra.wantStorage)}📦 = ${formatFixed(lodgingNewInfra.cost)} CP` + "\n" +
+          gameStore.uloc.town[storTk] +
+          ` storage:\nold: ${Math.max(0, storageOldInfra.wantLodging)}🛏️ + ${Math.max(0, storageOldInfra.wantStorage)}📦 = ${formatFixed(storageOldInfra.cost)} CP\nnew: ${Math.max(0, storageNewInfra.wantLodging)}🛏️ + ${Math.max(0, storageNewInfra.wantStorage)}📦 = ${formatFixed(storageNewInfra.cost)} CP`
+        return {
+          cost: storageCostDelta + lodgingNewInfra.cost - lodgingOldInfra.cost,
+          tooltip,
+          storageTk: storTk,
         }
       }
     },
@@ -1139,6 +1172,7 @@ export const useUserStore = defineStore({
 
     autotakenNodes(state) {
       // grind
+      const start = Date.now()
       const ret = new Set([...state.autotakenGrindNodes])
       // platzones and workshops
       for (const job of state.mapJobs) {
@@ -1157,7 +1191,7 @@ export const useUserStore = defineStore({
         }
       }
 
-      console.log('autotakenNodes getter', ret)
+      console.log('autotakenNodes getter took ', Date.now()-start, 'ms', ret)
       return ret
     },
 
