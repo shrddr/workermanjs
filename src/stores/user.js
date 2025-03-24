@@ -119,7 +119,7 @@ export const useUserStore = defineStore({
             w.job = { kind: 'plantzone', pzk, storage: w.tnk }
             updated = true
           }
-          else if (typeof(w.job) == 'object' && 'kind' in w.job && w.job.kind == 'plantzone') {
+          else if (w?.job?.kind === 'plantzone') {
             if (!('storage' in w.job)) {
               w.job.storage = w.tnk
               updated = true
