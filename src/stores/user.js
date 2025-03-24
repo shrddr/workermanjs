@@ -119,6 +119,12 @@ export const useUserStore = defineStore({
             w.job = { kind: 'plantzone', pzk, storage: w.tnk }
             updated = true
           }
+          else if (typeof(w.job) == 'object' && 'kind' in w.job && w.job.kind == 'plantzone') {
+            if (!('storage' in w.job)) {
+              w.job.storage = w.tnk
+              updated = true
+            }
+          }
         })
       }
 
@@ -152,12 +158,13 @@ export const useUserStore = defineStore({
       return true
     },
     assignWorker(worker, job) {
+      console.log('assigning', worker.label, 'to', worker.job)
+      if (job.storage == undefined) throw Error('storage undefined')
       var fromIndex = this.userWorkers.indexOf(worker)
-      console.log('fromIndex', fromIndex)
+      //console.log('fromIndex', fromIndex)
       this.userWorkers.splice(fromIndex, 1)
       this.userWorkers.push(worker)
       worker.job = job
-      console.log('assigned', worker.label, 'to', worker.job)
     },
 
     // --------- floating modifier related
@@ -773,9 +780,11 @@ export const useUserStore = defineStore({
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
       gameStore.townsWithRedirectableStorage.forEach(tnk => ret[gameStore.tnk2tk(tnk)] = new Set([]))
+      //console.log('townsStoreItemkeys::ret', ret)
       state.workingWorkers.forEach(w => {
         if (gameStore.jobIsPz(w.job)) {
           const tk = gameStore.tnk2tk(w.job.storage)
+          //console.log('townsStoreItemkeys::tk', tk)
           ret[tk] = new Set([...ret[tk], ...gameStore.plantzones[w.job.pzk].itemkeys])
         }
       })

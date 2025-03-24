@@ -676,6 +676,7 @@ export const useGameStore = defineStore({
         profit: profitData,
         w: worker,
         statsOnPz,
+        storageTnk: this.tk2tnk(addInfraInfo.storageTk),
       }
 
       jobEntry.dailyPerCp = jobEntry.profit.priceDaily / (mapCp + addInfraInfo.cost)
