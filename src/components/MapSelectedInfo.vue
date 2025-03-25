@@ -115,25 +115,30 @@ export default {
     </div>
 
     <div id="clickedTownInfo" v-if="gameStore.isLodgingTown(clickedNode.key)" class="vscrollable">
-      <table>
-        <TownWorkers
-          :o="gameStore.lodgingPerTown[gameStore.tnk2tk(clickedNode.key)]"
-          :tk="gameStore.tnk2tk(clickedNode.key)"
-          @selectLodging="selectLodging"
-          @selectHouses="selectHouses"
-          @hireWorker="hireWorker"
-          @editWorker="editWorker"
-          @sendWorker="sendWorker"
-          @panToPaPos="panToPaPos"
-        />
 
-      </table>
+      <div class="vscroll40">
+        <table>
+          <TownWorkers
+            :o="gameStore.lodgingPerTown[gameStore.tnk2tk(clickedNode.key)]"
+            :tk="gameStore.tnk2tk(clickedNode.key)"
+            @selectLodging="selectLodging"
+            @selectHouses="selectHouses"
+            @hireWorker="hireWorker"
+            @editWorker="editWorker"
+            @sendWorker="sendWorker"
+            @panToPaPos="panToPaPos"
+          />
+
+        </table>
+      </div>
+      
       
       <TownWorkshops v-if="userStore.userWorkshops"
         :tk="gameStore.tnk2tk(clickedNode.key)"
         @selectWorker="selectWorker"
         @editWorker="editWorker"
       />
+      
     </div>
     <div id="clickedTownInfo" v-else-if="gameStore.townsWithRentableStorageSet.has(clickedNode.key)" class="vscrollable">
       <button @click="this.$emit('selectHouses', gameStore.tnk2tk(clickedNode.key))" :class="{ 'unresolved': gameStore.ready && userStore.townsInfra[gameStore.tnk2tk(clickedNode.key)].success == false }">
@@ -206,5 +211,9 @@ export default {
 }
 button.unresolved {
   border-color: rgba(255, 0, 0, 0.7);
+}
+.vscroll40 {
+    max-height: 40vh;  /* 40% of the viewport height */
+    overflow-y: auto;   /* Show scrollbar only when needed */
 }
 </style>

@@ -72,57 +72,59 @@ export default {
   <details v-if="Object.keys(filteredHouses).length">
     <summary>Workshops</summary>
 
-    <table>
-      <tr>
-        <td>house</td>
-        <td>type</td>
-        <td>workload</td>
-        <td>$/cycle</td>
-        <td>CP</td>
-        <td colspan="3">worker</td>
-      </tr>
-
-      <template v-for="houses, industry in filteredHouses">
-        
-        <tr v-for="v, hk in houses">
-          <td>
-            {{ gameStore.uloc.char[hk] }} {{ v.label }}
-          </td>
-          <td>
-            <select v-model="v.industry">
-              <option v-for="n, k in gameStore.industries" :value="k">{{ n }}</option>
-            </select>
-          </td>
-          <td><input type="number" class="w5em" v-model.number="v.manualWorkload"/></td>
-          <td><input type="number" class="w5em" v-model.number="v.manualCycleIncome"/></td>
-          <td><input type="number" class="float4" v-model.number="v.manualCp"/></td>
-          <td>
-            <div v-for="w in filteredWorkers.filter(w => w.job.hk == hk)">
-              <button @click="this.$emit('editWorker', w)">edit</button>
-              {{ userStore.workerLabel(w) }}
-              @
-              <template v-if="userStore.displayProfitPerCp">
-                {{ formatFixed(userStore.workerIncomePerCp(w), 2) }} M$/day/CP
-              </template>
-              <template v-else>
-                {{ formatFixed(userStore.workerIncome(w), 2) }} M$/day
-              </template>
-              <button @click="w.job = null">stop</button>
-            </div>
-
-            <div v-if="v.industry == 'mass'">
-              <button @click="this.$emit('selectWorker', Number(hk))">add</button>
-            </div>
-
-            <div v-else-if="filteredWorkers.filter(w => w.job.hk == hk).length == 0">
-              <button @click="this.$emit('selectWorker', Number(hk))">send</button>
-            </div>
-            
-          </td>
+    <div class="vscroll40">
+      <table>
+        <tr>
+          <td>house</td>
+          <td>type</td>
+          <td>workload</td>
+          <td>$/cycle</td>
+          <td>CP</td>
+          <td colspan="3">worker</td>
         </tr>
-      </template>
 
-    </table>
+        <template v-for="houses, industry in filteredHouses">
+          
+          <tr v-for="v, hk in houses">
+            <td>
+              {{ gameStore.uloc.char[hk] }} {{ v.label }}
+            </td>
+            <td>
+              <select v-model="v.industry">
+                <option v-for="n, k in gameStore.industries" :value="k">{{ n }}</option>
+              </select>
+            </td>
+            <td><input type="number" class="w5em" v-model.number="v.manualWorkload"/></td>
+            <td><input type="number" class="w5em" v-model.number="v.manualCycleIncome"/></td>
+            <td><input type="number" class="float4" v-model.number="v.manualCp"/></td>
+            <td>
+              <div v-for="w in filteredWorkers.filter(w => w.job.hk == hk)">
+                <button @click="this.$emit('editWorker', w)">edit</button>
+                {{ userStore.workerLabel(w) }}
+                @
+                <template v-if="userStore.displayProfitPerCp">
+                  {{ formatFixed(userStore.workerIncomePerCp(w), 2) }} M$/day/CP
+                </template>
+                <template v-else>
+                  {{ formatFixed(userStore.workerIncome(w), 2) }} M$/day
+                </template>
+                <button @click="w.job = null">stop</button>
+              </div>
+
+              <div v-if="v.industry == 'mass'">
+                <button @click="this.$emit('selectWorker', Number(hk))">add</button>
+              </div>
+
+              <div v-else-if="filteredWorkers.filter(w => w.job.hk == hk).length == 0">
+                <button @click="this.$emit('selectWorker', Number(hk))">send</button>
+              </div>
+              
+            </td>
+          </tr>
+        </template>
+
+      </table>
+    </div>
   </details>
 </template>
 
@@ -131,5 +133,9 @@ export default {
 <style scoped>
 summary {
   cursor: pointer;
+}
+.vscroll40 {
+    max-height: 40vh;  /* 40% of the viewport height */
+    overflow-y: auto;   /* Show scrollbar only when needed */
 }
 </style>
