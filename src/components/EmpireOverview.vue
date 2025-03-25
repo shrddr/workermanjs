@@ -61,9 +61,10 @@ export default {
           }
           workData.path = path
           const tk = gameStore.tnk2tk(tnk)
-          const storageTk = this.selectedRedirect == -1 ? tk : gameStore.tnk2tk(this.selectedRedirect)  // sets to undefined if not found
-          // if (selectedRedirect == 0) storageTk = undefined
-          const addInfraInfo = userStore.townInfraAddCost(tk, 1, gameStore.plantzones[pzk].itemkeys, storageTk)
+
+          const storageTk = this.selectedRedirect < 0 ? tk : gameStore.tnk2tk(this.selectedRedirect)  // 0 -> undefined -> search for best
+          const itemKeys = this.selectedRedirect == -2 ? new Set() : gameStore.plantzones[pzk].itemkeys
+          const addInfraInfo = userStore.townInfraAddCost(tk, 1, itemKeys, storageTk)
           workData.townCp = addInfraInfo.cost
           workData.townCpTooltip = addInfraInfo.tooltip
           workData.dailyPerCp = workData.priceDaily / (workData.cp + workData.townCp)
@@ -72,6 +73,7 @@ export default {
           //workData.deltaEff = userStore.jobEfficiencyDelta(workData.priceDaily, workData.cp + workData.townCp)
           //if (isNaN(workData.deltaEff)) return
           ret.push(workData)
+          
         })
       }
       ret.sort((a,b) => b.dailyPerCp-a.dailyPerCp)
@@ -176,6 +178,7 @@ export default {
       Uses stats of median 40lvl artisans. 
       Stash at:
       <select v-model="selectedRedirect" class="fsxs">
+        <option value="-2">ignore storage cost</option>
         <option value="-1">worker hometown</option>
         <option value="0">cheapest storage 🧊</option>
         <option v-for="tnk in gameStore.townsWithRedirectableStorage" :value="tnk">

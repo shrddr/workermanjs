@@ -144,6 +144,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
     <li>Plantzones page > <strong class="notranslate">hide taken</strong> checkbox</li>
+    <li>In Empire > Best untaken, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">ignore storage cost</strong> option.</li>
     <li>In Empire > Best untaken and selected Plantzone pane, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">cheapest storage 🧊</strong> option.</li>
     <ul>
       <li>it does apply to <strong class="notranslate">assign</strong> action, but is frozen in a sense that it means cheapest at this point in time, and not a commitment to keep it cheapest going forward (after adding more jobs).</li>

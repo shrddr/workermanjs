@@ -120,6 +120,7 @@ export const useUserStore = defineStore({
             updated = true
           }
           else if (w?.job?.kind === 'plantzone') {
+            // 2025-03-23 there was a bad push which allowed creating a plantzone job with no storage
             if (!('storage' in w.job)) {
               w.job.storage = w.tnk
               updated = true
