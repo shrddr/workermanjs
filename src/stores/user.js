@@ -160,7 +160,7 @@ export const useUserStore = defineStore({
     },
     assignWorker(worker, job) {
       console.log('assigning', worker.label, 'to', worker.job)
-      if (job.storage == undefined) throw Error('storage undefined')
+      if (job?.kind == 'plantzone' && job.storage == undefined) throw Error('storage undefined')
       var fromIndex = this.userWorkers.indexOf(worker)
       //console.log('fromIndex', fromIndex)
       this.userWorkers.splice(fromIndex, 1)
