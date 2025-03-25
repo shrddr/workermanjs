@@ -83,7 +83,7 @@ export default {
           const state = lookup.states[idx]
           ret.push({hk, name, state})
         }
-        ret.sort((a,b)=>a.hk-b.hk)
+        ret.sort((a,b)=>('' + a.name).localeCompare(b.name))
       }
       return ret
     },
