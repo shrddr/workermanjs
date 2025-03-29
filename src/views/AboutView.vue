@@ -51,7 +51,11 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </QnaItem>
     <QnaItem>
       <template #q>
-        Why are node connections so bad? When building path from town <strong class="notranslate">A</strong> to node <strong class="notranslate">B</strong>, it ignores the fact that there is already taken node <strong class="notranslate">C</strong> on the way.
+        Why are node connections so bad? When building path 
+        from town <strong class="notranslate">A</strong> 
+        to node <strong class="notranslate">B</strong>, 
+        it ignores the fact that there is already taken 
+        node <strong class="notranslate">C</strong> on the way.
       </template>
       Connections are resolved in same order the jobs were given. 
       The worker who received the job first doesn't know yet about all others, and builds connection in a beeline.
@@ -61,17 +65,47 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </QnaItem>
     <QnaItem>
       <template #q>
-        How does the giant bonus work?
+        No matter how I change the order of jobs, I still can't achieve the optimal routing I have in mind.
       </template>
-        https://discord.com/channels/371035077037129729/404532586246045696/1124952052892713062
+      Cases like 
+      <details><summary>these</summary>
+        <img src="/data/images/steiner.png">
+      </details>
+      can't be routed optimally by workerman, you'll get either A→B→C or A→C→B both costing 4 CP.<br/>
+      To achieve 3 CP you need to activate node S manually (mark it as invested for droprate).
+    </QnaItem>
+    <QnaItem>
+      <template #q>
+        How does the giant bonus work? Is it not just goblin yield increased by 68.4%?
+      </template>
+      It is not, because of rounding, which makes giant worse than expected. Low yield nodes are more affected by rounding.
+      <ul>
+        <li>yields follow a <a href="https://en.wikipedia.org/wiki/Binomial_distribution">binomial</a> distribution with parameters <i>n</i> (number of rolls) and <i>p</i> (roll success chance)</li>
+        <li>some of them were leaked at some point, some inferred by observation</li>
+        <li>for goblin, <i>np</i> is basically the average yield per cycle; for giant, it's more complicated:</li>
+        <ul>
+          <li>
+            <details><summary>build the distribution of goblin yields and their chances</summary>
+              <img src="/data/images/yields_gob.webp">
+            </details>
+          </li>
+          <li>
+            <details><summary>build the distribution of giant yields by increasing each yield 68.4% but rounded down</summary>
+              <img src="/data/images/yields_gia.webp">
+            </details>
+          </li>
+          <li>combine back into average yield per cycle for giant (which usually turns out less than 1.684<i>np</i>)</li>
+        </ul>
+      </ul>
     </QnaItem>
     <QnaItem>
       <template #q>
         What are stat ranks?
       </template>
-      If levelup range for a given stat is 1.0-2.0, rolling 1.4 is 40% rank, and rolling 1.9 is 90% rank.
-      Rank 100% level 40 worker means 39 max rolls in a row (39*2=78).<br/>
-      "Stat per level" skills are not accounted for, but they do modify the "sheet" value so you can get >100% rank.
+      If levelup range for a given stat is 1.0-2.0, rolling 1.4 is 40% rank, and rolling 1.9 is 90% rank.<br/>
+      Rank 50% level 3 worker means 2 avg rolls (1.5+1.5=3.0), or one min roll and one max roll (1.0+2.0=3.0), or any combination of rolls giving 3.0 stat.<br/>
+      Rank 100% level 40 worker means 39 max rolls in a row (39*2.0=78.0).<br/>
+      "+stat per level" skills are not accounted for when calculating rank, so you can potentially have >100% rank (by having >78.0 stat).
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -83,7 +117,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       3. Lucky drops across all regions: observed in june 2023.<br/>
       4. Morning Land drops: observed at summer 2023 - regular nodes are fine, excavations are approximate, too rare to judge confidently (see <a href="https://discord.com/channels/371035077037129729/404532586246045696/1284834924381212704">table</a>).<br/>
       5. Seoul drops: observed non-thoroughly in september 2024, when in doubt picked values most similar to existing node drops from (1).<br/>
-      All of the above are adjusted when relevant patchnotes come out (increased yields by X at Y).
+      I've been adjusting all of the above over time (when relevant changes are published in patch notes, like "increased yields at node X by Y%").
     </QnaItem>
 
     <h2>Tips & tricks</h2>
@@ -103,7 +137,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         </ul>
       <li>If you have nodes invested for grinding, mark them with <strong class="notranslate">zero-cost connection</strong> checkbox - this will make nearby plantzones more desirable</li>
         <ul>
-          <li>just like with ordinary nodes, order matters - if they don't want to chain properly, try to reorder (ex: activate Olun before Crypt). Order is shown in <strong class="notranslate">Total CP</strong> pane</li>
+          <li>just like with ordinary nodes, order matters - if grinding connections (shown in orange) don't want to chain properly, try to reorder (ex: activate Olun before Crypt). Order is shown in <strong class="notranslate">Total CP</strong> pane</li>
           <li>if a zero-cost connects to a wrong town, assign a whole chain of zero-costs along the path you want (usually just 1 dummy halfway is enough)</li>
         </ul>
       <li>Use <strong class="notranslate">import</strong> and <strong class="notranslate">export</strong> buttons in <strong class="notranslate">All towns/workers list</strong> to:
@@ -122,7 +156,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <ul>
             <li>even if the worker is stopped but has "restart job" and "clear restart" buttons ingame active, his job is cached.</li>
             <li>you can have two ingame workers with same cached job (but only one actually working). there is zero protection against that in workerman. don't leave dangling jobs - use "clear restart" ingame button.</li>
-            <li>even after firing/selling the ingame worker, his job remains cached. the way to get rid of these remnant jobs is to clear the cache and wait until it's filled again.</li>
+            <li>even after firing/selling the ingame worker, his job remains cached.</li>
+            <li>the only way to get rid of fired worker cached job seems to be: delete the cache file while the game is running and wait for it to be recreated (during load screen).</li>
           </ul>
         </ul>
       </li>
@@ -131,13 +166,22 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         Some niche nodes however can report up to 2x higher profit if you enter their real Modifiers.
         <ul>
           <li>Each green bar ingame does not belong to single resource node, but to a piece of land (aka RegionGroup), which may can contain multiple resource nodes, so they share the modifier.</li>
-          <li>If you want to be really meticulous about it, switch to floating modifiers (in Modifiers > Advanced) and track the ingame modifiers change over time. More observations - more accuracy.</li>
+          <ul>
+            <li>
+              <details><summary>RegionGroup borders can be somwhat seen on ingame Resource view, though some people say they can't (probably depends on graphics settings).</summary>
+                <img src="/data\images\regiongroup.png">
+              </details>
+            </li>
+          </ul>
+          <li>If you want to be really meticulous about it, switch to floating modifiers (in <strong class="notranslate">Modifiers</strong> > Advanced) and track the ingame modifiers change over time. More observations - more accuracy.</li>
           <ul>
             <li>With floating modifier, daily profit is calculated via the chance of reaching relevant workload breakpoints on each cycle. Detailed view available in edit worker dialog.</li>
             <li>Workloads shown in ~XXX format refer to median (50% chance) value. This is for reference only and is not used in profit calculations, the whole dataset is.</li>
             <li>You can opt in to use floating modifier only for specific RegionGroups.</li>
           </ul>
         </ul>
+      </li>
+      <li>Try <a href="https://github.com/Thell/bdo-empire">bdo-empire</a> which takes a while to run, but creates an empire from scratch given a target amount of CP (and can by imported back into workerman)
       </li>
     </ul>
 
@@ -153,20 +197,20 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <li>Ctrl+F on <strong class="notranslate">Home</strong> page searches for items and node names, Esc to remove highlight. If you need builtin Chrome search it is still accessible through F3</li>
     <li>[2024-11-21 patch] updated Yukjo houses to have more lodging</li>
     <li>worker seals don't require town storage space anymore</li>
-    <li>[2024-09-12 patch] added Seoul region with 19 nodes</li>
+    <li>[2024-09-12 patch] added Seoul area with 19 nodes</li>
     <li>can assign Personal Items in Muzgar > config (do not enter too much, will show <strong class="notranslate">?</strong> in totals)</li>
-    <li>home > selected plantzone > added "hire+assign" section, which autosuggests best race</li>
+    <li>Home page > selected plantzone pane > added "hire+assign" section, which autosuggests best race</li>
     <li>custom prices import/export</li>
     <li>workshop tweaks</li>
     <ul>
-      <li>worker packing skills now improve profit (please review <strong class="notranslate">$/cycle</strong> column in 🏭Workshops config, probaly needs to be reduced accordingly)</li>
+      <li>worker packing skills now improve profit (please review <strong class="notranslate">$/cycle</strong> column in <strong class="notranslate">Settings</strong> > 🏭Workshops, probably needs to be reduced if you set it to 4x before)</li>
       <li>skill #1008 (refining) affects crate packing workspeed</li>
       <li>added intracity distances for workshops (and improved intercity)</li>
       <li>remote town workshop job requires (creates) a connection</li>
       <li>Home page > selected town pane has workshop section, sorted by type</li>
     </ul>
     <li>fixed unexpected lodging redirect when using "send worker to" dialog > stash dropdown set to a remote town</li>
-    <li>added feed calc to Home > Empire > Daily yields (bottom)</li>
+    <li>added feed calc to Home > Empire > Daily yields (scroll down)</li>
     <li>map: added a setting to hide all inactive elements</li>
     <li>if any of jobs originating in a town has negative income, this town lodgage costs will be split between jobs equally (not proportionally)</li>
     <li>allowed storage use at oquilla, asparkan, velandir, muzgar (muzgar is also slightly upgradeable)</li>
@@ -186,7 +230,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       </ul>
     <li>added TW language</li>
     <li>Plantzones page > added town filter</li>
-    <li>[2024-01-31 patch] extended Ulukita region (still 0 plantzones)</li>
+    <li>[2024-01-31 patch] extended Ulukita area (still 0 plantzones)</li>
     <li>added JP language</li>
     <li>[2023-11-08 patch] replaced junk yields with ores at <details><summary>10 excavation nodes. yields are approximate</summary>
       <LinkToNode :nodeKey="144"/>,
@@ -296,7 +340,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       </ul>
     <li>implemented manual output redirection (available at any worker level for easier prototyping)</li>
     <li>added separate VP setting to add 16 P2W slots to every town</li>
-    <li>[2023-08-23 patch] added new Ulukita region with 0 plantzones</li>
+    <li>[2023-08-23 patch] added new Ulukita area with 0 plantzones</li>
     <li>added KR language</li>
     <li>[2023-03-10 patch] item 4206 yields tripled at 3 plantzones</li>
     <li>housing config > items are now sorted exactly as ingame</li>
@@ -312,7 +356,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <li>giants got +68.4% yield of <s>all</s> all unlucky drops, rounded down</li>
       </ul>
     <li>fixed warehouse slot calculations to require lucky items too + 1 slot required to be free</li>
-    <li>[2023-06-14 patch] added LotML region with 24 nodes</li>
+    <li>[2023-06-14 patch] added LotML area with 24 nodes</li>
     <li>in darkmode, buttons are now actually dark</li>
     <li>[2023-05-31 patch] added sack items with auto-calculated prices</li>
       <ul>
@@ -416,7 +460,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <li>take both innate stat, current skills and potential reroll prospects into account</li>
       </ul>
     <li>on first run, pick server using geoip</li>
-    <li>some of morningland workers' levelup stats still unknown, using values from older regions</li>
+    <li>some of morningland workers' levelup stats still unknown, using values from older cities</li>
     <li>[2023-05-31 patch]</li>
       <ul>
         <li>implement species-restricted plantzones and workshops</li>
