@@ -33,7 +33,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         How do i make an empire optimized for cooking/alchemy?
       </template>
-      Only difference is you don't tax cooking/alchemy mats (mark as Keep on <strong class="notranslate">Settings</strong> page). You are still going to be recommended nodes with unwanted mats, just sell the output and use that $ to buy whatever you need. If you want to completely avoid some item put in 0 as its Custom Value.
+      Only difference is you don't tax cooking/alchemy mats (mark as Keep on <strong class="notranslate">Settings</strong> page).
+      You are still going to be recommended nodes that have nothing to do with cooking/alchemy. 
+      Just sell the output and use that silver to buy whatever you need.
+      If you want to completely avoid some item, go to Settings and put 0 as its Custom Value.
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -71,21 +74,21 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <details><summary>these</summary>
         <img src="/data/images/steiner.png">
       </details>
-      can't be routed optimally by workerman, you'll get either A→B→C or A→C→B both costing 4 CP.<br/>
-      To achieve 3 CP you need to activate node S manually (mark it as invested for droprate).
+      can't be routed optimally by workerman, you'll get either B←A→C, A→B→C or A→C→B all costing 4 CP.<br/>
+      To get both A and B with 3 CP you need to activate node S manually (mark it as invested for droprate).
     </QnaItem>
     <QnaItem>
       <template #q>
-        How does the giant bonus work? Is it not just goblin yield increased by 68.4%?
+        How does the giant bonus work? Is it not just average goblin yield increased by 68.4%?
       </template>
-      It is not, because of rounding, which makes giant worse than expected. Low yield nodes are more affected by rounding.
+      It is not, because of rounding down, which makes giant worse than expected. Low yield nodes are more affected by rounding, since <code>floor(1*1.684)=1</code>.
       <ul>
-        <li>yields follow a <a href="https://en.wikipedia.org/wiki/Binomial_distribution">binomial</a> distribution with parameters <i>n</i> (number of rolls) and <i>p</i> (roll success chance)</li>
+        <li>yields of a specific item at a specific plantzone follow a <a href="https://en.wikipedia.org/wiki/Binomial_distribution">binomial</a> distribution with parameters <i>n</i> (number of rolls) and <i>p</i> (roll success chance)</li>
         <li>some of them were leaked at some point, some inferred by observation</li>
-        <li>for goblin, <i>np</i> is basically the average yield per cycle; for giant, it's more complicated:</li>
+        <li>for goblins and humans, the <i>np</i> product is basically the average yield per cycle; for giants, it's more complicated:</li>
         <ul>
           <li>
-            <details><summary>build the distribution of goblin yields and their chances</summary>
+            <details><summary>build the distribution of non-giant yields and their chances</summary>
               <img src="/data/images/yields_gob.webp">
             </details>
           </li>
@@ -94,7 +97,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
               <img src="/data/images/yields_gia.webp">
             </details>
           </li>
-          <li>combine back into average yield per cycle for giant (which usually turns out less than 1.684<i>np</i>)</li>
+          <li>do a weighted sum back into average yield per cycle for giants (which turns out less than 1.684<i>np</i>)</li>
         </ul>
       </ul>
     </QnaItem>
@@ -137,8 +140,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         </ul>
       <li>If you have nodes invested for grinding, mark them with <strong class="notranslate">zero-cost connection</strong> checkbox - this will make nearby plantzones more desirable</li>
         <ul>
-          <li>just like with ordinary nodes, order matters - if grinding connections (shown in orange) don't want to chain properly, try to reorder (ex: activate Olun before Crypt). Order is shown in <strong class="notranslate">Total CP</strong> pane</li>
-          <li>if a zero-cost connects to a wrong town, assign a whole chain of zero-costs along the path you want (usually just 1 dummy halfway is enough)</li>
+          <li>just like with ordinary nodes, order matters - if grinding connections (shown in orange) don't want to chain properly, try to reorder them (ex: activate Olun before Crypt). Order is shown in <strong class="notranslate">Total CP</strong> pane</li>
+          <li>if a zero-cost autoconnects to a wrong town, assign intermediate zero-costs along the path you want (usually just 1 dummy halfway is enough)</li>
         </ul>
       <li>Use <strong class="notranslate">import</strong> and <strong class="notranslate">export</strong> buttons in <strong class="notranslate">All towns/workers list</strong> to:
         <ul>
@@ -154,10 +157,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>warning: if the totals in top right corner show ? after the import, you probably exceeded the F2P town limits for lodging/storage. look for towns marked red in <strong class="notranslate">All towns/workers</strong> list and adjust their <strong class="notranslate">config > P2W</strong> numbers</li>
           <li>note: the script doesn't really fetch <i>current</i> jobs, but the jobs associated with ingame "restart job" button of each worker.</li>
           <ul>
-            <li>even if the worker is stopped but has "restart job" and "clear restart" buttons ingame active, his job is cached.</li>
+            <li>even if the worker is stopped but has "restart job" <img src="/data\images\restart.png" class="icon"> and "clear restart" <img src="/data\images\clear_restart.png" class="icon"> buttons ingame active, his job is cached.</li>
             <li>you can have two ingame workers with same cached job (but only one actually working). there is zero protection against that in workerman. don't leave dangling jobs - use "clear restart" ingame button.</li>
             <li>even after firing/selling the ingame worker, his job remains cached.</li>
-            <li>the only way to get rid of fired worker cached job seems to be: delete the cache file while the game is running and wait for it to be recreated (during load screen).</li>
+            <li>the only way to remove cached jobs of fired workers seems to be: delete the cache file while the game is running and wait for it to be recreated (during load screen).</li>
           </ul>
         </ul>
       </li>
@@ -426,9 +429,12 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <li>[2024-11-21 patch] palace stuff maybe</li>
     <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
-    <li>worker ranks are in linear stat space, shows 98.55 giant as 56% rank when actually it is top 10% in "chance of achieving" space</li>
+    <li>worker ranks are in linear stat space, should probably rework it to use "chance of achieving" space
+      <ul>
+        <li>ex: 98.55 workspeed giant shows as 56% rank when actually it is top 10% in "chance of achieving" space</li>
+      </ul>
+    </li>
     <li>for some reason mousemove while hovering a node triggers continuous recalculations</li>
-    <li>empire > best untaken > automatically try alternative stashes</li>
     <li>change (again) the job resource sharing principle when negative profit jobs are involved</li>
       <ul>
         <li>when positive profit jobs A, B and negative profit jobs C, D are sharing the same resource,
@@ -465,7 +471,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <ul>
         <li>implement species-restricted plantzones and workshops</li>
       </ul>
-    <li>when exporting/importing, show what exactly is being -ported (maybe even choose?)</li>
+    <li>when exporting/importing, show what exactly is being -ported (maybe even choose with checkboxes?)</li>
     <li>show real house positions in housecraft viewer</li>
     <li>when optimizing skills, try to keep new skill of same type at same position as old one</li>
       <ul>
@@ -496,7 +502,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <li>different items have different lifetime though</li>
     </ul>
     <li>detect and apply price floors and ceilings (±7.5%)</li>
-    <li>show market fetch timestamp</li>
+    <li>show the age of last market fetch</li>
     
     <h2>Misc</h2>
     <p><RouterLink to="/workshops">House Usage</RouterLink></p>
@@ -519,5 +525,10 @@ strong {
 
 .tooltip {
   cursor: help;
+}
+
+.icon {
+  height: 1em; /* Match the text height */
+  vertical-align: middle; /* Align it properly */
 }
 </style>
