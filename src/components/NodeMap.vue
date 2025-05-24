@@ -467,8 +467,7 @@ export default {
     },
 
     initializeDeck() {
-      console.log('initializeDeck', this.initialViewState)
-      console.log('initializeDeck', this.mapStore.target)
+      console.log('initializeDeck', this.initialViewState, this.mapStore.target)
 
       this.tileLayer = new TileLayer({
         data: 'https://shrddr.github.io/maptiles/{z}/{x}_{y}.webp',

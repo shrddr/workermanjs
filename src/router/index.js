@@ -9,6 +9,7 @@ import OtherTownsView from "../views/OtherTownsView.vue";
 import WorkshopsView from "../views/WorkshopsView.vue";
 import HouseCraft from "../views/HouseCraft.vue";
 import DropratesView from "../views/DropratesView.vue";
+import FishsizeView from "../views/FishsizeView.vue";
 import RouterTestsView from "../views/RouterTestsView.vue";
 import RegionMapView from "../views/RegionMapView.vue";
 
@@ -65,6 +66,11 @@ const router = createRouter({
     {
       path: '/regionmap',
       component: RegionMapView
+    },
+    // temporary
+    {
+      path: "/fishsize",
+      component: FishsizeView,
     },
     // deprecated
     {

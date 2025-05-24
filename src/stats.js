@@ -1,5 +1,33 @@
 import { jStat } from 'jstat-esm';
 
+export function makeUniformArray(mean, samples, bins, width) {
+  let ret = []
+  for (let k = 0; k <= bins; k++) {
+    const binCenter = 0.5 + k
+    const probability = jStat.uniform.pdf( binCenter, mean-width/2, mean+width/2 )
+    const y = probability * samples
+    if (y < 0.01) {
+      continue
+    }
+    ret.push([k, y])
+  }
+  return ret
+}
+
+export function makeNormalArray(mean, samples, bins, stdDev) {
+  let ret = []
+  for (let k = 0; k <= bins; k++) {
+    const binCenter = 0.5 + k
+    const probability = jStat.normal.pdf( binCenter, mean, stdDev )
+    const y = probability * samples
+    if (y < 0.01) {
+      continue
+    }
+    ret.push([k, y])
+  }
+  return ret
+}
+
 export function makeBinomialArray(mean, len, n, isGiant) {
   if (isGiant) return makeBinomialArrayGiant(mean, len, n)
   // binomial distribution

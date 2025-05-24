@@ -20,8 +20,15 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         How to use?
       </template>
       First of all go to <strong class="notranslate">Settings</strong>, select your server and tax. After that, two options are available:
-      <li>Quick and simple: do nothing and just look at <strong class="notranslate">Plantzones</strong> page - nodes at the top are good, nodes at the bottom are bad. Use Plantzones page if just starting out.</li>
-      <li>Personalized and nuanced: go to <strong class="notranslate">Home</strong> page, select a town, hire a worker, send to whatever node gives highest efficiency, repeat. Use Home page if you want to improve or rework an existing empire.</li>
+      <ul>
+        <li>Quick and simple: do nothing and just look at <strong class="notranslate">Plantzones</strong> page - nodes at the top are good, nodes at the bottom are bad. Use Plantzones page if just starting out.</li>
+        <li>
+          Personalized and nuanced: go to <strong class="notranslate">Home</strong> page, 
+          select a town, hire a worker, send to whatever node gives highest efficiency, repeat
+          (OR select a node, select, hire+assign in one click).
+          Use Home page if you want to improve or rework an existing empire.
+        </li>
+      </ul>
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -40,11 +47,17 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </QnaItem>
     <QnaItem>
       <template #q>
-        What does <strong class="notranslate">+efficiency</strong> column mean and why is it always negative for me?
+        In send worker dialog, what does <strong class="notranslate">+efficiency</strong> column mean and why is it mostly negative for me?
       </template>
       It shows the change in total efficiency (M$/day/CP) of the empire after starting this job with this worker. 
       It being negative is good - means you already own all the best nodes, so remaining nodes reduce the current efficiency.
       You want to spend all available CP anyway, so just select those that are least negative (= highest in list).
+    </QnaItem>
+    <QnaItem>
+      <template #q>
+        What is M$/day/CP?
+      </template>
+      M$ is a million silver; M$/day is silver profit per IRL day; (M$/day)/CP is profit per CP point spent. Higher is better.
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -75,7 +88,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <img src="/data/images/steiner.png">
       </details>
       can't be routed optimally by workerman, you'll get either B←A→C, A→B→C or A→C→B all costing 4 CP.<br/>
-      To get both A and B with 3 CP you need to activate node S manually (mark it as invested for droprate).
+      To get both B and C with 3 CP you need to activate node S manually (mark it as invested for droprate).
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -190,6 +203,9 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
+    <li>[2025-05-22 patch] Reduced CP costs of houses</li>
+    <li>[2025-05-22 patch] Reduced CP costs of nodes</li>
+    <li>[2025-05-22 patch] Added 16 plantzones in Mediah 2</li>
     <li>Plantzones page > <strong class="notranslate">hide taken</strong> checkbox</li>
     <li>In Empire > Best untaken, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">ignore storage cost</strong> option.</li>
     <li>In Empire > Best untaken and selected Plantzone pane, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">cheapest storage 🧊</strong> option.</li>
@@ -427,6 +443,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
 
+    <li>Restore KR item names</li>
+    <li>when P2W storage of Yukjo street is set to negative, cycling between Ignore and Yukjo stash in Untaken tab changes CP</li>
     <li>[2024-11-21 patch] palace stuff maybe</li>
     <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
     <li>worker ranks are in linear stat space, should probably rework it to use "chance of achieving" space
@@ -503,11 +521,13 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </ul>
     <li>detect and apply price floors and ceilings (±7.5%)</li>
     <li>show the age of last market fetch</li>
+    <li>apparently OBS in Capture Window mode does not capture basic HTML tooltips, only custom rolled CSS ones</li>
     
     <h2>Misc</h2>
     <p><RouterLink to="/workshops">House Usage</RouterLink></p>
     <p><RouterLink to="/housecraft">HouseCraft Viewer</RouterLink></p>
     <p><RouterLink to="/droprates">Droprates</RouterLink></p>
+    <p><RouterLink to="/fishsize">Fishsize</RouterLink></p>
     <p><RouterLink to="/routertests">Router Tests</RouterLink></p>
     <p><RouterLink to="/regionmap">Region Map</RouterLink></p>
     <p><RouterLink to="/lodging">All Towns Lodging (deprecated)</RouterLink></p>

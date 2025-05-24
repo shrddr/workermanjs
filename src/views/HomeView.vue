@@ -506,7 +506,7 @@ export default {
               </template>
 
               <template v-if="userStore.workersWorkshopCount">
-                workshop: {{ userStore.workersWorkshopCount }} <br/> 
+                workshops: {{ userStore.workersWorkshopCount }} <br/> 
               </template>
 
               <template v-if="userStore.workersCustomCount">
@@ -574,7 +574,7 @@ export default {
                 farming: {{ formatFixed(userStore.farmingJobsDailyProfitPerCp, 3) }} <br/> 
               </template>
               <template v-if="userStore.workersWorkshopCount">
-                workshop: {{ formatFixed(userStore.workshopJobsDailyProfitPerCp, 3) }} <br/> 
+                workshops: {{ formatFixed(userStore.workshopJobsDailyProfitPerCp, 3) }} <br/> 
               </template>
               <template v-if="userStore.workersCustomCount">
                 custom: {{ formatFixed(userStore.customJobsDailyProfitPerCp, 3) }} <br/> 

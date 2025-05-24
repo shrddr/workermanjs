@@ -4,7 +4,6 @@ import {useGameStore} from './stores/game'
 import {useUserStore} from './stores/user'
 import {useMarketStore} from './stores/market'
 import {useMapStore} from './stores/map'
-import {useDropratesStore} from './stores/droprates'
 </script>
 
 <script>

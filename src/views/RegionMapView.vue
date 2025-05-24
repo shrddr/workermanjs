@@ -2,7 +2,7 @@
 import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
 import {Deck, OrthographicView, COORDINATE_SYSTEM} from '@deck.gl/core';
-import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer} from '@deck.gl/layers';
+import {BitmapLayer, GeoJsonLayer, IconLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
 
 export default {
@@ -21,7 +21,7 @@ export default {
       deck: null,
       tileLayer: null,
       geoLayer: null,
-      polygonLayer: null,
+      iconLayer: null,
       initialViewState: {
         target: [0, 0],
         zoom: -12,
@@ -33,6 +33,7 @@ export default {
       hoverx: 0,
       hovery: 0,
       selectedZone: 0,
+      highlightedIcon: 0,
     }
   },
 
@@ -44,89 +45,54 @@ export default {
     this.deck = this.initializeDeck()
   },
 
-  methods: {
-    initializeDeck() {
-      this.tileLayer = new TileLayer({
-        data: 'https://shrddr.github.io/maptiles/{z}/{x}_{y}.webp',
-        minZoom: 0,
-        maxZoom: 7,
-        tileSize: 256 * 12800,
-        zoomOffset: 14,
-        extent: [
-          (-67 * 2) * 12800,
-          (-71 * 2) * 12800,
-          (58 * 2) * 12800,
-          (35 * 2) * 12800
-        ],
-        renderSubLayers: props => {
-          const {
-            bbox: {left, bottom, right, top}
-          } = props.tile;
+  watch: {
+    highlightedIcon(newVal) {
+      //console.log('highlightedIcon ->', newVal)
+      this.iconLayer = this.makeIconsLayer()
+      this.deck.setProps({
+        layers: [
+          this.tileLayer,
+          this.geoLayer,
+          this.iconLayer,
+        ]
+      })
+    },
+  },
 
-          return new BitmapLayer(props, {
-            data: null,
-            image: props.data,
-            bounds: [left, bottom, right, top]
-          });
+  methods: {
+    makeIconsLayer() {
+      return new IconLayer({
+        data: 'data/deck_rg_graphs.json',
+        getPosition: d => [d.graphx, d.graphz],
+        getColor: d => [66, 66, 66, 255],  // r, g, b have no effect, only alpha does
+        getIcon: function(d) {
+          return {
+            url: 'data/icons/target_percent.png',
+            width: 128,
+            height: 128,
+            anchorX: 64,
+            anchorY: 64,
+          }
+        },
+        modelMatrix: [
+          1, 0, 0, 0,
+          0, -1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1
+        ],
+        getSize: d => d.k == this.highlightedIcon ? 50 : 0,
+        //autoHighlight: true,
+        //pickable: true,
+        updateTriggers: {
+          getSize: this.highlightedIcon, // accessor does not re-run by default
         }
       })
+    },
 
-      this.polygonLayer = new SolidPolygonLayer({
-        id: 'SolidPolygonLayer',
-        // [{"zipcode":94107,"population":26599,"area":6.11,"contour":[[-122.4011597,37.7820243],[-122.3967052,37.7855421],
-        
-        //data: 'data/poly_simple.json',
-        //data: 'data/poly_2024-06.json',
-        //data: 'data/poly_2025-01.json',
-        data: 'data/poly_2025-01_rg.json',
-        
-        
-        /* props from SolidPolygonLayer class */
-        
-        //elevationScale: 1,
-        //extruded: true,
-        filled: true,
-        //getElevation: d => d.population / d.area / 10,
-        getFillColor: d => [...d.c],
-        //getLineColor: [80, 80, 80],
-        getPolygon: d => d.p,
-        //material: true,
-        //wireframe: true,
-        
-        /* props inherited from Layer class */
-        
-        autoHighlight: true,
-        // coordinateOrigin: [0, 0, 0],
-        coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
-        //highlightColor: [0, 0, 128, 128],
-        modelMatrix: [
-          301.1765,        0, 0, 0,
-                 0, 301.1765, 0, 0,
-                 0,        0, 1, 0,
-          -2048000, -2048000, 0, 1
-
-              /*3000,        0, 0, 0,
-                 0,     3000, 0, 0,
-                 0,        0, 1, 0,
-                 0,        0, 0, 1*/
-        ],
-        opacity: 0.1,
-        pickable: true,
-        // visible: true,
-        // wrapLongitude: false,
-
-        /*onClick: (info, event) => {
-          if (info.object) {
-            console.log(info.object)
-            this.selectedZone = info.object.ci
-          }
-        },*/
-      })
-      
-      
-      this.geoLayer = new GeoJsonLayer({
-        id: 'GeoJsonLayer',
-        data: 'data/poly_2025-01_rg_s3.geojson',
+    makeGeoLayer() {
+      return new GeoJsonLayer({
+        id: 'GeoJsonLayerCur',
+        data: 'data/rg_2025-05_1_5.geojson',
 
         stroked: false,  // default: true
         getLineWidth: 50,  
@@ -155,8 +121,44 @@ export default {
         opacity: 0.1,
         // visible: true,
         // wrapLongitude: false,
+
+        onHover: ({object}) => {
+          if (object && object.properties) {
+            this.highlightedIcon = object.properties.rg
+          }
+        },
+      })
+    },
+
+    initializeDeck() {
+      this.tileLayer = new TileLayer({
+        id: 'TileLayer',
+        data: 'https://shrddr.github.io/maptiles/{z}/{x}_{y}.webp',
+        minZoom: 0,
+        maxZoom: 7,
+        tileSize: 256 * 12800,
+        zoomOffset: 14,
+        extent: [
+          (-67 * 2) * 12800,
+          (-71 * 2) * 12800,
+          (58 * 2) * 12800,
+          (35 * 2) * 12800
+        ],
+        renderSubLayers: props => {
+          const {
+            bbox: {left, bottom, right, top}
+          } = props.tile;
+
+          return new BitmapLayer(props, {
+            data: null,
+            image: props.data,
+            bounds: [left, bottom, right, top]
+          });
+        }
       })
 
+      this.iconLayer = this.makeIconsLayer()
+      this.geoLayer = this.makeGeoLayer()
 
       const deckInstance = new Deck({
         canvas: 'deck-canvas',
@@ -166,15 +168,26 @@ export default {
         //onViewStateChange: this.onMoveEvent,  // saves to mapStore
 
         initialViewState: this.initialViewState,
-        
+
         layers: [
           this.tileLayer,
-          //this.polygonLayer,
           this.geoLayer,
+          this.iconLayer,
         ],
 
         controller: {doubleClickZoom: false},
-        getTooltip: ({object}) => object && `RG${object.properties.ci}`,
+        getTooltip: ({object}) => {
+          if (object && object.properties) {
+            if (object.properties.rg) {
+              let ret = `RG${object.properties.rg}`
+              //const member_indices = object.properties.rs
+              //for (const ri of member_indices) {
+              //  ret += `\n${this.gameStore.uloc.town[ri]}`
+              //}
+              return ret
+            }
+          }
+        },
 
         views: [
           new OrthographicView({

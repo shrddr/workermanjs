@@ -150,7 +150,7 @@ export default {
             {{ formatFixed(w.luckSheet, 2) }}🍀
           </template>
         )
-        where? 
+        where?<br/>
         {{ workerNearestCpPlantzonesProfit.length }} top untaken nodes 
         near {{ gameStore.uloc.node[w.tnk] }}:
       </div>

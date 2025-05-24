@@ -193,9 +193,11 @@ export const useGameStore = defineStore({
       // observed
       this.plantzoneDrops = await (await fetch(`data/manual/plantzone_drops.json`)).json()
       this.pzdSet = new Set(Object.keys(this.plantzoneDrops).map(x=>+x))
+      //console.log('pzdSet', this.pzdSet)
 
       // from client
       this.plantzoneStatic = await (await fetch(`data/plantzone.json`)).json()
+      console.log('plantzoneStatic', this.plantzoneStatic[1879])
 
       // info for sorting
       this.itemInfo = await (await fetch(`data/manual/item_info.json`)).json()
@@ -253,6 +255,7 @@ export const useGameStore = defineStore({
       // tal, mut, ric, 
       //
       // yuk, god, buk
+      // asp, muz
       this.townsWithLodging = [
         1,   61,  301, 302, 601, 602,
         604, 608, 1002,1101,1141,1301,
@@ -262,6 +265,7 @@ export const useGameStore = defineStore({
         // 1727,1834,1843,1850,  // can provide storage, cannot house workers
         // 1001, // lema costs cp, cannot provide storage, cannot house workers
         1853,1857,1858,
+        1834,1843
       ]
       // town(1+2) again, but tk-based (TODO: unify)
       this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json()
@@ -273,16 +277,16 @@ export const useGameStore = defineStore({
       // sha, baz, anc, are, owt, gra
       // duv, odd, oqi, eil, 
       // tal, mut, ric, 
-      //      muz,
       // yuk, god
+      // asp, muz
       this.townsWithRentableStorage = [
         1,   61,  301, 302, 601, 602,
         604, 608, 1002,1101,1141,1301,
         1314,1319,1343,1380,1604,1623,
         1649,1691,1727,1750, 
         1781,1785,1795,
-             1843,
         1853,1857,
+        1834,1843,
       ]
 
       // town(3a) can be a target of "stash redirect" feature, filled manually

@@ -173,7 +173,7 @@ export default {
               <option value="0.8515">0.8515 (4000 + VP)</option>
               <option value="0.85475">0.85475 (7000 + VP)</option>
               <option value="0.88725">0.88725 (7000 + ring + VP)</option>
-              <option value="1">1 (ironman)</option>
+              <option value="1">1 (just hoarding)</option>
             </select>
           </div>
 
