@@ -164,7 +164,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>pull actual worker stats from your PC (ty @Aman, @Thell, @Sbreeng, @thirtyeight):</li>
           <ul>
             <li>download and install <a href="https://www.python.org/">Python</a> 3.9+</li>
-            <li>download the <a href="https://pastebin.com/JahEcXHn">Import Script</a>, and run it through Python</li>
+            <li>download the <a href="https://pastebin.com/JahEcXHn">CacheToJson Script</a>, and run it through Python</li>
             <li>now head back to Workerman Home page > All towns/workers list > import the json file you just created by running the script</li>
           </ul>
           <li>warning: if the totals in top right corner show ? after the import, you probably exceeded the F2P town limits for lodging/storage. look for towns marked red in <strong class="notranslate">All towns/workers</strong> list and adjust their <strong class="notranslate">config > P2W</strong> numbers</li>
@@ -205,7 +205,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <h2>Changelog</h2>
     <li>[2025-05-22 patch] Reduced CP costs of houses</li>
     <li>[2025-05-22 patch] Reduced CP costs of nodes</li>
-    <li>[2025-05-22 patch] Added 16 plantzones in Mediah 2</li>
+    <li>[2025-05-22 patch] Added 12 plantzones in Ulukita + 4 around Keplan</li>
+      <ul>
+        <li>droprates: v2 (1174 cycles observed)</li>
+      </ul>
     <li>Plantzones page > <strong class="notranslate">hide taken</strong> checkbox</li>
     <li>In Empire > Best untaken, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">ignore storage cost</strong> option.</li>
     <li>In Empire > Best untaken and selected Plantzone pane, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">cheapest storage 🧊</strong> option.</li>
