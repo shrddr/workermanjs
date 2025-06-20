@@ -2,7 +2,8 @@
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
 import {makeIconSrc, formatFixed, randBetween, levelup} from '../util.js'
-import FloatingModifierEdit from '../components/FloatingModifierEdit.vue'
+import FloatingResourceEdit from './FloatingResourceEdit.vue'
+import WorkerJobDescription from '../components/WorkerJobDescription.vue'
 
 export default {
   setup() {
@@ -13,7 +14,8 @@ export default {
   },
 
   components: {
-    FloatingModifierEdit,
+    FloatingResourceEdit,
+    WorkerJobDescription,
   },
 
   props: {
@@ -385,7 +387,7 @@ export default {
             <template v-else-if="gameStore.jobIsPz(workerEditing.job)">
               {{ gameStore.plantzoneName(workerEditing.job.pzk) }}
               / 
-              <span v-if="gameStore.ready && workerEditing.job && workerEditing.job.pzk &&gameStore.plantzones[workerEditing.job.pzk].regiongroup && userStore.allowFloating && userStore.useFloatingModifiers[gameStore.plantzones[workerEditing.job.pzk].regiongroup]">
+              <span v-if="gameStore.ready && workerEditing.job && workerEditing.job.pzk &&gameStore.plantzones[workerEditing.job.pzk].regiongroup && userStore.allowFloating && userStore.useFloatingResources[gameStore.plantzones[workerEditing.job.pzk].regiongroup]">
                 ~{{ formatFixed(userStore.medianWorkloads[workerEditing.job.pzk], 2) }}
                 <span @click="showChartPane = !showChartPane">{{ showChartPane ? "◀" : "▶" }}</span>
               </span>
@@ -396,10 +398,10 @@ export default {
 
             <template v-else-if="gameStore.jobIsCustom(workerEditing.job)">
               ✍️
-              <input class="workshop-label-input" v-model="workerEditing.job[3]"/>
+              <input class="workshop-label-input" v-model="workerEditing.job.label"/>
               @
-              <input type="number" class="float4" step="0.1" v-model.number="workerEditing.job[1]"/>M$/day
-              <input type="number" class="float4" v-model.number="workerEditing.job[2]"/>CP
+              <input type="number" class="float4" step="0.1" v-model.number="workerEditing.job.profit"/>M$/day
+              <input type="number" class="float4" v-model.number="workerEditing.job.cp"/>CP
             </template>
 
             <template v-else-if="gameStore.jobIsFarming(workerEditing.job)">
@@ -407,11 +409,18 @@ export default {
             </template>
 
             <template v-else-if="gameStore.jobIsWorkshop(workerEditing.job)">
-              {{ gameStore.workerJobDescription(workerEditing) }}
+
+              <select v-model="workerEditing.job.recipe" style="width: 13em;">
+                <option v-for="outputs, recipe in gameStore.craftItems" :value="recipe">
+                  {{ gameStore.uloc.item[outputs[0]] }}
+                </option>
+              </select>
+
+              <WorkerJobDescription :w="workerEditing"/>
               /
               {{ userStore.userWorkshops[workerEditing.job.hk].manualWorkload }}
 
-              <abbr class="tooltip" title="see Settings > 🏭Workshops">ℹ️</abbr>
+              <abbr class="tooltip" title="see Settings > 🏭Workshops">ℹ</abbr>
 
               <span class="fsxs">
                 [type: {{ userStore.userWorkshops[workerEditing.job.hk].industry }}]
@@ -421,10 +430,10 @@ export default {
 
             <template v-else-if="gameStore.jobIsCustom(workerEditing.job)">
               ✍️
-              <input class="workshop-label-input" v-model="workerEditing.job[3]"/>
+              <input class="workshop-label-input" v-model="workerEditing.job.label"/>
               @
-              <input type="number" class="float4" step="0.1" v-model.number="workerEditing.job[1]"/>M$/day
-              <input type="number" class="float4" v-model.number="workerEditing.job[2]"/>CP
+              <input type="number" class="float4" step="0.1" v-model.number="workerEditing.job.profit"/>M$/day
+              <input type="number" class="float4" v-model.number="workerEditing.job.cp"/>CP
             </template>
 
             <template v-else>
@@ -541,13 +550,13 @@ export default {
       </table>
       
       <template v-if="gameStore.ready && workerEditing.job && gameStore.jobIsPz(workerEditing.job) && workerEditing.job.pzk in gameStore.plantzones && gameStore.plantzones[workerEditing.job.pzk].regiongroup && userStore.allowFloating">
-        <input type="checkbox" v-model="userStore.useFloatingModifiers[gameStore.plantzones[workerEditing.job.pzk].regiongroup]">
-        use floating modifier for this regionGroup
+        <input type="checkbox" v-model="userStore.useFloatingResources[gameStore.plantzones[workerEditing.job.pzk].regiongroup]">
+        use floating resource for this regionGroup
       </template>
     </div>
 
-    <div id="chartPane" v-if="showChartPane && gameStore.ready && workerEditing.job && workerEditing.job.pzk && workerEditing.job.pzk in gameStore.plantzones && gameStore.plantzones[workerEditing.job.pzk].regiongroup && userStore.useFloatingModifiers[gameStore.plantzones[workerEditing.job.pzk].regiongroup]">
-      <FloatingModifierEdit 
+    <div id="chartPane" v-if="showChartPane && gameStore.ready && workerEditing.job && workerEditing.job.pzk && workerEditing.job.pzk in gameStore.plantzones && gameStore.plantzones[workerEditing.job.pzk].regiongroup && userStore.useFloatingResources[gameStore.plantzones[workerEditing.job.pzk].regiongroup]">
+      <FloatingResourceEdit 
         :rgk="gameStore.plantzones[workerEditing.job.pzk].regiongroup"
         :wspd="workerEditing.wspdSheet + currentWspdBonus"
         :workload="gameStore.plantzones[workerEditing.job.pzk].workload"
@@ -569,7 +578,7 @@ export default {
 select.animable {
   border-color: var(--color-border);
   background-color: var(--color-background);
-  color: var(--color-text);
+  color: var(--color-button);
 }
 .anim {
   background-color: var(--color-background);

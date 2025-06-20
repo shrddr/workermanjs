@@ -40,7 +40,6 @@ export default {
     makeIconSrc,
     async fetchData() {
       this.houseCrafts = await (await fetch(`data/houseinforeceipe.json`)).json()
-      this.craftItems = await (await fetch(`data/house_craft_outputs.json`)).json()
       this.houses = await (await fetch(`data/houseinfo.json`)).json()
       const _towns = new Set([-1])
       const _usages = new Set([-1])
@@ -84,7 +83,7 @@ export default {
           level {{ n+1 }}:
             <table>
             <tr v-for="craft in crafts">
-              <template v-for="ik in this.craftItems[craft]">
+              <template v-for="ik in this.gameStore.craftItems[craft]">
                 <a :href="this.userStore.itemUrl+ik">
                   <img :src="makeIconSrc(ik)" class="iconitem" :data-key="ik" />
                   {{ gameStore.uloc.item[ik] }}

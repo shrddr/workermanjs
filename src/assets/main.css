@@ -48,7 +48,9 @@ input.mid {
 }
 
 input.price {
-  width: 7.3em;
+  width: 7.3em;  
+  margin-left: 3px;
+  margin-right: 3px;
 }
 
 .w5em {
@@ -184,4 +186,29 @@ table, tr, td, th {
 .spaced-columns {
   display: flex;
   justify-content: space-between;
+}
+
+
+input,
+select {
+  background-color: var(--color-background-soft);
+  color: var(--color-button);           /* light text */
+  border: 1px solid #444;    /* subtle border */
+}
+
+input[type="checkbox"]:unchecked {
+  accent-color: var(--color-background-soft);
+}
+
+@media (prefers-color-scheme: dark) {
+  input[type="number"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    color-scheme: dark;
+  }
+
+  input[type="checkbox"]:disabled {
+    opacity: 0.5;
+  }
 }

@@ -14,6 +14,18 @@ export function makeUniformArray(mean, samples, bins, width) {
   return ret
 }
 
+export function makeTriangularArray(mean, samples, bins, width) {
+  let ret = []
+  for (let k = 0; k <= bins; k++) {
+    const binCenter = 0.5 + k
+    const probability = jStat.triangular.pdf( binCenter, mean-width, mean+width, mean )
+    const y = probability * samples
+
+    ret.push([k, y])
+  }
+  return ret
+}
+
 export function makeNormalArray(mean, samples, bins, stdDev) {
   let ret = []
   for (let k = 0; k <= bins; k++) {

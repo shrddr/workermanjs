@@ -293,7 +293,7 @@ export default {
             </a>
             {{ ' ' }}
             <span v-if="ik in marketStore.calculatedPrices">
-              <abbr class="tooltip" :title="'contains:\n'+Object.entries(marketStore.calculatedPrices[ik]).map(([cik, cqty]) => formatFixed(cqty, 3) + ' ' + gameStore.uloc.item[cik]).join('\n')">ℹ️</abbr>
+              <abbr class="tooltip" :title="'contains:\n'+Object.entries(marketStore.calculatedPrices[ik]).map(([cik, cqty]) => formatFixed(cqty, 3) + ' ' + gameStore.uloc.item[cik]).join('\n')">ℹ</abbr>
             </span>
           </td>
           <td class="right">

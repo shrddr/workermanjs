@@ -159,10 +159,15 @@ export default {
         hi: this.stats.meanHi,
       }
       if (this.isGiant) {
-        if (ret.init > 40) {
+        if (ret.init > 60) {
           ret.lo /= 1.684
           ret.init /= 1.684
           ret.hi /= 1.684
+        }
+        else if (ret.init > 50) {
+          ret.lo /= 1.684
+          ret.init /= 1.684
+          ret.hi /= 1.64
         }
         else if (ret.init > 20) {
           ret.lo /= 1.684

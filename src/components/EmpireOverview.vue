@@ -3,6 +3,7 @@ import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
 import {useMarketStore} from '../stores/market'
 import {makeIconSrc, formatFixed, strShortenLeft} from '../util.js'
+import WorkerJobDescription from '../components/WorkerJobDescription.vue'
 
 export default {
   setup() {
@@ -22,6 +23,10 @@ export default {
   emits: [
     'panToPaPos',
   ],
+
+  components: {
+    WorkerJobDescription,
+  },
 
   data: () => ({
     activeTab: 'daily',
@@ -134,10 +139,10 @@ export default {
     </tr>
     <tr>
       <th>
-        &nbsp;job <abbr class="tooltip" title="cost of the node (for plantzones) OR cost of the house (for workshops)">ℹ️</abbr>
+        &nbsp;job <abbr class="tooltip" title="cost of the node (for plantzones) OR cost of the house (for workshops)">ℹ</abbr>
       </th>
       <th>
-        town <abbr class="tooltip" title="worker lodging + material storage">ℹ️</abbr>
+        town <abbr class="tooltip" title="worker lodging + material storage">ℹ</abbr>
       </th>
     </tr>
     <tr v-for="{w, i, ipc} in userStore.workersSortedByIncomePerCp">
@@ -161,7 +166,7 @@ export default {
             </span>
           </template>
           <span v-else class="hlim left">
-            {{ gameStore.workerJobDescription(w) }}
+            <WorkerJobDescription :w="w"/>
           </span>
         </div>
       </td>

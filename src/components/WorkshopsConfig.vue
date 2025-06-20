@@ -132,12 +132,12 @@ export default {
       <th>House</th>
       <th>
         label
-        <abbr class="tooltip" title="for display only">ℹ️</abbr>
+        <abbr class="tooltip" title="for display only">ℹ</abbr>
       </th>
       <th>
         worktype
         <abbr class="tooltip" title="used to factor in some worker skills.
-also, only Mass Production can employ multiple workers at once.">ℹ️</abbr>
+also, only Mass Production can employ multiple workers at once.">ℹ</abbr>
       </th>
       <th>
         workload
@@ -145,7 +145,7 @@ also, only Mass Production can employ multiple workers at once.">ℹ️</abbr>
       <th>
         $/cycle 
         <abbr title="use Sho's Workshop Profitability Calculator & gpw Trading/Crates Calculator to find out.
-For crates, enter profit per 1 crate - if a worker with +1/+3 packing skill occupies this workshop it will be taken into account." class="tooltip">ℹ️</abbr>
+For crates, enter profit per 1 crate - if a worker with +1/+3 packing skill occupies this workshop it will be taken into account." class="tooltip">ℹ</abbr>
       </th>
       <th>
         CP
@@ -156,7 +156,7 @@ For crates, enter profit per 1 crate - if a worker with +1/+3 packing skill occu
 The only thing to not include here is lodging for the worker who is going to occupy the workshop.
 However, if your workshop house chain does provide lodging, reduce (2) accordingly. 
 The house chain can potentially provide storage and lodging not only for this workshop, but for other workshops of this town. 
-In this case, use average CP value (sum up all workshop-related CP costs and divide by active workshop count)." class="tooltip">ℹ️</abbr>
+In this case, use average CP value (sum up all workshop-related CP costs and divide by active workshop count)." class="tooltip">ℹ</abbr>
       </th>
       <th>action</th>
     </tr>
@@ -226,16 +226,20 @@ In this case, use average CP value (sum up all workshop-related CP costs and div
         <select v-model="selectedHouse">
           <option v-for="hk in filteredHouses" :value="hk">{{ hk }} {{ gameStore.uloc.char[hk] }} {{ hk in userStore.userWorkshops ? '✔️' : '' }}</option>
         </select>
+        <span v-if="selectedHouse in userStore.userWorkshops" class="fsxs">
+          already in list!
+        </span>
       </td>
     </tr>
   </table>
 
-  <button :disabled="selectedHouse == -1 || selectedHouse in userStore.userWorkshops" @click="addWorkshop(selectedHouse)">add</button>
-  <span v-if="selectedHouse in userStore.userWorkshops" class="fsxs">
-    already in list!
-  </span>
-
-  Note that assigning house as workshop does not prevent it from being used for autolodging/autostorage on Home page. You need to manually work around this.
+  <button :disabled="selectedHouse == -1 || selectedHouse in userStore.userWorkshops" @click="addWorkshop(selectedHouse)">
+    add to my workshops
+  </button>
+  
+  {{  }}
+  <abbr class="tooltip" title="Note that assigning house as workshop does not prevent it from being used for autolodging/autostorage on Home page.
+You need to manually work around this.">ℹ</abbr>
 
 </template>
 

@@ -41,7 +41,7 @@ export default {
       <nav>
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/plantzones">Plantzones</RouterLink>
-        <RouterLink to="/modifiers">Modifiers</RouterLink>
+        <RouterLink to="/resources">Resources</RouterLink>
         <RouterLink to="/settings">Settings</RouterLink>
         <RouterLink to="/about">About</RouterLink>
       </nav>

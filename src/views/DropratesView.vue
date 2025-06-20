@@ -404,10 +404,10 @@ export default {
             </td>
             <td v-for="specie in ['normal', 'giant']" class="center">
               <template v-if="specie in nodeitemdata">
-                <button :title="'item '+ik" v-if="pzk != dropratesStore.selected_pzk || ik != dropratesStore.selected_ik || specie != dropratesStore.selected_specie" @click="activate(pzk, ik, specie)">
+                <button :title="`item ${ik} ${specie}`" v-if="pzk != dropratesStore.selected_pzk || ik != dropratesStore.selected_ik || specie != dropratesStore.selected_specie" @click="activate(pzk, ik, specie)">
                   {{ Object.values(nodeitemdata[specie]).flat().length }} 
                 </button>
-                <button :title="'item '+ik" v-else class="pressed">
+                <button :title="`item ${ik} ${specie}`" v-else class="pressed">
                   {{ Object.values(nodeitemdata[specie]).flat().length }}
                 </button>
               </template>

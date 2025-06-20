@@ -279,6 +279,7 @@ export default {
       const now = Date.now()
       if (now - this.mapStateSavedTimestamp > 100) {
         this.mapStore.target = [...e.viewState.target]
+        this.mapStore.zoom = e.viewState.zoom
         this.mapStateSavedTimestamp = now
       }
       // can't modify property in a component

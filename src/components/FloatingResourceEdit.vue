@@ -1,6 +1,6 @@
 <script>
-import {useUserStore} from '../stores/user'
-import {useGameStore} from '../stores/game'
+import {useUserStore} from '../stores/user.js'
+import {useGameStore} from '../stores/game.js'
 import {formatFixed, searchSorted} from '../util.js'
 
 import { use } from "echarts/core";
@@ -65,11 +65,11 @@ export default {
 
   computed: {
     modHist() {
-      if (!this.userStore.regionModifiers2.hasOwnProperty(this.rgk)) {
-        this.userStore.regionModifiers2[this.rgk] = [0]
+      if (!this.userStore.regionResources2.hasOwnProperty(this.rgk)) {
+        this.userStore.regionResources2[this.rgk] = [0]
       }
       // [0, 50, 0] -> [50, 0, 0]
-      const sorted = this.userStore.regionModifiers2[this.rgk]
+      const sorted = this.userStore.regionResources2[this.rgk]
         //.split(',')
         .map(Number)
         .filter(v => !isNaN(v))
@@ -78,7 +78,7 @@ export default {
       return sorted
     },
     modTimes() {
-      // [50, 0, 0] modifiers -> {50 mod: 33% time, 0 mod: 100% time}
+      // [50, 0, 0] resource -> {50 mod: 33% time, 0 mod: 100% time}
       const size = this.modHist.length
       const times = {}
       for (let i=0; i<this.modHist.length; i++) {
@@ -93,7 +93,7 @@ export default {
       //console.log('modSorted', ret)
       return ret
     },
-    medianModifier() {
+    medianResource() {
       let mod = 0
       const pos = this.modHist.length
       if (pos % 2) {
@@ -104,10 +104,10 @@ export default {
         const modB = this.modHist[(pos-1+1)/2]
         mod = (modA+modB)/2
       }
-      console.log('medianModifier', pos, mod)
+      console.log('medianResource', pos, mod)
       return this.workload * (2 - mod/100)
     },
-    tierModifiers() {
+    tierResources() {
       const ret = []
       let prev_tier_chance = 0
       const wld_lo = this.workload
@@ -118,7 +118,7 @@ export default {
         //wspd * tier = activewld = wld * (2 - mod)
         const mod = Math.max(2 - this.wspd * tier / wld_lo, 0)
         const wld = wld_lo * (2 - mod)
-        const chance = this.userStore.chanceAtModifier(this.rgk, mod*100)
+        const chance = this.userStore.chanceAtResource(this.rgk, mod*100)
         //console.log(`w=${wld.toFixed(2)}, mod=${mod.toFixed(3)} → tier=${tier}, chance=${chance}`)
         const slice = chance - prev_tier_chance
         //if (slice == 0) continue
@@ -132,7 +132,7 @@ export default {
       for (let i=0; i<1001; i++) {
         const mod = i/10.0
         const awld = this.workload * (2 - mod/100)
-        const chance = this.userStore.chanceAtModifier(this.rgk, mod)
+        const chance = this.userStore.chanceAtResource(this.rgk, mod)
         const tier = awld / this.wspd
         ret.push([mod, awld, chance, tier])
       }
@@ -156,7 +156,7 @@ export default {
     chartColorRanges() {
       const ret = []
       let best_limit = 100
-      for (const row of this.tierModifiers) {
+      for (const row of this.tierResources) {
         const worst_limit = row.mod*100
         ret.push({
           lte: best_limit,
@@ -170,7 +170,7 @@ export default {
     chartColorRangesWorkload() {
       const ret = []
       let best_limit = this.workload
-      for (const row of this.tierModifiers) {
+      for (const row of this.tierResources) {
         const worst_limit = row.wld
         ret.push({
           gt: best_limit,
@@ -184,7 +184,7 @@ export default {
     chartBands() {
       const ret = []
       let high_limit = 100
-      for (const row of this.tierModifiers) {
+      for (const row of this.tierResources) {
         const low_limit = row.mod * 100
         ret.push([
           {
@@ -200,7 +200,7 @@ export default {
       console.log('chartBands', ret)
       return ret
     },
-    chartOption() {
+    chartOptionRotated() {
       return {
         grid: { left: 30, top: 30, right: 30, bottom: 40 },
         xAxis: [
@@ -280,7 +280,7 @@ export default {
             const minutes = p[0].value[3]
             return `${minutes*10} minute tier<br/>`+
               `workload ≤ ${wld.toFixed(1)}<br/>`+
-              `modifier ≥ ${mod.toFixed(1)}<br/>`+
+              `resource ≥ ${mod.toFixed(1)}<br/>`+
               `chance ${chance.toFixed(1)}%`
           },
         },
@@ -289,7 +289,7 @@ export default {
         }
       }
     },
-    chartOption2() {
+    chartOption() {
       return {
         /*title: {
           text: 'distribution',
@@ -318,7 +318,7 @@ export default {
         },
         yAxis: [
           {
-            name: 'modifier',
+            name: 'resource',
             nameGap: 10,
             //inverse: true,
             //scale: true,
@@ -352,6 +352,10 @@ export default {
             type: 'scatter',
             symbolSize: 5,
             color: 'gray',
+            
+            tooltip: {
+              show: false,
+            }
           },
         ],
         visualMap: {
@@ -366,14 +370,14 @@ export default {
           axisPointer: {
             //type: 'cross',
             //snap: false,
-            axis: 'y',
+            axis: 'x',
           },
           formatter: function(p) {
             const mod = p[0].value[0]
             const wld = p[0].value[1]
             const chance = p[0].value[2]
             const tier = p[0].value[3]
-            return `${chance.toFixed(1)}% chance to get<br/>${mod.toFixed(1)} or more modifier<br/>${wld.toFixed(1)} or less workload<br/>${formatFixed(tier*10, 1)} → ${Math.ceil(tier)*10} minute cycle`
+            return `${formatFixed(chance, 1)}% chance to get<br/>${formatFixed(mod, 1)} or more resource, or<br/>${formatFixed(wld, 1)} or less workload, or<br/>${formatFixed(tier*10, 1)} min → ${Math.ceil(tier)*10} min cycle`
           },
           textStyle: {
             fontSize: 11,
@@ -391,7 +395,7 @@ export default {
     formatFixed,
     updStore(str) {
       //console.log('upd', str)
-      this.userStore.regionModifiers2[this.rgk] = str.split(',')
+      this.userStore.regionResources2[this.rgk] = str.split(',')
     },
     
     spaceSep(millions, forceSign) {
@@ -404,32 +408,34 @@ export default {
 
 <template>
   Observations:
-  <abbr class="tooltip" title="Enter comma-separated modifier values (0..100 range) observed evenly across all worker-active time. The order does not matter, but repeat occurence of same value does. You can sneak in newlines and comments like 'evening,0,0.1,2,morning,3,22,0' - text will be stored, but ignored in calculations.">ℹ️</abbr><br/>
+  <abbr class="tooltip" title="Enter comma-separated resource values (0..100 range) observed evenly across all worker-active time.
+The order does not matter, but repeat occurence of same value does.
+You can sneak in newlines and comments like `evening,0,0.1,2, morning,3,22,0` - text will be stored, but ignored in calculations.">ℹ</abbr><br/>
   <textarea 
-    :value="this.userStore.regionModifiers2[this.rgk]"
+    :value="this.userStore.regionResources2[this.rgk]"
     @input="event => updStore(event.target.value)" 
     class="multiline">
   </textarea>
   <div>
-    <v-chart class="chart hmid" :option="chartOption2" />
+    <v-chart class="chart hmid" :option="chartOption" />
   </div>
   <span style="line-height: 200%;">Breakpoints:</span>
   <table class="fsxs tar">
     <tr>
       <th>work time</th>
-      <td v-for="r in tierModifiers.filter(r => r.time)">{{ 10 * r.tier }} min</td>
+      <td v-for="r in tierResources.filter(r => r.time)">{{ 10 * r.tier }} min</td>
     </tr>
     <tr>
       <th>workload ≤</th>
-      <td v-for="r in tierModifiers.filter(r => r.time)">{{ formatFixed(r.wld, 2) }}</td>
+      <td v-for="r in tierResources.filter(r => r.time)">{{ formatFixed(r.wld, 2) }}</td>
     </tr>
     <tr>
-      <th>modifier ≥</th>
-      <td v-for="r in tierModifiers.filter(r => r.time)">{{ formatFixed(100 * r.mod, 2) }}</td>
+      <th>resource ≥</th>
+      <td v-for="r in tierResources.filter(r => r.time)">{{ formatFixed(100 * r.mod, 2) }}</td>
     </tr>
     <tr>
       <th>chance</th>
-      <td v-for="r in tierModifiers.filter(r => r.time)">{{ formatFixed(r.time, 2) }}%</td>
+      <td v-for="r in tierResources.filter(r => r.time)">{{ formatFixed(r.time, 2) }}%</td>
     </tr>
   </table>
 

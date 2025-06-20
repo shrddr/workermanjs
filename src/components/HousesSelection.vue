@@ -2,6 +2,7 @@
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
 import {formatFixed,makeIconSrc} from '../util.js'
+import WorkerJobDescription from '../components/WorkerJobDescription.vue'
 
 export default {
   setup() {
@@ -24,6 +25,10 @@ export default {
       type: Boolean,
       default: false
     }
+  },
+
+  components: {
+    WorkerJobDescription,
   },
 
   data: () => ({
@@ -148,7 +153,7 @@ export default {
       
       <tr v-for="s in userStore.townsSteppedInfra[tk]">
         <td>
-          {{ gameStore.workerJobDescription(s.w) }}
+          <WorkerJobDescription :w="s.w"/>
         </td>
         <td>
           {{ s.curL }}

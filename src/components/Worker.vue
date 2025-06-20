@@ -2,6 +2,7 @@
 import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
 import {formatFixed, percentageToColor} from '../util.js'
+import WorkerJobDescription from '../components/WorkerJobDescription.vue'
 
 export default {
   setup() {
@@ -21,6 +22,10 @@ export default {
     'send',
     'edit',
   ],
+
+  components: {
+    WorkerJobDescription,
+  },
 
   data: () => ({
     
@@ -76,11 +81,11 @@ export default {
       <template v-if="w.job">
         <template v-if="gameStore.jobIsPz(w.job)">
           <span @click="$emit('panToPaPos', this.gameStore.nodes[w.job.pzk].pos)" class="clickable">
-            {{ gameStore.workerJobDescription(w) }}
+            <WorkerJobDescription :w="w"/>
           </span>
         </template>
         <template v-else>
-          {{ gameStore.workerJobDescription(w, w.tnk) }}
+          <WorkerJobDescription :w="w"/>
         </template>
         @
         <template v-if="userStore.displayProfitPerCp">

@@ -15,7 +15,7 @@ import HousesSelection from '../components/HousesSelection.vue'
 import NodeMap from "../components/NodeMap.vue";
 import MapSelectedInfo from "../components/MapSelectedInfo.vue";
 import EmpireOverview from '../components/EmpireOverview.vue'
-import FloatingModifierEdit from '../components/FloatingModifierEdit.vue'
+import FloatingResourceEdit from '../components/FloatingResourceEdit.vue'
 import WorkerSelection from '../components/WorkerSelection.vue'
 import SearchBar from '../components/SearchBar.vue'
 import { ref, nextTick } from "vue";
@@ -49,7 +49,7 @@ export default {
     NodeMap,
     MapSelectedInfo,
     EmpireOverview,
-    FloatingModifierEdit,
+    FloatingResourceEdit,
     WorkerSelection,
     SearchBar,
   },
@@ -69,10 +69,10 @@ export default {
     importDialogVisible: false,
     clickedNode: null,
     hoverInfo: null,
-    modifierDialogWspd: 150,
-    modifierDialogRgroup: 1,
-    modifierDialogWkld: 400,
-    modifierDialogVisible: false,
+    resourceDialogWspd: 150,
+    resourceDialogRgroup: 1,
+    resourceDialogWkld: 400,
+    resourceDialogVisible: false,
     panToPzk: null,
     panPaPos: null,
     selectWorkerDialogVisible: false,
@@ -295,6 +295,10 @@ export default {
           console.log(`removing plantzone job of worker ${w.label}: unknown pzk`, w.job)
           w.job = null
         }
+        // update custom job format
+        if (Array.isArray(w.job)) {
+          w.job = { kind: 'custom', profit: w.job[1], cp: w.job[2], label: w.job[3]}
+        }
       })
       
       console.log('import parsed')
@@ -344,11 +348,11 @@ export default {
       console.log(s)
     },
 
-    showModifierDialog(pzk) {
-      this.modifierDialogVisible = true
-      this.modifierDialogRgroup = this.gameStore.plantzoneStatic[pzk].regiongroup
-      this.modifierDialogWkld = this.gameStore.plantzones[pzk].peg.time
-      this.modifierDialogWspd = this.userStore.workedPlantzones.has(String(pzk)) ? this.userStore.pzJobs[pzk].worker.wspdSheet + this.gameStore.wspdBonus(this.userStore.pzJobs[pzk].worker, 'farm') : 150
+    showResourceDialog(pzk) {
+      this.resourceDialogVisible = true
+      this.resourceDialogRgroup = this.gameStore.plantzoneStatic[pzk].regiongroup
+      this.resourceDialogWkld = this.gameStore.plantzones[pzk].peg.time
+      this.resourceDialogWspd = this.userStore.workedPlantzones.has(String(pzk)) ? this.userStore.pzJobs[pzk].worker.wspdSheet + this.gameStore.wspdBonus(this.userStore.pzJobs[pzk].worker, 'farm') : 150
     },
 
     panToHash() {
@@ -408,23 +412,23 @@ export default {
     </form>
   </ModalDialog>
 
-  <ModalDialog v-model:show="modifierDialogVisible">
-    <FloatingModifierEdit 
-      :rgk="modifierDialogRgroup"
-      :wspd="modifierDialogWspd"
-      :workload="modifierDialogWkld"
-      v-model:show="modifierDialogVisible"
+  <ModalDialog v-model:show="resourceDialogVisible">
+    <FloatingResourceEdit 
+      :rgk="resourceDialogRgroup"
+      :wspd="resourceDialogWspd"
+      :workload="resourceDialogWkld"
+      v-model:show="resourceDialogVisible"
     />
     <div style="width: 24em;">Test with workspeed:
       <input 
         type="range" 
         class="vmid"
-        v-model.number="modifierDialogWspd" 
+        v-model.number="resourceDialogWspd" 
         min="40" 
         max="200" 
         step="0.01"
       />
-      {{ modifierDialogWspd }}
+      {{ resourceDialogWspd }}
     </div>
   </ModalDialog>
 
@@ -473,7 +477,7 @@ export default {
           @editWorker="editWorker"
           @sendWorker="sendWorker"
           @panToPaPos="panToPaPos"
-          @showModifierDialog="showModifierDialog"
+          @showResourceDialog="showResourceDialog"
           @setClickedNode="setClickedNode"
           @selectWorker="selectWorker"
         />

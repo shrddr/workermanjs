@@ -56,9 +56,12 @@ export default {
   data() {
     const darkModeQuery = matchMedia('(prefers-color-scheme: dark)')
     return {
+      mode_relative: true,
+      relative_base: 100,
+
       alldata: {},
-      selectedFish: 8302,
-      selectedLuck: 33,
+      selectedFish: 'ALL',
+      selectedLuck: 68.3,
       generalSigmas: 4,
 
       fish_info: {},
@@ -89,10 +92,13 @@ export default {
     currentDataset() {
       const ret = []
       if (this.selectedFish in this.alldata) {
-
+        const info = this.get_fish_info(this.selectedFish)
+        const avg_size = (info.BaseSize + info.FishVarySize) / 2
         for (const v of this.alldata[this.selectedFish]) {
-          //ret.push(10 * v / this.avg_sizes[this.selectedFish])
-          ret.push(v)
+          if (this.mode_relative)
+            ret.push(this.relative_base * v / avg_size)
+          else
+            ret.push(v)
         }
 
       }
@@ -116,6 +122,15 @@ export default {
         sorted: [...data].sort((a, b) => a-b),
         weights: luckyChances
       }
+
+      dataByLuck.grouped = dataByLuck.sorted.reduce((acc, num) => {
+        const key = Math.floor(num);
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        acc[key].push(num);
+        return acc;
+      }, {})
       
       //console.log('weightedDataset', dataByLuck)
       return dataByLuck
@@ -146,7 +161,7 @@ export default {
       
       minLuck = Math.min(minLuck, this.selectedLuck)
       maxLuck = Math.max(maxLuck, this.selectedLuck)
-      let {len, luckyLen, sorted, weights} = dataByLuck
+      let {len, luckyLen, sorted, weights, grouped} = dataByLuck
       totalLuckyLen += luckyLen
       dataFlatSorted.push(...sorted)
       weightsFlat.push(...weights)
@@ -180,9 +195,6 @@ export default {
         bell: [],
         histo: [],
       }
-
-
-      
       
       /* 
       Standard deviation is the sqrt of the variance of a distribution;
@@ -313,7 +325,21 @@ export default {
       this.alldata = await (await fetch(`data/manual/my_catches.json`)).json()
       this.fish_info = await (await fetch(`data/manual/fish_info.json`)).json()
 
+      if (this.mode_relative) {
+        console.log('filling group ALL')
+        const all = []
+        
+        for (const [ik, sizes] of Object.entries(this.alldata)) {
+          const info = this.get_fish_info(ik)
+          const avg_size = (info.BaseSize + info.FishVarySize) / 2
+          for (const v of sizes) all.push(this.relative_base * v / avg_size)
+        }
+        this.alldata['ALL'] = all
+        this.fish_info['ALL'] = {BaseSize: this.relative_base, FishVarySize: this.relative_base}
+      }
+
       const group_sizes = {}
+
       for (const [ik, sizes] of Object.entries(this.alldata)) {
         const info = this.get_fish_info(ik)
         const groupKey = `${info.BaseSize}_${info.FishVarySize}`
@@ -332,7 +358,7 @@ export default {
         const group = group_sizes[groupKey]
         if (group.fishes.length > 1 && group.totalSamples > 1000) {
           const groupName = group.fishes.join("+")
-          console.log('filling group', groupName)
+          //console.log('filling group', groupName)
           if (!(groupName in this.alldata)) {
             this.alldata[groupName] = []
           }
@@ -351,7 +377,7 @@ export default {
     },
 
     get_fish_info(ik) {
-      const ret = ik in this.fish_info ? this.fish_info[ik] : {"BaseSize": 0, "FishVarySize": 0}
+      const ret = ik in this.fish_info ? this.fish_info[ik] : {"BaseSize": 1, "FishVarySize": 1}
       ret.avg_size = (ret.BaseSize + ret.FishVarySize) / 2
       return ret
     },
@@ -363,6 +389,11 @@ export default {
   <main>
     <div id="menu">
       <div style="display: none;">{{ selectedFish }}</div>
+
+      <input type="checkbox" v-model="mode_relative">relative sizes (scaled to AVG=
+      <input type="number" v-model="relative_base" step="10" style="width: 4em;">
+      )
+      <br/>
 
       <template v-for="sizes, ik in alldata">
         <div v-if="sizes.length > 600">
@@ -388,8 +419,8 @@ export default {
 
         <div>
           <table>
-            <tr>
-              <td v-for="v in stats.dataRaw">{{ formatFixed(v, 3) }}</td>
+            <tr v-for="vs, group in weightedDataset.grouped">
+              <td v-for="v in vs">{{ formatFixed(v, 3) }}</td>
             </tr>
           </table>
         </div>
@@ -399,7 +430,7 @@ export default {
         <FishModel 
           :stats="stats" 
           :histogram="histogram"
-          :avg_size="fish_info[selectedFish] ? fish_info[selectedFish].avg_size : 1"
+          :avg_size="mode_relative ? relative_base : fish_info[selectedFish]"
         />
       </div>
 

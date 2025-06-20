@@ -25,7 +25,7 @@ export default {
   },
 
   emits: [
-    'showModifierDialog',
+    'showResourceDialog',
     'editWorker',
   ],
 
@@ -103,13 +103,13 @@ export default {
 
   <div>
     workload:
-    <template v-if="gameStore.ready && gameStore.plantzones[pzk].regiongroup && userStore.allowFloating && userStore.useFloatingModifiers[gameStore.plantzones[pzk].regiongroup]">
+    <template v-if="gameStore.ready && gameStore.plantzones[pzk].regiongroup && userStore.allowFloating && userStore.useFloatingResources[gameStore.plantzones[pzk].regiongroup]">
       ~{{ formatFixed(userStore.medianWorkloads[pzk], 2) }}
-      <button @click="$emit('showModifierDialog', pzk)">review</button><!--📝-->
+      <button @click="$emit('showResourceDialog', pzk)">review</button><!--📝-->
     </template>
     <template v-else>
       {{ formatFixed(gameStore.plantzones[pzk].activeWorkload, 2) }}
-      ← modifier <input type="number" v-model.number="userStore.regionModifiers[gameStore.plantzones[pzk].regiongroup]" min="0" max="100" step="0.1" class="w42em" />
+      ← <input type="number" v-model.number="userStore.regionResources[gameStore.plantzones[pzk].regiongroup]" min="0" max="100" step="0.1" class="w42em" />% resource
     </template>
   </div>
 
@@ -131,14 +131,14 @@ export default {
       <br/>
       connection cost: 
       {{ formatFixed(userStore.pzjobsSharedConnectionCP[pzk].value, 3) }} CP 
-      <abbr class="tooltip" :title="'full cost of this node + Σ of connection nodes costs shared proportionally between all active jobs using them\n'+userStore.pzjobsSharedConnectionCP[pzk].tooltip">ℹ️</abbr>
+      <abbr class="tooltip" :title="'full cost of this node + Σ of connection nodes costs shared proportionally between all active jobs using them\n'+userStore.pzjobsSharedConnectionCP[pzk].tooltip">ℹ</abbr>
       <br/>
       lodgage cost: 
       {{ formatFixed(userStore.workerSharedLodgageCP(userStore.pzJobs[pzk].worker).value, 3) }} CP 
-      <abbr class="tooltip" :title="userStore.workerSharedLodgageCP(userStore.pzJobs[pzk].worker).tooltip">ℹ️</abbr>
+      <abbr class="tooltip" :title="userStore.workerSharedLodgageCP(userStore.pzJobs[pzk].worker).tooltip">ℹ</abbr>
       <br/>
       efficiency: {{ formatFixed(userStore.workerIncomePerCp(userStore.pzJobs[pzk].worker), 3) }} M$/day/CP
-      <abbr class="tooltip" title="income / (connectionCost + lodgageCost)">ℹ️</abbr>
+      <abbr class="tooltip" title="income / (connectionCost + lodgageCost)">ℹ</abbr>
 
     </template>
 
@@ -172,9 +172,9 @@ export default {
         <tr>
           <th>town</th>
           <th>walk</th>
-          <th>worker <abbr class="tooltip" title="same town&stat workers are hidden in this view">ℹ️</abbr></th>
+          <th>worker <abbr class="tooltip" title="same town&stat workers are hidden in this view">ℹ</abbr></th>
           <th>+M$/day</th>
-          <th>+CP <abbr class="tooltip" title="node connection + town housing = total">ℹ️</abbr></th>
+          <th>+CP <abbr class="tooltip" title="node connection + town housing = total">ℹ</abbr></th>
           <th>M$/day/CP</th>
           <th>action</th>
         </tr>

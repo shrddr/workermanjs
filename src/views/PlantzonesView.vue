@@ -164,7 +164,7 @@ export default {
         Use worker management on Home page to take this (and also lodging/storage costs) into account.
       </p>
       <p>
-        Don't forget to set up your server and prices on Settings page and maybe take a look at Modifiers as well.
+        Don't forget to set up your server and prices on Settings page and maybe take a look at Resources as well.
         👺=goblin, 👨=human, 🐢=giant, hover for more info
       </p>
       Only show entries with best town = 
@@ -194,7 +194,7 @@ export default {
             lucky
             <abbr title="you always get unlucky items;
 these are in addition to those,
-only on cycles when 🍀 procs" class="tooltip">ℹ️</abbr>
+only on cycles when 🍀 procs" class="tooltip">ℹ</abbr>
           </th>
           <th>$ value</th>
           <th>name</th>
@@ -252,7 +252,7 @@ only on cycles when 🍀 procs" class="tooltip">ℹ️</abbr>
           </td>
           <td class="tac">{{ formatFixed(e.wspd+5, 1) }}</td>
           <td class="tac">
-            <template v-if="userStore.allowFloating && userStore.useFloatingModifiers[e.regiongroup]">
+            <template v-if="userStore.allowFloating && userStore.useFloatingResources[e.regiongroup]">
               ~{{ formatFixed(userStore.medianWorkloads[e.key], 2) }}
             </template>
             <template v-else>

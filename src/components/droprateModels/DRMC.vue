@@ -638,9 +638,13 @@ export default {
   <p><input type="checkbox" v-model="isGiant_lucky"> with giant bonus on Lucky</p>
 
   <div style="float:left;">
-    <div style="width:570px;height:270px;" v-if="modelCSweep">
-      <v-chart :option="makeChartCGrid" />
+    <div style="width:570px;height:270px;">
+      <v-chart :option="makeChartCGrid" v-if="modelCSweep?.result?.npU"/>
+      <div v-else class="inner">
+        search failed (npᵁ=0)
+      </div>
     </div>
+    
     <div style="padding:1em;">
       <div style="float:left;">
         <table>
@@ -692,5 +696,12 @@ export default {
   float: left;
   width: 500px;
   height: 320px;
+}
+
+.inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>

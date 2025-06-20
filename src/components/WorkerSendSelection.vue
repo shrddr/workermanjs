@@ -190,7 +190,7 @@ export default {
         </td>
         
         <td class="tac">
-          {{ userStore.useFloatingModifiers[job.pz.regiongroup] ? "~" : "" }}{{ formatFixed(userStore.medianWorkloads[job.pz.key], 2) }}
+          {{ userStore.useFloatingResources[job.pz.regiongroup] ? "~" : "" }}{{ formatFixed(userStore.medianWorkloads[job.pz.key], 2) }}
         </td>
 
         <td class="tac">
@@ -202,7 +202,9 @@ export default {
         <td class="tac">
           <abbr :title="Array.from(job.path, nk => `${userStore.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')" class="tooltip">
             {{ job.mapCp }}
-          </abbr>+<abbr :title="job.infraTooltip" class="tooltip">{{ formatFixed(job.townCp) }}</abbr>={{ formatFixed(job.cp) }}
+          </abbr>+<abbr :title="job.infraTooltip" class="tooltip">
+            {{ formatFixed(job.townCp) }}
+          </abbr>={{ formatFixed(job.cp) }}
         </td>
         <td class="tac">
           {{ formatFixed(job.dailyPerCp, 2) }}
@@ -219,7 +221,7 @@ export default {
 
       <tr v-if="userStore.farmingEnable && userStore.workersFarmingCount < 10">
         <td>
-          🌻 Farm <abbr title="see Settings page: singleWorkerProfit = (fullWorkersProfit - noWorkersProfit) / 10" class="tooltip">ℹ️</abbr>
+          🌻 Farm <abbr title="see Settings page: singleWorkerProfit = (fullWorkersProfit - noWorkersProfit) / 10" class="tooltip">ℹ</abbr>
         </td>
         <td class="tac">x</td>
         <td class="tac">x</td>
@@ -281,7 +283,7 @@ export default {
       <tr>
         <td>
           ✍️ Custom job
-          <abbr title="enter daily profit and CP cost for this specific job PER ONE WORKER" class="tooltip">ℹ️</abbr>
+          <abbr title="enter daily profit and CP cost for this specific job PER ONE WORKER" class="tooltip">ℹ</abbr>
           <div style="float: right;">
             &nbsp;label: <input v-model="customLabel" class="workshop-label-input"/>
           </div>
@@ -292,7 +294,9 @@ export default {
           <input type="number" class="float4" step="0.1" v-model.number="customProfit"/> 
         </td>
         <td class="tac">
-          <input type="number" class="float3" v-model.number="customCP"/>+<abbr :title="addBedHereInfo.tooltip" class="tooltip">{{ addBedHereInfo.cost }}</abbr>={{ customCP+addBedHereInfo.cost }}
+          <input type="number" class="float3" v-model.number="customCP"/>+<abbr :title="addBedHereInfo.tooltip" class="tooltip">
+            {{ formatFixed(addBedHereInfo.cost) }}
+          </abbr>={{ formatFixed(customCP+addBedHereInfo.cost) }}
         </td>
         <td class="tac">
           {{ formatFixed(customProfit / (customCP+addBedHereInfo.cost), 2) }}

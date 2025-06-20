@@ -153,8 +153,8 @@ export default {
       <tr>
         <th>🛏️town</th>
         <th>walk</th>
-        <th>make new level 40 artisan <abbr class="tooltip" title="with median stats and a single +5🔨 skill">ℹ️</abbr></th>
-        <th>+CP <abbr class="tooltip" title="node connection + town housing = total">ℹ️</abbr></th>
+        <th>make new level 40 artisan <abbr class="tooltip" title="with median stats and a single +5🔨 skill">ℹ</abbr></th>
+        <th>+CP <abbr class="tooltip" title="node connection + town housing = total">ℹ</abbr></th>
         <th>M$/day/CP</th>
         <th>action</th>
       </tr>

@@ -19,11 +19,11 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         How to use?
       </template>
-      First of all go to <strong class="notranslate">Settings</strong>, select your server and tax. After that, two options are available:
+      First of all go to <RouterLink to="/settings">Settings</RouterLink>, select your server and tax. After that, two options are available:
       <ul>
-        <li>Quick and simple: do nothing and just look at <strong class="notranslate">Plantzones</strong> page - nodes at the top are good, nodes at the bottom are bad. Use Plantzones page if just starting out.</li>
+        <li>Quick and simple: do nothing and just look at <RouterLink to="/plantzones">Plantzones</RouterLink> page - nodes at the top are good, nodes at the bottom are bad. Use Plantzones page if just starting out.</li>
         <li>
-          Personalized and nuanced: go to <strong class="notranslate">Home</strong> page, 
+          Personalized and nuanced: go to <RouterLink to="/">Home</RouterLink> page, 
           select a town, hire a worker, send to whatever node gives highest efficiency, repeat
           (OR select a node, select, hire+assign in one click).
           Use Home page if you want to improve or rework an existing empire.
@@ -40,10 +40,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         How do i make an empire optimized for cooking/alchemy?
       </template>
-      Only difference is you don't tax cooking/alchemy mats (mark as Keep on <strong class="notranslate">Settings</strong> page).
+      Only difference is you don't tax cooking/alchemy mats (mark as Keep in <RouterLink to="/settings">Settings</RouterLink>).
       You are still going to be recommended nodes that have nothing to do with cooking/alchemy. 
       Just sell the output and use that silver to buy whatever you need.
-      If you want to completely avoid some item, go to Settings and put 0 as its Custom Value.
+      If you want to completely avoid some item, go to <RouterLink to="/settings">Settings</RouterLink> and put 0 as its Custom Value.
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -57,13 +57,13 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         What is M$/day/CP?
       </template>
-      M$ is a million silver; M$/day is silver profit per IRL day; (M$/day)/CP is profit per CP point spent. Higher is better.
+      M$ is a million silver; M$/day is silver profit per IRL day; (M$/day)/CP is silver profit per one CP point spent. In all cases, higher is better.
     </QnaItem>
     <QnaItem>
       <template #q>
         I checked the plantzones page X months ago and it showed best worker is Y and now shows Z, why?
       </template>
-      Because market prices change over time.
+      Because central market prices change over time.
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -119,7 +119,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         What are stat ranks?
       </template>
       If levelup range for a given stat is 1.0-2.0, rolling 1.4 is 40% rank, and rolling 1.9 is 90% rank.<br/>
-      Rank 50% level 3 worker means 2 avg rolls (1.5+1.5=3.0), or one min roll and one max roll (1.0+2.0=3.0), or any combination of rolls giving 3.0 stat.<br/>
+      Rank 50% level 3 worker means 2 avg rolls (1.5+1.5=3.0), or one min roll and one max roll (1.0+2.0=3.0), or any combination of rolls giving 3.0 total.<br/>
       Rank 100% level 40 worker means 39 max rolls in a row (39*2.0=78.0).<br/>
       "+stat per level" skills are not accounted for when calculating rank, so you can potentially have >100% rank (by having >78.0 stat).
     </QnaItem>
@@ -143,8 +143,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           after it turns downwards, click again to hide
         </details>
       </li>
-      <li>Also hover over <abbr class="tooltip" title="water is wet">ℹ️</abbr>'s and other <abbr class="tooltip" title="roses are blue">dot-underlined</abbr> things to see useful info</li>
-      <li>Spend some time on item valuation on Settings page: set <strong class="notranslate">Custom</strong> value above market price for bottlenecked stuff, reduce the value for mats you don't want</li>
+      <li>Also hover over <abbr class="tooltip" title="water is wet">ℹ</abbr>'s and other <abbr class="tooltip" title="water is blue">dot-underlined</abbr> things to see useful info</li>
+      <li>Spend some time on item valuation in <RouterLink to="/settings">Settings</RouterLink>: set <strong class="notranslate">Custom</strong> value above market price for bottlenecked stuff, reduce the value for mats you don't want</li>
       <li>Home page > <strong class="notranslate">Empire</strong> pane has some useful stats. Get rid of <strong class="notranslate">Worst Taken</strong> and acquire <strong class="notranslate">Best Untaken</strong></li>
       <li>Use <strong class="notranslate">optimize</strong> button inside a working worker's editor and see what skills to roll to maximize profit, then <strong class="notranslate">revert</strong> back</li>
         <ul>
@@ -164,7 +164,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>pull actual worker stats from your PC (ty @Aman, @Thell, @Sbreeng, @thirtyeight):</li>
           <ul>
             <li>download and install <a href="https://www.python.org/">Python</a> 3.9+</li>
-            <li>download the <a href="https://pastebin.com/JahEcXHn">CacheToJson Script</a>, and run it through Python</li>
+            <li>download the <a href="https://pastebin.com/Fp2TbMdg">cache2json</a> script, and run it through Python</li>
             <li>now head back to Workerman Home page > All towns/workers list > import the json file you just created by running the script</li>
           </ul>
           <li>warning: if the totals in top right corner show ? after the import, you probably exceeded the F2P town limits for lodging/storage. look for towns marked red in <strong class="notranslate">All towns/workers</strong> list and adjust their <strong class="notranslate">config > P2W</strong> numbers</li>
@@ -177,37 +177,38 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           </ul>
         </ul>
       </li>
-      <li>Workloads (and therefore profits) depend on <strong class="notranslate">Modifiers</strong>. 
+      <li>Workloads (and therefore profits) depend on <RouterLink to="/resources">Resources</RouterLink>. 
         The default value works well for highly contested nodes (they are popular for a reason - you probably want them too).
-        Some niche nodes however can report up to 2x higher profit if you enter their real Modifiers.
+        Some niche nodes however can report up to 2x higher profit if you enter their real Resource values.
         <ul>
-          <li>Each green bar ingame does not belong to single resource node, but to a piece of land (aka RegionGroup), which may can contain multiple resource nodes, so they share the modifier.</li>
+          <li>Each green bar ingame does not belong to single resource node, but to a piece of land (aka RegionGroup), which may can contain multiple resource nodes, so they share the resource %.</li>
           <ul>
             <li>
-              <details><summary>RegionGroup borders can be somwhat seen on ingame Resource view, though some people say they can't (probably depends on graphics settings).</summary>
+              <details><summary>RegionGroup borders can be somewhat seen on ingame map > Resource view, though some people say they can't (probably depends on graphics settings).</summary>
                 <img src="/data\images\regiongroup.png">
               </details>
             </li>
           </ul>
-          <li>If you want to be really meticulous about it, switch to floating modifiers (in <strong class="notranslate">Modifiers</strong> > Advanced) and track the ingame modifiers change over time. More observations - more accuracy.</li>
+          <li>If you want to be really meticulous about it, switch to floating mode (in <RouterLink to="/resources">Resources</RouterLink> > Advanced) and track the ingame resources change over time. More observations - more accuracy.</li>
           <ul>
-            <li>With floating modifier, daily profit is calculated via the chance of reaching relevant workload breakpoints on each cycle. Detailed view available in edit worker dialog.</li>
+            <li>With floating resources, daily profit is calculated via the chance of reaching relevant workload breakpoints on each cycle. Detailed view available in edit worker dialog.</li>
             <li>Workloads shown in ~XXX format refer to median (50% chance) value. This is for reference only and is not used in profit calculations, the whole dataset is.</li>
-            <li>You can opt in to use floating modifier only for specific RegionGroups.</li>
+            <li>You can opt in to use floating resource only for specific RegionGroups.</li>
           </ul>
         </ul>
       </li>
-      <li>Try <a href="https://github.com/Thell/bdo-empire">bdo-empire</a> which takes a while to run, but creates an empire from scratch given a target amount of CP (and can by imported back into workerman)
+      <li>Try <a href="https://github.com/Thell/bdo-empire">bdo-empire</a> which takes a while to run, but creates an empire from scratch given a target amount of CP (and its output can be imported back into workerman)
       </li>
     </ul>
 
 
     <h2>Changelog</h2>
+    <li>show product icon for workshop jobs</li>
     <li>[2025-05-22 patch] Reduced CP costs of houses</li>
     <li>[2025-05-22 patch] Reduced CP costs of nodes</li>
     <li>[2025-05-22 patch] Added 12 plantzones in Ulukita + 4 around Keplan</li>
       <ul>
-        <li>droprates: v2 (1174 cycles observed)</li>
+        <li>droprates: v4 (cycles observed: ~6k)</li>
       </ul>
     <li>Plantzones page > <strong class="notranslate">hide taken</strong> checkbox</li>
     <li>In Empire > Best untaken, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">ignore storage cost</strong> option.</li>
@@ -225,7 +226,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <li>custom prices import/export</li>
     <li>workshop tweaks</li>
     <ul>
-      <li>worker packing skills now improve profit (please review <strong class="notranslate">$/cycle</strong> column in <strong class="notranslate">Settings</strong> > 🏭Workshops, probably needs to be reduced if you set it to 4x before)</li>
+      <li>worker packing skills now improve profit (please review <strong class="notranslate">$/cycle</strong> column in <RouterLink to="/settings">Settings</RouterLink> > 🏭Workshops config, probably needs to be reduced if you set it to 4x before)</li>
       <li>skill #1008 (refining) affects crate packing workspeed</li>
       <li>added intracity distances for workshops (and improved intercity)</li>
       <li>remote town workshop job requires (creates) a connection</li>
@@ -396,7 +397,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <li>[2023-05-03 patch] reduced 10 fences cost to 80 CP</li>
     <li>reimplemented workshop jobs to stay after worker reimport</li>
       <ul>
-        <li>each house can be set up in <strong class="notranslate">Settings &gt; Workshops config</strong> and stored separately from worker data</li>
+        <li>each house can be set up in <RouterLink to="/settings">Settings</RouterLink> &gt; <strong class="notranslate">Workshops config</strong> and stored separately from worker data</li>
         <li>previously assigned <strong class="notranslate">🏭Workshop</strong> jobs have been converted into <strong class="notranslate">✍️Custom</strong> jobs</li>
       </ul>
     <li>on town/node click, map pans to its location</li>
@@ -422,7 +423,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <li>selects nearest town by CP instead of distance</li>
       </ul>
     <li>removed Blue Maned Lion's Manor</li>
-    <li>~floating modifiers support</li>
+    <li>~floating resources support</li>
     <li>selecting a node highlights connection path</li>
     <li>worker job assignment moves to the end of connection queue</li>
     <li>worker editor: added button to suggest best skills for current job</li>
@@ -433,7 +434,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <li>configurable default worker for hire</li>
     <li>send worker dialog: show worker stats</li>
     <li>worker editor: when on job, show profit changes while editing</li>
-    <li>node info: show/edit the workload modifier</li>
+    <li>node info: show/edit the resource%</li>
     <li>Ancado lodging now requires other town connection (nearest chosen automatically)</li>
     <li>added nodes 911..914 & 1604 (ty @Ayashi)</li>
     <li>added total daily items summary</li>
@@ -446,8 +447,6 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
 
-    <li>Restore KR item names</li>
-    <li>when P2W storage of Yukjo street is set to negative, cycling between Ignore and Yukjo stash in Untaken tab changes CP</li>
     <li>[2024-11-21 patch] palace stuff maybe</li>
     <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
     <li>worker ranks are in linear stat space, should probably rework it to use "chance of achieving" space
@@ -464,7 +463,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         </li>
       </ul>
     <li>more pronounced warning when unable to resolve housing</li>
-    <li>home > on inactive plantzone hover show the profit estimate (with optimal worker from optimal town?)</li>
+    <li>home > when hovering an inactive plantzone, show the profit estimate (with optimal worker from optimal town?)</li>
     <li>need to rethink default "random art gob" hire since gobs are not BiS anymore</li>
       <ul>
         <li>a quick popup would be nice right after clicking <strong>hire</strong> asking 👺 or 🐢</li>
@@ -499,14 +498,13 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <li>don't optimize +2 wspd into +2 wspd with no benefit</li>
       </ul>
     <li>find a consistent fast way to build optimal connections (orderless)</li>
-    <li>add lodgage support to workshop system</li>
-    <li>on item icon hover: show name and price</li>
+    <li>add lodging/storage support to workshop system</li>
+    <li>on item icon hover: show tooltip with name and price</li>
     <li>workerlist: show drops instead of pzname</li>
     <li>grade towns/workers graphically with bar charts</li>
     <li>map tweaks
       <ul>
         <li>node hover: highlight potential path to town</li>
-        <li>save zoom too in addition to pos</li>
         <li>deal with missing tiles</li>
       </ul>
     </li>

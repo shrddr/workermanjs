@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "../views/HomeView.vue";
 import PlantzonesView from "../views/PlantzonesView.vue";
 import LodgingView from "../views/LodgingView.vue";
-import ModifiersView from "../views/ModifiersView.vue";
+import ResourcesView from "../views/ResourcesView.vue";
 import SettingsView from "../views/SettingsView.vue";
 import AboutView from "../views/AboutView.vue";
 import OtherTownsView from "../views/OtherTownsView.vue";
@@ -26,8 +26,8 @@ const router = createRouter({
       component: PlantzonesView
     },
     {
-      path: '/modifiers',
-      component: ModifiersView
+      path: '/resources',
+      component: ResourcesView
     },
     {
       path: '/settings',

@@ -11,10 +11,10 @@ export const useUserStore = defineStore({
     selectedTax: 0.65,
     customPrices: {},
     keepItems: {},
-    regionModifiers: {},
+    regionResources: {},
     allowFloating: false,
-    useFloatingModifiers: {},
-    regionModifiers2: {},
+    useFloatingResources: {},
+    regionResources2: {},
     
     lodgingP2W: {},
     storageP2W: {},
@@ -95,6 +95,7 @@ export const useUserStore = defineStore({
       }
 
       if ('userWorkers' in parsed) {
+        // event node
         parsed.userWorkers.forEach(w => {
           if (w.job == 1049) {
             w.job = null
@@ -126,6 +127,10 @@ export const useUserStore = defineStore({
               updated = true
             }
           }
+          // update custom job format
+          if (Array.isArray(w.job)) {
+            w.job = { kind: 'custom', profit: w.job[1], cp: w.job[2], label: w.job[3]}
+          }
         })
       }
 
@@ -133,6 +138,19 @@ export const useUserStore = defineStore({
         parsed.farmingP2WShare = parsed.farmingP2W ? 80 : 0
         delete parsed.farmingP2W
         updated = true
+      }
+
+      if ('regionModifiers' in parsed) {
+        parsed.regionResources = parsed.regionModifiers
+        delete parsed.regionModifiers
+      }
+      if ('useFloatingModifiers' in parsed) {
+        parsed.useFloatingResources = parsed.useFloatingModifiers
+        delete parsed.useFloatingModifiers
+      }
+      if ('regionModifiers2' in parsed) {
+        parsed.regionResources2 = parsed.regionModifiers2
+        delete parsed.regionModifiers2
       }
 
       if (updated) {
@@ -168,9 +186,9 @@ export const useUserStore = defineStore({
       worker.job = job
     },
 
-    // --------- floating modifier related
+    // --------- floating resource related
 
-    chanceAtModifier(rgk, mod) {
+    chanceAtResource(rgk, mod) {
       if (mod == 0)
         return 100
       const gameStore = useGameStore()
@@ -181,7 +199,7 @@ export const useUserStore = defineStore({
       // otherwise, lerp between nearest known time(a) and time(b)
       // a ---- mod -- b
       if (this.modSorteds[rgk] === undefined)
-        console.log('undefined modifiers at rgk', rgk)
+        console.log('undefined resource% at rgk', rgk)
       const pos_a = searchSorted(this.modSorteds[rgk], mod)
       //console.log(mod, pos_a)
       const pos_b = pos_a + 1
@@ -190,7 +208,7 @@ export const useUserStore = defineStore({
       if (pos_a === size) return 0
       const mod_a = this.modSorteds[rgk][pos_a]
       const time_a = this.modTimes[rgk][mod_a]
-      //console.log('chanceAtModifier', mod, pos_a, pos_b)
+      //console.log('chanceAtResource', mod, pos_a, pos_b)
       if (pos_a == pos_b) return time_a
       const mod_b = this.modSorteds[rgk][pos_b]
       const time_b = this.modTimes[rgk][mod_b]
@@ -200,7 +218,7 @@ export const useUserStore = defineStore({
       return time
     },
 
-    tierModifiers(rgk, baseWorkload, wspd) {
+    tierResources(rgk, baseWorkload, wspd) {
       const ret = []
       let prev_tier_time = 0
       const wld_lo = baseWorkload
@@ -211,13 +229,13 @@ export const useUserStore = defineStore({
         //wspd * tier = activewld = wld * (2 - mod)
         const mod = Math.max(2 - wspd * tier / wld_lo, 0)
         const wld = Math.floor(wld_lo * (2 - mod) / 100) * 100  // floor to prevent 770.0000000000001
-        const time = this.chanceAtModifier(rgk, mod*100)
+        const time = this.chanceAtResource(rgk, mod*100)
         //console.log(`w < ${wld.toFixed(2)}, mod > ${mod.toFixed(3)} -> tier ${tier}, time ${time}`)
         if (time == 0) continue
         ret.push({wld, mod, tier, time: time - prev_tier_time})
         prev_tier_time = time
       }
-      //console.log(rgk, baseWorkload, wspd, 'tierModifiers', ret.length)
+      //console.log(rgk, baseWorkload, wspd, 'tierResources', ret.length)
       return ret
     },
 
@@ -228,8 +246,8 @@ export const useUserStore = defineStore({
     calcCyclesDaily(baseWorkload, rgk, wspd, dist, mspd) {
       let ret = 0
       const moveMinutes = this.calcWalkMinutes(dist, mspd)
-      if (this.allowFloating && this.useFloatingModifiers[rgk]) {
-        for (const r of this.tierModifiers(rgk, baseWorkload, wspd)) {
+      if (this.allowFloating && this.useFloatingResources[rgk]) {
+        for (const r of this.tierResources(rgk, baseWorkload, wspd)) {
           const workMinutes = Math.ceil(r.wld / wspd)
           const cycleMinutes = 10 * workMinutes + moveMinutes
 
@@ -246,7 +264,7 @@ export const useUserStore = defineStore({
         ret = 24 * 60 / cycleMinutes
         //console.log('cycleMinutes', ret)
       }
-      //console.log(baseWorkload, this.useFloatingModifiers[rgk], wspd, dist, mspd, 'cycleMinutes', ret)
+      //console.log(baseWorkload, this.useFloatingResources[rgk], wspd, dist, mspd, 'cycleMinutes', ret)
       
       return ret
     },
@@ -284,11 +302,11 @@ export const useUserStore = defineStore({
     codexNodeUrl: (state) => `https://bdolytics.com/${state.selectedLang}/${state.selectedRegion}/db/node/`,
     itemUrl: (state) => `https://bdolytics.com/${state.selectedLang}/${state.selectedRegion}/db/item/`,
     
-    // --------- floating modifier related
+    // --------- floating resource related
 
     floatingRegionGroups() {
       const gameStore = useGameStore()
-      const ret = Object.keys(gameStore.regionGroups).filter(rgk => this.useFloatingModifiers.hasOwnProperty(rgk) && this.useFloatingModifiers[rgk])
+      const ret = Object.keys(gameStore.regionGroups).filter(rgk => this.useFloatingResources.hasOwnProperty(rgk) && this.useFloatingResources[rgk])
       //console.log('floatingRegionGroups', ret)
       return ret
     },
@@ -296,19 +314,19 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       for (const rgk of Object.keys(gameStore.regionGroups)) {
-        if (this.regionModifiers.hasOwnProperty(rgk)) {
-          ret[rgk] = [this.regionModifiers[rgk]]
+        if (this.regionResources.hasOwnProperty(rgk)) {
+          ret[rgk] = [this.regionResources[rgk]]
         }
         else {
           ret[rgk] = [0]
         }
       }
       for (const rgk of this.floatingRegionGroups) {
-        if (!(this.regionModifiers2.hasOwnProperty(rgk))) {
-          this.regionModifiers2[rgk] = [0]
+        if (!(this.regionResources2.hasOwnProperty(rgk))) {
+          this.regionResources2[rgk] = [0]
         }
         // [0, 50, 0] -> [50, 0, 0]
-        const sorted = this.regionModifiers2[rgk]
+        const sorted = this.regionResources2[rgk]
           //.split(',')
           .map(Number)
           .filter(v => !isNaN(v))
@@ -319,7 +337,7 @@ export const useUserStore = defineStore({
       //console.log('modHists', ret)
       return ret
     },
-    medianModifiers() {
+    medianResources() {
       const ret = {}
       for (const [rgk, histo] of Object.entries(this.modHists)) {
         let mod = 0
@@ -334,7 +352,7 @@ export const useUserStore = defineStore({
         }
         ret[rgk] = mod
       }
-      //console.log('medianModifiers', ret)
+      //console.log('medianResources', ret)
       return ret
     },
     medianWorkloads() {
@@ -342,7 +360,7 @@ export const useUserStore = defineStore({
       const gameStore = useGameStore()
       for (const [pzk, pzd] of Object.entries(gameStore.plantzones)) {
         const rgk = pzd.regiongroup
-        ret[pzk] = pzd.workload * (2 - this.medianModifiers[rgk]/100)
+        ret[pzk] = pzd.workload * (2 - this.medianResources[rgk]/100)
       }
       //console.log('medianWorkloads', ret)
       return ret
@@ -352,7 +370,7 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       for (const rgk of Object.keys(gameStore.regionGroups)) {
-        // [50, 0, 0] modifiers -> {50 mod: 33% time, 0 mod: 100% time}
+        // [50, 0, 0] Resources -> {50 mod: 33% time, 0 mod: 100% time}
         const size = this.modHists[rgk].length
         const times = {}
         // from leftmost cluster, take rightmost pos
@@ -413,7 +431,7 @@ export const useUserStore = defineStore({
     // ---------
 
     productivity: (state) => (rgr) => {
-      const prod = rgr in state.regionModifiers ? state.regionModifiers[rgr] : 0
+      const prod = rgr in state.regionResources ? state.regionResources[rgr] : 0
       return prod / 100
     },
 
@@ -1032,7 +1050,7 @@ export const useUserStore = defineStore({
       if (gameStore.jobIsFarming(w.job))
         return state.farmingProfitPerWorker
       if (gameStore.jobIsCustom(w.job))
-        return w.job[1]
+        return w.job.profit
       if (gameStore.jobIsWorkshop(w.job)) {
         const hk = w.job.hk
         if (!(hk in state.userWorkshops)) {
@@ -1053,7 +1071,7 @@ export const useUserStore = defineStore({
       if (gameStore.jobIsFarming(w.job))
         ret = 0
       if (gameStore.jobIsCustom(w.job))
-        ret = w.job[2]
+        ret = w.job.cp
       if (gameStore.jobIsWorkshop(w.job)) {
         const workersAtWorkshop = state.workersWorkshop.filter(ww => ww.job.hk == w.job.hk).length
         ret = state.userWorkshops[w.job.hk].manualCp / workersAtWorkshop
@@ -1320,13 +1338,13 @@ export const useUserStore = defineStore({
 
     customTotalProfit(state) {
       let ret = 0
-      state.workersCustom.forEach(w => ret += w.job[1])
+      state.workersCustom.forEach(w => ret += w.job.profit)
       return ret
     },
 
     customTotalCP(state) {
       let ret = 0
-      state.workersCustom.forEach(w => ret += w.job[2])
+      state.workersCustom.forEach(w => ret += w.job.cp)
       return ret
     },
 

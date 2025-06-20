@@ -1,10 +1,10 @@
 <script>
-import {useGameStore} from '../stores/game'
-import {useUserStore} from '../stores/user'
-import {useMarketStore} from '../stores/market'
+import {useGameStore} from '../stores/game.js'
+import {useUserStore} from '../stores/user.js'
+import {useMarketStore} from '../stores/market.js'
 import {formatFixed} from '../util.js'
 import ModalDialog from '../components/ModalDialog.vue'
-import FloatingModifierEdit from '../components/FloatingModifierEdit.vue'
+import FloatingResourceEdit from '../components/FloatingResourceEdit.vue'
 
 export default {
   setup() {
@@ -22,7 +22,7 @@ export default {
   },
   components: {
     ModalDialog,
-    FloatingModifierEdit,
+    FloatingResourceEdit,
   },
 
   data: () => ({
@@ -33,7 +33,7 @@ export default {
     importDialogVisible: false,
   }),
   watch: {
-    'userStore.useFloatingModifiers': {
+    'userStore.useFloatingResources': {
       handler(newValue, oldValue) {
         // catch individual switches
       },
@@ -45,8 +45,16 @@ export default {
 
     fileParse(event) {
       let str = event.target.result
-      let json = JSON.parse(str)
-      this.userStore.$patch(json)
+      let parsed = JSON.parse(str)
+      if ('regionModifiers' in parsed) {
+        parsed.regionResources = parsed.regionModifiers
+        delete parsed.regionModifiers
+      }
+      if ('regionModifiers2' in parsed) {
+        parsed.regionResources2 = parsed.regionModifiers2
+        delete parsed.regionModifiers2
+      }
+      this.userStore.$patch(parsed)
       this.setAllFloating(true)
       this.importDialogVisible = false
     },
@@ -74,19 +82,19 @@ export default {
     fileExport() {
       var a = document.createElement("a")
       let out = { 
-        regionModifiers: this.userStore.regionModifiers,
-        regionModifiers2: this.userStore.regionModifiers2,
+        regionResources: this.userStore.regionResources,
+        regionResources2: this.userStore.regionResources2,
       } 
       const str = JSON.stringify(out)
       var file = new Blob([str], {type: 'text/plain'});
       a.href = URL.createObjectURL(file);
-      a.download = 'modifiers.json';
+      a.download = 'resources.json';
       a.click();
     },
 
     clear() {
-      this.userStore.regionModifiers = {}
-      this.userStore.regionModifiers2 = {}
+      this.userStore.regionResources = {}
+      this.userStore.regionResources2 = {}
     },
 
     setAllFloating(val) {
@@ -95,7 +103,7 @@ export default {
         newDict[rgk] = val
       }
       // this is successfully tracked by standard (shallow) reactivity
-      this.userStore.useFloatingModifiers = newDict
+      this.userStore.useFloatingResources = newDict
     },
 
 
@@ -112,7 +120,7 @@ export default {
   </ModalDialog>
 
   <ModalDialog v-model:show="floatingDialogVisible">
-    <FloatingModifierEdit 
+    <FloatingResourceEdit 
       :rgk="floatingDialogRgroup"
       :wspd="floatingDialogWspd"
       :workload="floatingDialogWkld"
@@ -124,7 +132,7 @@ export default {
         v-for="pzk in gameStore.regionGroups[floatingDialogRgroup]" 
         :value="gameStore.plantzones[pzk] && gameStore.plantzones[pzk].peg.time"
       >
-        {{ gameStore.plantzoneName(pzk) }} - {{ gameStore.plantzones[pzk] && gameStore.plantzones[pzk].peg.time }} base
+        {{ gameStore.plantzoneName(pzk) }} ({{ gameStore.plantzones[pzk] && gameStore.plantzones[pzk].peg.time }} base)
       </option>
     </select>
     <br/>
@@ -141,10 +149,10 @@ export default {
   </ModalDialog>
 
   <div id="toptext">
-    <p>Productivity modifiers are shown ingame as green bars at world map > resource view.</p>
-    <p>Some green bars are hidden though, for those you can see the current workload for a specific node in ingame worker assignment panel and calculate the modifier off that.</p>
-    <p>Low modifier means lots of players are working in the area and workloads are increased (up to 2x of base).</p>
-    <p>If unspecified, 0% modifier will be used (= max workload = longest cycle = min cycles per day = min profit)</p>
+    <p>These values are shown ingame as green bars at world map > resource view.</p>
+    <p>However, some green bars are hidden/misplaced, for those you can check the current workload in worker assignment panel ingame.</p>
+    <p>Low (exhausted) resource means workloads of relevant nodes are increased (up to 2x of base) so each job takes longer to complete.</p>
+    <p>If unspecified here, 0% resource will be used (= max workload = longest cycle = min cycles per day = min profit)</p>
     
     <details>
       <summary>Advanced</summary>
@@ -152,7 +160,7 @@ export default {
       <button @click="fileExport()">export</button>
       <button @click="clear()">clear</button>
       <label>
-        <input type="checkbox" v-model="userStore.allowFloating">allow floating modifiers
+        <input type="checkbox" v-model="userStore.allowFloating">allow floating resources
       </label>
       <span v-if="userStore.allowFloating">
         <button @click="setAllFloating(true)">all floating</button>
@@ -164,8 +172,8 @@ export default {
   <table>
     <tr>
       <th>RG</th>
-      <th>Modifier%</th>
-      <th>Contains nodes</th>
+      <th>Resource %</th>
+      <th>Contains nodes with workload (base → current)</th>
     </tr>
 
     <tr v-for="plantzones, rgk in gameStore.regionGroups">
@@ -176,18 +184,18 @@ export default {
       <td class="center">
         <template v-if="userStore.allowFloating">
           <label class="switch mauto">
-            <input type="checkbox" v-model="userStore.useFloatingModifiers[rgk]">
+            <input type="checkbox" v-model="userStore.useFloatingResources[rgk]">
             <span class="slider"></span>
           </label>
         </template>
-        <template v-if="userStore.allowFloating && userStore.useFloatingModifiers[rgk]">
+        <template v-if="userStore.allowFloating && userStore.useFloatingResources[rgk]">
           floating<br/>
-          ~{{ formatFixed(userStore.medianModifiers[rgk], 2) }}
+          ~{{ formatFixed(userStore.medianResources[rgk], 2) }}
           <button @click="showDialog(rgk)">edit</button>
         </template>
         <template v-else>
           constant<br/>
-          <input type="number" v-model.number="userStore.regionModifiers[rgk]" min="0" max="100" step="0.01" class="w42em">
+          <input type="number" v-model.number="userStore.regionResources[rgk]" min="0" max="100" step="0.01" class="w42em">
         </template>
       </td>
 
@@ -198,7 +206,7 @@ export default {
           </RouterLink>
           {{ gameStore.ready && gameStore.plantzones[pzk].peg.time }}
 
-          <template v-if="userStore.allowFloating && userStore.useFloatingModifiers[rgk]">
+          <template v-if="userStore.allowFloating && userStore.useFloatingResources[rgk]">
             ⤳ {{ formatFixed(userStore.medianWorkloads[pzk], 2) }}
           </template>
           <template v-else>

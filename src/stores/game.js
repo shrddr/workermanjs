@@ -332,7 +332,7 @@ export const useGameStore = defineStore({
         "pack_ore": "pack_ore",
       }
 
-      // for modifiers view, calculated from pzStatic
+      // for resources view, calculated from pzStatic
       const regionGroups = {}
       for (const [key, value] of Object.entries(this.plantzoneStatic)) {
         if (key in this.plantzoneDrops) {
@@ -370,6 +370,9 @@ export const useGameStore = defineStore({
         7: '👨',  // lotml
         8: '🐢',  // lotml
       }
+
+      this.craftItems = await (await fetch(`data/house_craft_outputs.json`)).json()
+
       this.ready = true
 
       console.log('fetchGame took', Date.now()-start, 'ms')
@@ -1007,7 +1010,7 @@ export const useGameStore = defineStore({
       return job == 'farming'
     },
     jobIsCustom(job) {
-      return Array.isArray(job)
+      return job?.kind == 'custom'
     },
     jobIsWorkshop(job) {
       return job && typeof(job) == 'object' && 'kind' in job && job.kind == 'workshop'
@@ -1018,31 +1021,7 @@ export const useGameStore = defineStore({
       if (this.jobIsWorkshop(job)) return '🏭'
       return ''
     },
-    workerJobDescription(w, contextTnk) {
-      const job = w.job
-      if (this.jobIsIdle(job)) 
-        return 'idle'
-      if (this.jobIsPz(job)) 
-        return this.uloc.node[job.pzk]
-      if (this.jobIsFarming(job))
-        return '['+this.jobIcon(job)+']'
-      if (this.jobIsCustom(job))
-        return '['+this.jobIcon(job)+'] ' + job[3]
-      if (this.jobIsWorkshop(job)) {
-        const userStore = useUserStore()
-        const houseName = this.uloc.char[job.hk]
-        let houseShort = extractNumbers(houseName)
-        if (contextTnk) {
-          const houseTk = this.houseInfo[job.hk].affTown
-          const houseTnk = this.tk2tnk(houseTk)
-          if (contextTnk != houseTnk) {
-            houseShort = this.nodeName(houseTnk) + ' ' + houseShort
-          }
-        }
-        return '['+this.jobIcon(job)+'] ' + houseShort + ' ' + userStore.userWorkshops[job.hk].label
-      }
-      return 'UNKNOWN_JOBTYPE'
-    },
+
 
     lsLookup(tk, wantLodging, wantStorage) {
       if (!this.ready)

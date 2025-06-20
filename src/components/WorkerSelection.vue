@@ -82,7 +82,7 @@ export default {
     <div>Nearest idle workers for {{ gameStore.uloc.char[hk] }} {{ workshop.label ? '"'+workshop.label+'"' : '' }} 
       ({{ workshop.manualWorkload }} workload, {{ workshop.manualCycleIncome }} $/cycle,
       type: {{ workshop.industry }} 
-      <abbr class="tooltip" title="see Settings > 🏭Workshops">ℹ️</abbr>):
+      <abbr class="tooltip" title="see Settings > 🏭Workshops">ℹ</abbr>):
       <template v-if="freeWorkers.length == 0">
         None
       </template>

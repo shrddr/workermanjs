@@ -44,7 +44,7 @@ export default {
     'editWorker',
     'sendWorker',
     'panToPaPos',
-    'showModifierDialog',
+    'showResourceDialog',
     'setClickedNode',
     'selectWorker',
   ],
@@ -76,8 +76,8 @@ export default {
     panToPaPos(e) {
       this.$emit('panToPaPos', e)
     },
-    showModifierDialog(pzk) {
-      this.$emit('showModifierDialog', pzk)
+    showResourceDialog(pzk) {
+      this.$emit('showResourceDialog', pzk)
     },
     setClickedNode(n) {
       this.$emit('setClickedNode', n)
@@ -150,7 +150,7 @@ export default {
       <p>
         {{ gameStore.uloc.node[clickedNode.key] }}
         <template v-if="userStore.autotakenGrindNodes.has(clickedNode.key)">
-          <s>{{ clickedNode.thisCpCost }}CP</s> <abbr class="tooltip" title="is involved in a zero-cost path">ℹ️</abbr>
+          <s>{{ clickedNode.thisCpCost }}CP</s> <abbr class="tooltip" title="is involved in a zero-cost path">ℹ</abbr>
         </template>
         <template v-else>
           {{ clickedNode.thisCpCost }}CP
@@ -184,7 +184,7 @@ export default {
     <div id="clickedPlantzoneInfo" v-if="gameStore.isPlantzone(clickedNode.key)">
       <Plantzone
         :pzk="clickedNode.key"
-        @showModifierDialog="showModifierDialog"
+        @showResourceDialog="showResourceDialog"
         @editWorker="editWorker"
       />
     </div>
