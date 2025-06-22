@@ -25,6 +25,10 @@ export function randBetween(a, b) {
   return a + (b - a) * Math.random()
 }
 
+export function isNumber(value) {
+   return typeof value === 'number' && isFinite(value)
+}
+
 export function isGoodVal(v) {
   return !isNaN(v) && isFinite(v)
 }

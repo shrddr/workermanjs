@@ -133,6 +133,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       3. Lucky drops across all regions: observed in june 2023.<br/>
       4. Morning Land drops: observed at summer 2023 - regular nodes are fine, excavations are approximate, too rare to judge confidently (see <a href="https://discord.com/channels/371035077037129729/404532586246045696/1284834924381212704">table</a>).<br/>
       5. Seoul drops: observed non-thoroughly in september 2024, when in doubt picked values most similar to existing node drops from (1).<br/>
+      6. Ulukita drops: observed in june 2025.<br/>
       I've been adjusting all of the above over time (when relevant changes are published in patch notes, like "increased yields at node X by Y%").
     </QnaItem>
 

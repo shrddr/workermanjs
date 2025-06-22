@@ -1,6 +1,7 @@
 <script>
 import { formatFixed, formatKMG, isGoodVal } from '../../util.js'
-import { makeBinomialArray, makeNormalArray, makeUniformArray, makeTriangularArray, sumDistributions, loss } from '../../stats.js'
+import { makeBinomialArray, makeNormalArray, makeLognormalArray, makeUniformArray, makeTriangularArray, makeGammaArray, sumDistributions, loss } from '../../stats.js'
+import FishCurve from './FishCurve.vue'
 
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
@@ -35,21 +36,41 @@ use([
 
 export default {
   data: () => ({
-    share_T: 0.5,
-    M_T: 1.0,
-    width_T: 0.76,
-
-    selected_npU: 0.69,
-    width_U: 0.49,
-
-
-    selected_npL: 1.25,
-    selected_std: 0.42,
-
-
+    curves: [],
+    presets: [
+      [
+        {amount: 1.00, kind: 'Lognormal', mean: 1.00, sigma: 0.41},
+      ],
+      [
+        {amount: 1.00, kind: 'Gamma', alpha: 6.65, theta: 0.158},
+      ],
+      [
+        {amount: 0.83, kind: 'Normal', mean: 1.08, sigma: 0.38},
+        {amount: 1.00, kind: 'Normal', mean: 0.69, sigma: 0.16},
+      ],
+      [
+        {amount: 0.48, kind: 'Normal', mean: 0.74, sigma: 0.20},
+        {amount: 0.76, kind: 'Normal', mean: 1.20, sigma: 0.21},
+        {amount: 1.00, kind: 'Normal', mean: 1.64, sigma: 0.22},
+      ],
+      [
+        {amount: 0.50, kind: 'Triangular', center: 1.00, width: 0.76},
+        {amount: 0.32, kind: 'Triangular', center: 0.69, width: 0.34},
+        {amount: 1.00, kind: 'Normal',       mean: 1.25, sigma: 0.42},
+      ],
+      [
+        {amount: 0.25, kind: 'Normal', mean: 0.62, sigma: 0.16},
+        {amount: 0.34, kind: 'Normal', mean: 0.87, sigma: 0.15},
+        {amount: 0.50, kind: 'Normal', mean: 1.18, sigma: 0.18},
+        {amount: 1.00, kind: 'Normal', mean: 1.47, sigma: 0.28},
+      ],
+    ],
     forceMSE: false,
     bestPval: 0,
   }),
+  mounted() {
+    this.loadPreset(0)
+  },
   props: {
     stats: Object,
     histogram: Object,
@@ -58,6 +79,7 @@ export default {
   },
   components: {
     VChart,
+    FishCurve,
   },
   methods: {
     isGoodVal,
@@ -65,132 +87,149 @@ export default {
     formatKMG,
     makeBinomialArray,
     makeNormalArray,
+    makeLognormalArray,
     makeUniformArray,
+    makeGammaArray,
     makeTriangularArray,
     sumDistributions,
     loss,
 
+    removeCurve(index) {
+      this.curves.splice(index, 1)
+      this.curves[this.curves.length-1].amount = 1
+    },
     
-    makeModel(npU, npL, stdDev) {
-      // if n is specified, just creates a model
-      // if not specified, sweeps to find best n
-      let stdDev_candidates = [stdDev]
-      if (stdDev === undefined) {
-        stdDev_candidates = [
-          this.stats.mean * 0.23,
-          this.stats.mean * 0.24,
-          this.stats.mean * 0.25,
-          this.stats.mean * 0.26,
-          this.stats.mean * 0.27,
-        ]
+    addCurve() {
+      this.curves[this.curves.length-1].amount /= 2
+      this.curves.push(
+        {amount: 1, kind:'Normal', mean: 1, sigma: 0.1},
+      )
+    },
+
+    loadPreset(index) {
+      const preset = this.presets[index]
+      this.curves = []
+      for (const curve of preset) this.curves.push({...curve})
+    },
+
+    makeModel() {
+      const model = {
+        bells: [],
+        bell: [],
       }
-
-      let best_model = {n: undefined, loss: {mse: undefined, chisq: undefined, pval: undefined}}
-      if (this.stats.unlucky.len == 0) return best_model
-      
-      stdDev_candidates.forEach((stdDev) => {
-        const model = {npL, stdDev, npU}
-        
-        //model.bellU = this.makeNormalArray(npU, this.stats.unlucky.len, this.stats.max, stdDev)
-        //model.bellL = this.makeNormalArray(npU+npL, this.stats.lucky.len, this.stats.max, stdDev)
-        //model.bellL = this.makeUniformArray(npL, this.stats.lucky.len, this.stats.max, 15)
-
-        model.bellT = this.makeTriangularArray(this.M_T * this.avg_size, this.share_T * this.stats.len, this.stats.max, this.avg_size * this.width_T)
-        model.bellU = this.makeTriangularArray(npU * this.avg_size, (1 - this.share_T) * this.stats.unlucky.len, this.stats.max, npU * this.avg_size * this.width_U)
-        model.bellL = this.makeNormalArray(npL * this.avg_size, (1 - this.share_T) * this.stats.lucky.len, this.stats.max, stdDev * this.avg_size)
-        
-
-        model.bell = this.sumDistributions(model.bellL, model.bellU)
-        model.bell = this.sumDistributions(model.bell, model.bellT)
-        
-
-        model.loss = this.loss(model.bell, this.histogram.map, 3)
-        //console.log('makeModel npU', npU, 'npL', npL, 'n', n, '->', model.loss)
-
-        //const better_pval = isGoodVal(model.loss.pval) && (!isGoodVal(best_model.loss.pval) || model.loss.pval > best_model.loss.pval)
-        //const better_chisq = isGoodVal(model.loss.chisq) && (!isGoodVal(best_model.loss.chisq) || model.loss.chisq < best_model.loss.chisq)
-        const better_mse = isGoodVal(model.loss.mse) && (!isGoodVal(best_model.loss.mse) || model.loss.mse < best_model.loss.mse)
-        if (better_mse) {
-          //console.log('new best model', npU, npL, n, model.loss.mse, model.loss.pval)
-          best_model = model
-          let sumX = 0
-          let sumY = 0
-          for (const [_, [sx, y_model]] of Object.entries(model.bell)) {
-            sumX += y_model
-            sumY += sx * y_model
-          }
-          best_model.sumX = sumX
-          best_model.sumY = sumY
+    
+      let amount_remain = this.stats.len
+      for (const curve of this.curves) {
+        let bell = null
+        switch(curve.kind) {
+          case 'Normal':
+            if (curve.amount == 'rest') curve.amount = amount_remain
+            bell = this.makeNormalArray(
+              curve.mean * this.avg_size,
+              curve.amount * amount_remain,
+              this.stats.max,
+              curve.sigma * this.avg_size
+            )
+            amount_remain -= curve.amount * amount_remain
+            //console.log('normal', bell)
+            break
+          case 'Triangular':
+            bell = this.makeTriangularArray(
+              curve.center * this.avg_size, 
+              curve.amount * amount_remain,
+              this.stats.max, 
+              curve.width * this.avg_size
+            )
+            amount_remain -= curve.amount * amount_remain
+            //console.log('triangle', bell)
+            break
+          case 'Uniform':
+            bell = this.makeUniformArray(
+              curve.center * this.avg_size, 
+              curve.amount * amount_remain,
+              this.stats.max, 
+              curve.width * this.avg_size
+            )
+            amount_remain -= curve.amount * amount_remain
+            //console.log('triangle', bell)
+            break
+          case 'Gamma':
+            bell = this.makeGammaArray(
+              curve.alpha * 1.00,
+              curve.amount * amount_remain,
+              this.stats.max, 
+              curve.theta * this.avg_size
+            )
+            amount_remain -= curve.amount * amount_remain
+            //console.log('triangle', bell)
+            break
+          case 'Lognormal':
+            bell = this.makeLognormalArray(
+              curve.mean * Math.log(this.avg_size),
+              curve.amount * amount_remain,
+              this.stats.max,
+              curve.sigma
+            )
+            amount_remain -= curve.amount * amount_remain
+            //console.log('triangle', bell)
+            break
+          default:
+            throw Error(`unknown curve kind ${curve.kind}`)
         }
-
-      })
-      //console.log('makeModel done: npU', npU, 'npL', npL, '->', best_model)
-      if (!best_model)
-        console.log('makeModel failed', npU, npL, stdDev)
-      return best_model
-    },
-
-    applySelectedNpL(val) {
-      if (val < 0) return
-      if (val > this.selected_nL)
-        this.selected_nL = Math.ceil(val)
-      this.selected_npL = val
-    },
-
-    applySelectedNpU(val) {
-      if (val < 0) return
-      this.selected_npU = val
-    },
-
-    applySelectedNL(val) {
-      if (val < 0) return
-      if (val < this.selected_npL)
-        this.selected_npL = val
-      this.selected_nL = val
-    },
-
-    applySelectedNU(val) {
-      if (val < 0) return
-      if (val < this.selected_npU)
-        this.selected_npU = val
-      this.selected_nU = val
-    },
-
-    applySelectedStd(val) {
-      if (val < 0) return
-      this.selected_std = val
-    },
-
-    meanOfDistribution(bell) {
-      let events = 0
-      let qty = 0
-      for (let [k, y] of bell) {
-        events += y
-        qty += k * y
+        model.bells.push(bell)
+        model.bell = this.sumDistributions(model.bell, bell)
       }
-      return qty / events
-    }
+
+      model.loss = this.loss(model.bell, this.histogram.map, 3)
+      //console.log('makeModel done: npU', npU, 'npL', npL, '->', best_model)
+      if (!model)
+        console.log('makeModel failed', npU, npL, stdDev)
+      return model
+    },
   },
+  
   computed: {
     modelC() {
-      const model = this.makeModel(this.selected_npU, this.selected_npL, this.selected_std)
-      console.log('modelC', model)
+      const model = this.makeModel()
+      console.log('model', model)
       return model
     },
 
     makeHistogramOption() {
       const chartOption = {
         legend: {},
+        title: {
+          text: `MSE=${formatFixed(this.modelC.loss.mse, 2)}\np-val=${formatFixed(this.modelC.loss.pval, 4)}`,
+          textStyle: {
+            fontWeight: 'normal',
+            fontSize: 11,
+          },
+          right: '3%',
+          top: '10%',
+        },
         tooltip: {
           trigger: 'axis',
+          extraCssText: 'background: var(--color-background);border-color: gray;color: var(--color-text);',
           valueFormatter: v => formatFixed(v, 1),
+          formatter: function (params) {
+            const x = params[0].axisValue
+            let result = `<div style="text-align:center;">[ ${x}...${x+1} )</div>`
+
+            params.forEach(item => {
+              const y = item.seriesName == 'observed' ? item.data[1] : formatFixed(item.data[1], 1)
+              result += `<div>
+                <div style="display:inline-block;">${item.marker} ${item.seriesName}</div>
+                <div style="float:right;margin-left:10px;font-weight:600">${y}</div>
+              </div>`
+            })
+
+            return result
+          }
         },
         dataset: [
           { source: this.histogram.arr },
           { source: this.modelC.bell },
-          { source: this.modelC.bellL },
-          { source: this.modelC.bellU },
-          { source: this.modelC.bellT },
+          // ...
         ],
         xAxis: {
           //axisLine: { onZero: false },
@@ -204,7 +243,9 @@ export default {
             formatter: value => this.formatKMG(value)
           },
         },
-        grid: { left: 35, top: 30, right: 10, bottom: 20 },
+        grid: { 
+          left: 35, top: 30, right: 10, bottom: 20,
+        },
         series: [
           {
             name: 'observed',
@@ -216,34 +257,28 @@ export default {
             },
           },
           {
-            name: 'model Σ',
+            name: 'curve Σ',
             type: 'line',
             datasetIndex: 1,
             encode: { x: 0, y: 1 },
             showSymbol: false,
+            lineStyle: { opacity: 1 },
           },
-          {
-            name: 'model U',
-            type: 'line',
-            datasetIndex: 3,
-            encode: { x: 0, y: 1 },
-            showSymbol: false,
-          },
-          {
-            name: 'model L',
-            type: 'line',
-            datasetIndex: 2,
-            encode: { x: 0, y: 1 },
-            showSymbol: false,
-          },
-          {
-            name: 'model T',
-            type: 'line',
-            datasetIndex: 4,
-            encode: { x: 0, y: 1 },
-            showSymbol: false,
-          },
+          // ...
         ],
+      }
+      for (const [i, bell] of this.modelC.bells.entries()) {
+        chartOption.dataset.push({
+          source: bell
+        })
+        chartOption.series.push({
+          name: `curve ${i}`,
+          type: 'line',
+          datasetIndex: 2 + i,
+          encode: { x: 0, y: 1 },
+          showSymbol: false,
+          lineStyle: { opacity: 1 },
+        })
       }
       return chartOption
     },
@@ -253,78 +288,38 @@ export default {
 </script>
 
 <template>
-  <span class="title">Fish Model</span>
-  <span>: some points were taken from a distribution L,
-    and the rest from distribution U,<br/>
-  so (1 - λ) npᵁ + λ (npᵁ + npᴸ) = M, where 
-  λ ∈ {{ formatFixed(stats.lucky.shareLo*100, 2) }}…{{ formatFixed(stats.lucky.shareHi*100, 2) }}% and 
-  M ∈ {{ formatFixed(stats.mean - 1.96 * stats.meanErr, 2) }}…{{ formatFixed(stats.mean + 1.96 * stats.meanErr, 2) }}</span><br/>
+  <div>
+    <button v-for="(_, index) in presets" @click="loadPreset(index)">preset{{ index }}</button>
 
-  <div style="float:left;">
-    <div style="padding:1em;">
-      <div style="float:left;">
-        <table>
-          <tr>
-            <th></th>
-            <th>npᵁ</th>
-            <th>npᴸ</th>
-            <th>σ</th>
-            <th>MSE</th>
-            <th>p-val</th>
-            <th>U/M</th>
-            <th>(U+L)/M</th>
-            <th>(U+L)/U</th>
-            <th>Σx</th>
-            <th>Σy</th>
-          </tr>
-          <tr>
-            <td>Manual:</td>
-            <td>{{ formatFixed(selected_npU, 2) }}</td>
-            <td>{{ formatFixed(selected_npL, 2) }}</td>
-            <td>{{ formatFixed(selected_std, 2) }}</td>
-            <td>{{ formatFixed(modelC.loss.mse, 2) }}</td>
-            <td>{{ formatFixed(modelC.loss.pval, 4) }}</td>
-            <td>{{ formatFixed(selected_npU / avg_size, 2) }}</td>
-            <td>{{ formatFixed((selected_npU + selected_npL) / avg_size, 2) }}</td>
-            <td>{{ formatFixed((selected_npU + selected_npL) / selected_npU, 2) }}</td>
-            <td>{{ formatFixed(modelC.sumX, 1) }}</td>
-            <td>{{ formatFixed(modelC.sumY, 0) }}</td>
-          </tr>
-        </table>
-        <p>
-          <input type="range" v-model="share_T" :min="0" :max="1" :step="0.001" class="vmid"> {{ share_T }} share_T
-          <br/>
-          <input type="range" v-model="M_T" :min="0.9" :max="1.1" :step="0.001" class="vmid"> {{ M_T }} M_T
-          <input type="range" v-model="width_T" :min="0.7" :max="0.8" :step="0.001" class="vmid"> {{ width_T }} width_T
-          <br/>
-          <input type="range" @input="event => applySelectedNpU(Number(event.target.value))" :value="selected_npU" :min="0" :max="1" :step="0.01" class="vmid"> npᵁ
-          <input type="range" v-model="width_U" :min="0" :max="1" :step="0.01" class="vmid"> {{ width_U }} width_U
-          <br/>
-          <input type="range" @input="event => applySelectedNpL(Number(event.target.value))" :value="selected_npL" :min="0" :max="2" :step="0.01" class="vmid"> npᴸ
-          <input type="range" @input="event => applySelectedStd(Number(event.target.value))" :value="selected_std" :min="0" :max="1" :step="0.01" class="vmid"> σ
-        </p>
-      </div>
-      <div style="clear:both;"></div>
-    </div>
+    <table>
+      <tr v-for="(_, index) in curves">
+        <td>
+          {{ index }}
+        </td>
+        <FishCurve
+          :key="index"
+          :isLast="index == curves.length - 1"
+          v-model:me="curves[index]"
+          @delete="removeCurve(index)"
+        />
+      </tr>
+    </table>
+    <button @click="addCurve">add curve</button>
   </div>
 
-  <div id="chartHisto" style="float:left;" v-if="modelC.bell && modelC.npL != undefined">
-    <v-chart :option="makeHistogramOption" />
+  <div id="chartHisto" style="float:left;" v-if="modelC.bell">
+    <v-chart :option="makeHistogramOption" :update-options="{notMerge: true}" autoresize />
   </div>
   
   <div style="clear:both;"></div>
 
-  <br/>
-  <p class="fsxs">MSE: <i>Σ (observed - model)²</i>, discard nothing ← this is used for fitting</p>
-  <p class="fsxs">χ²: discard bins where model &lt; 3, then <i>Σ (observed - model)² / model</i></p>
-  <p class="fsxs">p-val: <i>1 - chisquare.cdf(χ², bins - 1 - dof)</i> ← this is shown on scatter plot, non uniform because depends on previous step discards</p>
 </template>
 
 <style scoped>
 
 #chartHisto {
   float: left;
-  width: 600px;
+  width: 646px;
   height: 400px;
 }
 </style>

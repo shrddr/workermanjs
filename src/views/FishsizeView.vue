@@ -1,6 +1,6 @@
 <script>
 import binomialTest from '@stdlib/stats-binomial-test';
-import { formatFixed, makeIconSrc } from '../util.js'
+import { formatFixed, isNumber, makeIconSrc } from '../util.js'
 import FishModel from '../components/droprateModels/FishModel.vue'
 
 import { jStat } from 'jstat-esm';
@@ -93,10 +93,9 @@ export default {
       const ret = []
       if (this.selectedFish in this.alldata) {
         const info = this.get_fish_info(this.selectedFish)
-        const avg_size = (info.BaseSize + info.FishVarySize) / 2
         for (const v of this.alldata[this.selectedFish]) {
           if (this.mode_relative)
-            ret.push(this.relative_base * v / avg_size)
+            ret.push(this.relative_base * v / info.avg_size)
           else
             ret.push(v)
         }
@@ -216,55 +215,9 @@ export default {
       stats.meanLo = stats.mean - this.generalSigmas * stats.meanErr
       stats.meanHi = stats.mean + this.generalSigmas * stats.meanErr
 
-      stats.lucky = { 
-        len: totalLuckyLen,
-        share: totalLuckyLen / stats.len,
-        mean: 0,
-        std: 0,
-        /*lenHi: luckyLenHi,
-        lenLo: luckyLenLo,
-        shareHi: luckyLenHi / stats.len,
-        shareLo: luckyLenLo / stats.len,*/
-        lenHi: 0,
-        lenLo: 0,
-        shareHi: 0,
-        shareLo: 0,
-      }
-
-      if (isNaN(stats.lucky.share)) {
-        stats.lucky.shareLo = NaN
-        stats.lucky.shareHi = NaN
-        stats.lucky.lenLo = NaN
-        stats.lucky.lenHi = NaN
-      }
-      else {
-        console.log('binomTest of lucky share%=', stats.lucky.share, 'with significance=', 1-stats.generalConfidence/100)
-        const luckyStats = this.binomialTest(
-          Math.round(stats.lucky.len), 
-          stats.len, 
-          {
-            p: stats.lucky.share,
-            alpha: 1-stats.generalConfidence/100,
-          } 
-        )
-        stats.lucky.shareLo = luckyStats.ci[0]
-        stats.lucky.shareHi = luckyStats.ci[1]
-        stats.lucky.lenLo = luckyStats.ci[0] * stats.len
-        stats.lucky.lenHi = luckyStats.ci[1] * stats.len
-      }
-
-      stats.unlucky = { 
-        len: stats.len - totalLuckyLen, 
-        share: 1 - stats.lucky.share, 
-        mean: 0, 
-        std: 0,
-      }
-
-      // makeWeightedStats
-
-      let accMeanU = 0
-      let accMeanL = 0
       
+
+           
 
       console.log('stats', stats)
       return stats
@@ -317,12 +270,13 @@ export default {
 
   methods: {
     formatFixed,
+    isNumber,
     makeIconSrc,
     binomialTest,
 
     async fetchObservations() {
       const start = Date.now()
-      this.alldata = await (await fetch(`data/manual/my_catches.json`)).json()
+      this.alldata = await (await fetch(`data/manual/catches_by_fish.json`)).json()
       this.fish_info = await (await fetch(`data/manual/fish_info.json`)).json()
 
       if (this.mode_relative) {
@@ -335,36 +289,80 @@ export default {
           for (const v of sizes) all.push(this.relative_base * v / avg_size)
         }
         this.alldata['ALL'] = all
-        this.fish_info['ALL'] = {BaseSize: this.relative_base, FishVarySize: this.relative_base}
+        this.fish_info['ALL'] = {BaseSize: 'x', FishVarySize: 'x', avg_size: this.relative_base}
       }
 
-      const group_sizes = {}
+      const bs_group_sizes = {}
+      const avg_group_sizes = {}
 
       for (const [ik, sizes] of Object.entries(this.alldata)) {
         const info = this.get_fish_info(ik)
         const groupKey = `${info.BaseSize}_${info.FishVarySize}`
         const sample_count = sizes.length
-        if (!(groupKey in group_sizes)) {
-          group_sizes[groupKey] = {fishes: [], totalSamples: 0}
+        if (!(groupKey in bs_group_sizes)) {
+          bs_group_sizes[groupKey] = {fishes: [], totalSamples: 0}
         }
-        group_sizes[groupKey].fishes.push(ik)
-        group_sizes[groupKey].totalSamples += sample_count
+        bs_group_sizes[groupKey].fishes.push(ik)
+        bs_group_sizes[groupKey].totalSamples += sample_count
       }
-      console.log('group_sizes', group_sizes)
+      console.log('bs_group_sizes', bs_group_sizes)
 
       for (const [ik, sizes] of Object.entries(this.alldata)) {
         const info = this.get_fish_info(ik)
-        const groupKey = `${info.BaseSize}_${info.FishVarySize}`
-        const group = group_sizes[groupKey]
-        if (group.fishes.length > 1 && group.totalSamples > 1000) {
-          const groupName = group.fishes.join("+")
-          //console.log('filling group', groupName)
-          if (!(groupName in this.alldata)) {
-            this.alldata[groupName] = []
-          }
-          this.fish_info[groupName] = {BaseSize: info.BaseSize, FishVarySize: info.FishVarySize}
-          for (const size of sizes) this.alldata[groupName].push(size)
+        const groupKey = `${info.avg_size}`
+        const sample_count = sizes.length
+        if (!(groupKey in avg_group_sizes)) {
+          avg_group_sizes[groupKey] = {fishes: [], totalSamples: 0}
         }
+        avg_group_sizes[groupKey].fishes.push(ik)
+        avg_group_sizes[groupKey].totalSamples += sample_count
+      }
+      console.log('avg_group_sizes', avg_group_sizes)
+
+      const bs_groups = {}
+      const avg_groups = {}
+
+      for (const [ik, sizes] of Object.entries(this.alldata)) {
+        const info = this.get_fish_info(ik)
+        const bs_groupKey = `${info.BaseSize}_${info.FishVarySize}`
+        const bs_group = bs_group_sizes[bs_groupKey]
+        if (bs_group.fishes.length > 1 && bs_group.totalSamples > 1000) {
+          const groupName = bs_group.fishes.join("+")
+          //console.log('filling group', groupName)
+          if (!(groupName in bs_groups)) {
+            bs_groups[groupName] = { 
+              sizes: [], 
+              info: {BaseSize: info.BaseSize, FishVarySize: info.FishVarySize}
+            }
+          }
+          for (const size of sizes) bs_groups[groupName].sizes.push(size)
+        }
+
+        const avg_groupKey = `${info.avg_size}`
+        const avg_group = avg_group_sizes[avg_groupKey]
+        if (avg_group.fishes.length > 1 && avg_group.totalSamples > 1000) {
+          const groupName = avg_group.fishes.join("+")
+          if (groupName in bs_groups) continue
+          //console.log('filling group', groupName)
+          if (!(groupName in avg_groups)) {
+            avg_groups[groupName] = { 
+              sizes: [], 
+              info: {BaseSize: 'x', FishVarySize: 'x', avg_size: info.avg_size}
+            }
+          }
+          for (const size of sizes) avg_groups[groupName].sizes.push(size)
+        }
+      }
+
+      for (const [fishList, group] of Object.entries(bs_groups)) {
+        const name = `by BS/FVS (${fishList})`
+        this.alldata[name] = group.sizes
+        this.fish_info[name] = group.info
+      }
+      for (const [fishList, group] of Object.entries(avg_groups)) {
+        const name = `by AVG (${fishList})`
+        this.alldata[name] = group.sizes
+        this.fish_info[name] = group.info
       }
 
       // TODO: scan all data, group by AvgSize and highlight with same
@@ -378,6 +376,7 @@ export default {
 
     get_fish_info(ik) {
       const ret = ik in this.fish_info ? this.fish_info[ik] : {"BaseSize": 1, "FishVarySize": 1}
+      if ('avg_size' in ret) return ret
       ret.avg_size = (ret.BaseSize + ret.FishVarySize) / 2
       return ret
     },
@@ -390,31 +389,59 @@ export default {
     <div id="menu">
       <div style="display: none;">{{ selectedFish }}</div>
 
-      <input type="checkbox" v-model="mode_relative">relative sizes (scaled to AVG=
-      <input type="number" v-model="relative_base" step="10" style="width: 4em;">
+      <input type="checkbox" v-model="mode_relative">relative sizes (scaled to Avg=
+      <input type="number" v-model="relative_base" step="10" style="width: 3.5em;">
       )
       <br/>
 
-      <template v-for="sizes, ik in alldata">
-        <div v-if="sizes.length > 600">
-          {{ ik }} {{ get_fish_info(ik).BaseSize }} {{ get_fish_info(ik).FishVarySize }} {{ get_fish_info(ik).avg_size }}
-          <button
-            :class="{ pressed: ik === selectedFish }"
-            @click="activate(ik)"
-          >
-            {{ sizes.length }} points
-          </button>
-        </div>
-      </template>
+      <table>
+        <tr>
+          <th>ik</th>
+          <th>BS</th>
+          <th>FVS</th>
+          <th>Avg</th>
+          <th>data</th>
+        </tr>
+        <template v-for="sizes, ik in alldata">
+          <tr v-if="sizes.length > 600">
+            <td>
+              <template v-if="ik.startsWith('by')">
+                <abbr class="tooltip" :title="ik">group</abbr>
+              </template>
+              <template v-else>
+                {{ ik }}
+              </template>
+            </td>
+            <td>
+              {{ get_fish_info(ik).BaseSize }}
+            </td>
+            <td>
+              {{ get_fish_info(ik).FishVarySize }}
+            </td>
+            <td>
+              {{ get_fish_info(ik).avg_size }}
+            </td>
+            <td>
+              <button
+                :class="{ pressed: ik === selectedFish }"
+                @click="activate(ik)"
+              >
+                {{ sizes.length }}
+              </button>
+            </td>
+          </tr>
+        </template>
+      </table>
     </div>
 
     <div id="content">
-      <input type="range" v-model="selectedLuck" min="0" max="100" :step="0.1" class="vmid">
-      {{ selectedLuck }} luck
 
       <details>
-        <summary>Dataset: size N = {{ stats.len }}, sum {{ formatFixed(stats.sum, 3) }}, 
+        <summary>Dataset: 
+          size N = {{ stats.len }},
           mean M = {{ formatFixed(stats.mean, 3) }}±{{ formatFixed(1.96 * stats.meanErr, 3) }},
+          min = {{ formatFixed(stats.min, 3) }},
+          max = {{ formatFixed(stats.max, 3) }}
         </summary>
 
         <div>
@@ -430,7 +457,7 @@ export default {
         <FishModel 
           :stats="stats" 
           :histogram="histogram"
-          :avg_size="mode_relative ? relative_base : fish_info[selectedFish]"
+          :avg_size="mode_relative ? relative_base : fish_info[selectedFish].avg_size"
         />
       </div>
 
@@ -449,7 +476,7 @@ export default {
 #content {
   position: absolute;
   padding-left: 2em;
-  left: 370px;
+  left: 250px;
 }
 
 #settings {

@@ -1,5 +1,29 @@
 import { jStat } from 'jstat-esm';
 
+export function makeLognormalArray(mean, samples, bins, sigma) {
+  let ret = []
+  for (let k = 0; k <= bins; k++) {
+    const binCenter = 0.5 + k
+    const probability = jStat.lognormal.pdf( binCenter, mean, sigma )
+    const y = probability * samples
+
+    ret.push([k, y])
+  }
+  return ret
+}
+
+export function makeGammaArray(alpha, samples, bins, theta) {
+  let ret = []
+  for (let k = 0; k <= bins; k++) {
+    const binCenter = 0.5 + k
+    const probability = jStat.gamma.pdf( binCenter, alpha, theta )
+    const y = probability * samples
+
+    ret.push([k, y])
+  }
+  return ret
+}
+
 export function makeUniformArray(mean, samples, bins, width) {
   let ret = []
   for (let k = 0; k <= bins; k++) {
@@ -37,6 +61,7 @@ export function makeNormalArray(mean, samples, bins, stdDev) {
     }
     ret.push([k, y])
   }
+  //console.log('makeNormalArray', mean, samples, bins, stdDev, '->', ret)
   return ret
 }
 
