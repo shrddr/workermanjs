@@ -30,8 +30,8 @@ export default {
     morph(event) {
       const oldKind = this.me.kind
       const newKind = event.target.value
-      let c = 0
-      let s = 0
+      let c = 0  // median
+      let s = 0  // sqrt(variance)
       switch (oldKind) {
         case 'Normal':
           c = this.me.mean
@@ -46,12 +46,13 @@ export default {
           s = this.me.width/2
           break
         case 'Gamma':
-          c = this.me.alpha * this.me.theta
-          s = Math.sqrt(this.me.alpha * this.me.theta * this.me.theta)
+          c = this.me.at
+          s = Math.sqrt(this.me.at * this.me.theta)
           break
         case 'Lognormal':
-          c = this.me.mean
-          s = this.me.sigma
+          c = this.me.emu
+          const v = this.me.sigma*this.me.sigma
+          s = Math.sqrt((Math.exp(v)-1)*Math.exp(2*Math.log(this.me.emu)+v))
           break
         default:
           throw Error(`unknown curve kind ${oldKind}`)
@@ -79,14 +80,14 @@ export default {
           this.me.width = Math.round(this.me.width * 100) / 100
           break
         case 'Gamma':
-          this.me.alpha = 6.66 * c
-          this.me.theta = c / this.me.alpha
+          this.me.at = c
+          this.me.theta = s * s / c
           this.me.alpha = Math.round(this.me.alpha * 100) / 100
           this.me.theta = Math.round(this.me.theta * 1000) / 1000
           break
         case 'Lognormal':
-          this.me.mean = c
-          this.me.sigma = s
+          this.me.emu = c
+          this.me.sigma = Math.sqrt(Math.log(1+s*s/c/c))
           this.me.mean = Math.round(this.me.mean * 100) / 100
           this.me.sigma = Math.round(this.me.sigma * 100) / 100
           break

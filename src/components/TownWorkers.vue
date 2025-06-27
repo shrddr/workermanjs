@@ -108,7 +108,7 @@ export default {
           {{ userStore.townsStoreItemkeys[tk] && userStore.townsStoreItemkeys[tk].size }}
         </span>
         📦
-        {{ gameStore.ready && userStore.townsInfra[tk].cost }}
+        {{ gameStore.ready && (userStore.townsInfra[tk].cost + (tk in userStore.customJobsCp ? userStore.customJobsCp[tk] : 0)) }}
         CP
         
         <button @click="this.$emit('selectHouses', tk)" :class="{ 'unresolved': gameStore.ready && userStore.townsInfra[tk].success == false }">

@@ -55,7 +55,7 @@ export default {
       this.$emit('update:show', false)
     },
     assignWorkerCustom(worker) {
-      this.userStore.assignWorker(worker, ['workshop', this.customProfit, this.customCP, this.customLabel])
+      this.userStore.assignWorker(worker, {kind: 'custom', profit: this.customProfit, cp: this.customCP, 'label': this.customLabel})
       this.$emit('update:show', false)
     },
     assignWorkerWorkshop(worker, hk) {

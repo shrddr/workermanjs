@@ -22,10 +22,10 @@ export default {
 
 <template>
   <td>
-    <input type="range" v-model="me.mean"  class="vmid" :min="0" :max="2" :step="0.01"> μ={{ me.mean }} 
+    <input type="range" v-model="me.emu"  class="vmid" :min="0.1" :max="2" :step="0.01"> e<sup>μ</sup>={{ me.emu }} 
   </td>
   <td>
-    <input type="range" v-model="me.sigma"  class="vmid" :min="0" :max="0.7" :step="0.01"> σ={{ me.sigma }}
+    <input type="range" v-model="me.sigma"  class="vmid" :min="0.1" :max="0.7" :step="0.01"> σ={{ me.sigma }}
   </td> 
 </template>
 

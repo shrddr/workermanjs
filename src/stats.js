@@ -6,7 +6,7 @@ export function makeLognormalArray(mean, samples, bins, sigma) {
     const binCenter = 0.5 + k
     const probability = jStat.lognormal.pdf( binCenter, mean, sigma )
     const y = probability * samples
-
+    if (y < 0.01) continue
     ret.push([k, y])
   }
   return ret
@@ -18,7 +18,7 @@ export function makeGammaArray(alpha, samples, bins, theta) {
     const binCenter = 0.5 + k
     const probability = jStat.gamma.pdf( binCenter, alpha, theta )
     const y = probability * samples
-
+    if (y < 0.01) continue
     ret.push([k, y])
   }
   return ret
@@ -30,9 +30,7 @@ export function makeUniformArray(mean, samples, bins, width) {
     const binCenter = 0.5 + k
     const probability = jStat.uniform.pdf( binCenter, mean-width/2, mean+width/2 )
     const y = probability * samples
-    if (y < 0.01) {
-      continue
-    }
+    if (y < 0.01) continue
     ret.push([k, y])
   }
   return ret
@@ -44,7 +42,7 @@ export function makeTriangularArray(mean, samples, bins, width) {
     const binCenter = 0.5 + k
     const probability = jStat.triangular.pdf( binCenter, mean-width, mean+width, mean )
     const y = probability * samples
-
+    if (y < 0.01) continue
     ret.push([k, y])
   }
   return ret
@@ -56,9 +54,7 @@ export function makeNormalArray(mean, samples, bins, stdDev) {
     const binCenter = 0.5 + k
     const probability = jStat.normal.pdf( binCenter, mean, stdDev )
     const y = probability * samples
-    if (y < 0.01) {
-      continue
-    }
+    if (y < 0.01) continue
     ret.push([k, y])
   }
   //console.log('makeNormalArray', mean, samples, bins, stdDev, '->', ret)
@@ -285,7 +281,7 @@ function lossDiscarded(model, observed, variables, discardBin0) {
     pval = 0
   }
   //console.log('stats.loss', chisq, bins, pval)
-  return {mse, chisq, pval}
+  return {mse, chisq, pval, variables}
 }
 
 export function applyGiantBonus(arr) {

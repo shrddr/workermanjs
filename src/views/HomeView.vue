@@ -546,7 +546,7 @@ export default {
 
               <template v-if="userStore.workersCustomCount">
                 custom:
-                {{ formatFixed(userStore.customTotalCP) }} <br/>
+                {{ userStore.customTotalCP }} <br/>
               </template>
 
             </p>

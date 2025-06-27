@@ -39,10 +39,10 @@ export default {
     curves: [],
     presets: [
       [
-        {amount: 1.00, kind: 'Lognormal', mean: 1.00, sigma: 0.41},
+        {amount: 1.00, kind: 'Lognormal', emu: 1.00, sigma: 0.41},
       ],
       [
-        {amount: 1.00, kind: 'Gamma', alpha: 6.65, theta: 0.158},
+        {amount: 1.00, kind: 'Gamma', at: 1.05, theta: 0.164},
       ],
       [
         {amount: 0.83, kind: 'Normal', mean: 1.08, sigma: 0.38},
@@ -117,10 +117,11 @@ export default {
         bells: [],
         bell: [],
       }
-    
+      let variables = -1
       let amount_remain = this.stats.len
       for (const curve of this.curves) {
         let bell = null
+        variables += 3
         switch(curve.kind) {
           case 'Normal':
             if (curve.amount == 'rest') curve.amount = amount_remain
@@ -155,7 +156,7 @@ export default {
             break
           case 'Gamma':
             bell = this.makeGammaArray(
-              curve.alpha * 1.00,
+              curve.at / curve.theta,
               curve.amount * amount_remain,
               this.stats.max, 
               curve.theta * this.avg_size
@@ -165,7 +166,7 @@ export default {
             break
           case 'Lognormal':
             bell = this.makeLognormalArray(
-              curve.mean * Math.log(this.avg_size),
+              Math.log(curve.emu * this.avg_size),
               curve.amount * amount_remain,
               this.stats.max,
               curve.sigma
@@ -180,7 +181,7 @@ export default {
         model.bell = this.sumDistributions(model.bell, bell)
       }
 
-      model.loss = this.loss(model.bell, this.histogram.map, 3)
+      model.loss = this.loss(model.bell, this.histogram.map, variables)
       //console.log('makeModel done: npU', npU, 'npL', npL, '->', best_model)
       if (!model)
         console.log('makeModel failed', npU, npL, stdDev)

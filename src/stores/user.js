@@ -1360,6 +1360,19 @@ export const useUserStore = defineStore({
       return state.customTotalProfit / (state.customTotalCP + state.customJobsTotalLodgingCost)
     },
 
+    customJobsCp(state) {
+      const ret = {}
+      const gameStore = useGameStore()
+      if (!gameStore.ready) return ret
+      state.workersCustom.forEach(w => {
+        const tk = gameStore.tnk2tk(w.tnk)
+        if (!(tk in ret)) ret[tk] = 0
+        ret[tk] += w.job.cp
+      })
+      console.log('customJobsCp', ret)
+      return ret
+    },
+
 
     totalCP(state) {
       // grind nodes cost exluded
