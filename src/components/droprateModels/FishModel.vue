@@ -39,14 +39,14 @@ export default {
     curves: [],
     presets: [
       [
-        {amount: 1.00, kind: 'Lognormal', emu: 1.00, sigma: 0.41},
+        {amount: 1.00, kind: 'Lognormal', emu: 1.01, sigma: 0.41},
       ],
       [
-        {amount: 1.00, kind: 'Gamma', at: 1.05, theta: 0.164},
+        {amount: 1.00, kind: 'Gamma', at: 1.05, theta: 0.163},
       ],
       [
-        {amount: 0.83, kind: 'Normal', mean: 1.08, sigma: 0.38},
-        {amount: 1.00, kind: 'Normal', mean: 0.69, sigma: 0.16},
+        {amount: 0.81, kind: 'Normal', mean: 1.09, sigma: 0.38},
+        {amount: 1.00, kind: 'Normal', mean: 0.70, sigma: 0.16},
       ],
       [
         {amount: 0.48, kind: 'Normal', mean: 0.74, sigma: 0.20},

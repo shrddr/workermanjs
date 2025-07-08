@@ -326,7 +326,7 @@ export default {
         const info = this.get_fish_info(ik)
         const bs_groupKey = `${info.BaseSize}_${info.FishVarySize}`
         const bs_group = bs_group_sizes[bs_groupKey]
-        if (bs_group.fishes.length > 1 && bs_group.totalSamples > 1000) {
+        if (bs_group.fishes.length > 1 && bs_group.totalSamples > 1500) {
           const groupName = bs_group.fishes.join("+")
           //console.log('filling group', groupName)
           if (!(groupName in bs_groups)) {
@@ -340,7 +340,7 @@ export default {
 
         const avg_groupKey = `${info.avg_size}`
         const avg_group = avg_group_sizes[avg_groupKey]
-        if (avg_group.fishes.length > 1 && avg_group.totalSamples > 1000) {
+        if (avg_group.fishes.length > 1 && avg_group.totalSamples > 1500) {
           const groupName = avg_group.fishes.join("+")
           if (groupName in bs_groups) continue
           //console.log('filling group', groupName)
@@ -403,7 +403,7 @@ export default {
           <th>data</th>
         </tr>
         <template v-for="sizes, ik in alldata">
-          <tr v-if="sizes.length > 600">
+          <tr v-if="sizes.length > 800">
             <td>
               <template v-if="ik.startsWith('by')">
                 <abbr class="tooltip" :title="ik">group</abbr>

@@ -410,7 +410,7 @@ export default {
           0, 0, 1, 0,
           0, 0, 0, 1
         ],
-        getSize: d => d.isHighlighted ? 50 : 30,
+        getSize: d => this.userStore.mapIconSize * (d.isHighlighted ? 1.66 : 1),
         autoHighlight: true,
         pickable: true,
       })
@@ -446,7 +446,7 @@ export default {
           0, 0, 1, 0,
           0, 0, 0, 1
         ],
-        getSize: d => d.isHighlighted ? 50 : 30,
+        getSize: d => this.userStore.mapIconSize * (d.isHighlighted ? 1.66 : 1),
         autoHighlight: true,
         pickable: true,
       })

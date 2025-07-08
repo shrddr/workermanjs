@@ -4,6 +4,7 @@ import {useGameStore} from '../stores/game'
 import {useMarketStore} from '../stores/market'
 import {useMapStore} from '../stores/map'
 import {makeIconSrc, formatFixed} from '../util.js'
+import PlantzonesRow from '../components/PlantzonesRow.vue'
 
 export default {
   setup() {
@@ -24,6 +25,12 @@ export default {
 
     return { marketStore, userStore, gameStore, mapStore }
   },
+  
+
+  components: {
+    PlantzonesRow,
+  },
+
   data: () => ({
     wspd: 150,
     mspd: 10,
@@ -37,11 +44,6 @@ export default {
   methods: {
     makeIconSrc,
     formatFixed,
-
-    formatDropQty(val) {
-      if (val < 0.1) return formatFixed(val, 3)
-      return formatFixed(val, 2)
-    },
 
     highlightHash() {
       if (this.$route.hash) {
@@ -89,14 +91,14 @@ export default {
         //if (pzk == 1046) console.log(`allPlantzonesNearestCpTownProfit pzk=${pzk} towns:`, towns)
         
         let workData = {}
-        let alt_towns_dict = {}
+        let alt_towns_profits = {}
         for (let i = 0; i < towns.length; i++) {
           const [tnk, cp] = towns[i]
           const tempData = this.gameStore.profitPzTownArtisans(pzk, tnk, cp)
           //if (pzk == 1046) console.log(`allPlantzonesNearestCpTownProfit pzk=${pzk}`, tnk, tempData)
           if (tnk == 1343) continue // skip Ancado
           if (tempData.connected) {
-            alt_towns_dict[tempData.tnk] = tempData.dailyPerCp
+            alt_towns_profits[tempData.tnk] = tempData.dailyPerCp
             if (!('priceDaily' in workData)) {
               workData = tempData
               continue
@@ -107,9 +109,9 @@ export default {
           }
         }
         if (!('alt_workers' in workData)) throw new Error(`Failed to calc alt_workers for pzk=${pzk}`)
-        const alt_towns = Object.entries(alt_towns_dict).map(([tnk, dailyPerCp]) => ({ tnk, dailyPerCp }))
+        const alt_towns = Object.entries(alt_towns_profits).map(([tnk, dailyPerCp]) => ({ tnk, dailyPerCp }))
         alt_towns.sort((a, b) => b.dailyPerCp - a.dailyPerCp) // without lodgage
-        workData.alt_towns_dict = alt_towns_dict
+        workData.alt_towns_profits = alt_towns_profits
         workData.alt_towns = alt_towns
         ret.push(workData)
       }
@@ -152,7 +154,7 @@ export default {
     <div id="toptext">
       <p>
         Profits here are calculated using average level 40 stats for artisan workers 
-        at corresponding town (papu/dokkebi/etc), with only one skill - Farm Knowledge (+5🔨). 
+        at corresponding town (papu/dokkebi/etc), with only one skill (+5🔨). 
         Home page has more tiers, levels, and skills.
       </p>
       <p>
@@ -160,8 +162,8 @@ export default {
         multiple resource nodes can reuse the same town connection, resulting in higher combined $/CP.
       </p>
       <p>
-        For example, taking both Shakatu Fig nodes is not 3+3 but 3+1 CP. 
-        Use worker management on Home page to take this (and also lodging/storage costs) into account.
+        For example, taking both Shakatu Fig nodes should not be 3+3 but 3+1 CP. 
+        Use Home page instead of Plantzones to take into account connection reuse (and also lodging/storage costs).
       </p>
       <p>
         Don't forget to set up your server and prices on Settings page and maybe take a look at Resources as well.
@@ -184,7 +186,13 @@ export default {
           <th rowspan="2">workload</th>
           <th colspan="3">daily</th>
           <th rowspan="2" v-if="userStore.workedPlantzones.size">
-            <abbr class="tooltip nound" title="assigned on Home page?">🏠</abbr>
+            <abbr class="tooltip nound" title="assigned on Home page?
+(hover for details)
+'X% better' does not consider:
+- worker stats
+- worker skills
+- connection reuse
+- lodging and storage">🏠</abbr>
           </th>
         </tr>
         <tr>
@@ -193,8 +201,8 @@ export default {
           <th>
             lucky
             <abbr title="you always get unlucky items;
-these are in addition to those,
-only on cycles when 🍀 procs" class="tooltip">ℹ</abbr>
+these are ADDITIONAL, with
+chance equal to luck stat" class="tooltip">ℹ</abbr>
           </th>
           <th>$ value</th>
           <th>name</th>
@@ -208,93 +216,12 @@ only on cycles when 🍀 procs" class="tooltip">ℹ</abbr>
           <!--taken-->
         </tr>
 
-        <tr v-for="e in allPlantzonesNearestCpTownProfit_sorted" :id="'drops'+e.key">
-          <td>
-            <RouterLink tag="a" :to="{path: './', hash: '#node' + e.key}">
-              {{ gameStore.plantzoneName(e.key) }}
-            </RouterLink>
-          </td>
-          <td>
-            <div v-for="q, k in e.unlucky">
-              <RouterLink tag="a" :to="{path: './settings', hash: '#item' + k}">
-                <span>
-                  {{ formatDropQty(q) }}
-                  <img :src="makeIconSrc(k)" class="iconitem" />
-                  {{ gameStore.uloc.item[k] }}
-                </span>
-              </RouterLink>
-              <span class="fss" v-if="showGiantValues"> [{{ formatDropQty(e.unlucky_gi[k]) }}] </span>
-            </div>
-          </td>
-          <td class="tac">
-            <div v-for="q, k in e.lucky">
-              <RouterLink tag="a" :to="{path: './settings', hash: '#item' + k}">
-                {{ formatDropQty(q) }}&nbsp;<img :src="makeIconSrc(k)" class="iconitem" />
-              </RouterLink>
-            </div>
-          </td>
-          <td class="tac">
-            <div v-if="showGiantValues">
-              {{ formatFixed(e.cycleValue_gob, 0) }}
-              <span class="fss">[{{ formatFixed(e.cycleValue_gi, 0) }}]</span>
-            </div>
-            <div v-else>
-              {{ formatFixed(e.cycleValue, 0) }}
-            </div>
-          </td>
-          <td class="tac">
-            <abbr class="tooltip nound" :title="e.alt_towns.map(obj => `${gameStore.nodeName(obj.tnk)}: ${formatFixed(obj.dailyPerCp, 2)} M$/day/CP → ${formatFixed(100*obj.dailyPerCp/e.dailyPerCp)}%`).join('\n')">{{ gameStore.nodeName(e.tnk) }}</abbr>
-          </td>
-          <td class="tac">{{ formatFixed(e.dist, 0) }}</td>
-          <td class="tac">{{ e.cp }}</td>
-          <td class="tac">
-            <abbr class="tooltip nound" :title="e.alt_workers.map(obj => `${gameStore.uloc.char[obj.charkey]}: ${formatFixed(obj.priceDaily, 2)} M$/day → ${formatFixed(100*obj.priceDaily/e.priceDaily)}%`).join('\n')">{{ {'goblin':'👺','giant':'🐢', 'human':'👨'}[e.kind] }}</abbr>
-          </td>
-          <td class="tac">{{ formatFixed(e.wspd+5, 1) }}</td>
-          <td class="tac">
-            <template v-if="userStore.allowFloating && userStore.useFloatingResources[e.regiongroup]">
-              ~{{ formatFixed(userStore.medianWorkloads[e.key], 2) }}
-            </template>
-            <template v-else>
-              {{ formatFixed(e.activeWorkload, 2) }}
-            </template>
-          </td>
-          <td class="tac">{{ formatFixed(e.cyclesDaily, 1) }}</td>
-          <td class="tac">{{ formatFixed(e.priceDaily, 2) }}</td>
-          <td class="tac">{{ formatFixed(e.dailyPerCp, 3) }}</td>
-          <td class="tac" v-if="userStore.workedPlantzones.size">
-            <template v-if="userStore.workedPlantzones.has(e.key.toString())">
-
-              <template v-if="userStore.pzJobs[e.key].worker.tnk == e.tnk">
-                <template v-if="userStore.pzJobs[e.key].worker.charkey == e.charkey">
-                  <abbr class="tooltip nound" title="all good">✔️</abbr>
-                </template>
-                
-                <template v-else>
-                  <abbr class="tooltip nound" :title="`worker used: ${gameStore.uloc.char[userStore.pzJobs[e.key].worker.charkey]}\nsuggested: ${gameStore.uloc.char[e.charkey]}`+(userStore.pzJobs[e.key].worker.charkey in e.alt_workers_dict ? ` (${formatFixed(e.priceDaily / e.alt_workers_dict[userStore.pzJobs[e.key].worker.charkey] * 100 - 100)}% better)` : ``)">
-                    <template v-if="(userStore.pzJobs[e.key].worker.charkey in e.alt_workers_dict && e.priceDaily / e.alt_workers_dict[userStore.pzJobs[e.key].worker.charkey] > 1.1)">
-                      ⚠️
-                    </template>
-                    <template v-else>
-                      ✔️
-                    </template>
-                  </abbr>
-                  
-                </template>
-              </template>
-
-              <template v-else>
-                <abbr class="tooltip nound" :title="`town used: ${gameStore.nodeName(userStore.pzJobs[e.key].worker.tnk)}\nsuggested: ${gameStore.nodeName(e.tnk)}`+(userStore.pzJobs[e.key].worker.tnk in e.alt_towns_dict ? ` (${formatFixed(e.dailyPerCp / e.alt_towns_dict[userStore.pzJobs[e.key].worker.tnk] * 100 - 100)}% better)` : ``)">
-                  ⚠️
-                </abbr>
-              </template>
-              
-            </template>
-            <template v-else>
-              <abbr class="tooltip nound" title="not assigned">❌</abbr>
-            </template>
-          </td>
-        </tr>
+        
+        <PlantzonesRow 
+          v-for="e in allPlantzonesNearestCpTownProfit_sorted" :id="'drops'+e.key"
+          :e="e"
+          :showGiantValues="showGiantValues"
+        />
 
       </table>
     </div>
@@ -319,12 +246,6 @@ main {
   z-index: -2;
 }
 
-.tar {
-  text-align: right;
-}
-.tac {
-  text-align: center;
-}
 
 .anim {
   background-color: var(--color-background);
@@ -339,10 +260,6 @@ main {
 }
 .tooltip {
   cursor: help;
-}
-
-.nound {
-  text-decoration: none;
 }
 
 </style>

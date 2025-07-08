@@ -762,13 +762,13 @@ export const useGameStore = defineStore({
 
     profitPzTownArtisans(pzk, tnk, cp) {
       const pzd = this.plantzones[pzk]
-      let stats = this.medianGoblin(tnk)
-      let profitData = this.profitPzTownStats(pzk, tnk, stats.wspd+5, stats.mspd, stats.luck, false)
+      let stat_gob = this.medianGoblin(tnk)
+      let profitData = this.profitPzTownStats(pzk, tnk, stat_gob.wspd+5, stat_gob.mspd, stat_gob.luck, false)
       if (profitData.dist > 1E6) {
         return {connected: false}
       }
-      profitData.charkey = stats.charkey
-      profitData.wspd = stats.wspd
+      profitData.charkey = stat_gob.charkey
+      profitData.wspd = stat_gob.wspd
       const workData_gob = {
         ...pzd,
         tnk,
@@ -779,10 +779,10 @@ export const useGameStore = defineStore({
         kind: 'goblin',
       }
 
-      stats = this.medianGiant(tnk)
-      profitData = this.profitPzTownStats(pzk, tnk, stats.wspd+5, stats.mspd, stats.luck, true)
-      profitData.charkey = stats.charkey
-      profitData.wspd = stats.wspd
+      const stat_gi = this.medianGiant(tnk)
+      profitData = this.profitPzTownStats(pzk, tnk, stat_gi.wspd+5, stat_gi.mspd, stat_gi.luck, true)
+      profitData.charkey = stat_gi.charkey
+      profitData.wspd = stat_gi.wspd
       const workData_gi = {
         ...pzd,
         tnk,
@@ -794,10 +794,10 @@ export const useGameStore = defineStore({
       }
       const workData_best = (workData_gi && workData_gi.dailyPerCp > workData_gob.dailyPerCp) ? workData_gi : workData_gob
 
-      const stats2 = this.medianHuman(tnk)
-      profitData = this.profitPzTownStats(pzk, tnk, stats2.wspd+5, stats2.mspd, stats2.luck, false)
-      profitData.charkey = stats2.charkey
-      profitData.wspd = stats2.wspd
+      const stat_hum = this.medianHuman(tnk)
+      profitData = this.profitPzTownStats(pzk, tnk, stat_hum.wspd+5, stat_hum.mspd, stat_hum.luck, false)
+      profitData.charkey = stat_hum.charkey
+      profitData.wspd = stat_hum.wspd
       const workData_hum = {
         ...pzd,
         tnk,
@@ -810,14 +810,14 @@ export const useGameStore = defineStore({
 
       const workData_best2 = (workData_hum && workData_hum.dailyPerCp > workData_best.dailyPerCp) ? workData_hum : workData_best
 
-      const alt_workers_dict = {
+      const alt_workers_profits = {
         [workData_gi.charkey]:  workData_gi.priceDaily,
         [workData_hum.charkey]: workData_hum.priceDaily,
         [workData_gob.charkey]: workData_gob.priceDaily,
       }
-      const alt_workers = Object.entries(alt_workers_dict).map(([charkey, priceDaily]) => ({ charkey, priceDaily }))
+      const alt_workers = Object.entries(alt_workers_profits).map(([charkey, priceDaily]) => ({ charkey, priceDaily }))
       alt_workers.sort((a, b) => a && b && b.priceDaily - a.priceDaily)
-      workData_best2.alt_workers_dict = alt_workers_dict
+      workData_best2.alt_workers_profits = alt_workers_profits
       workData_best2.alt_workers = alt_workers
       workData_best2.connected = true
       workData_best2.cycleValue_gob = workData_gob.cycleValue

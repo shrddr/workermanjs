@@ -263,6 +263,13 @@ export default {
           <div>
             <input type="checkbox" id="vi_hie" v-model="userStore.mapHideInactive"> hide inactive
           </div>
+          <div>
+            <input type="number"
+              class="w3em"
+              min="20"
+              max="50"
+              v-model="userStore.mapIconSize"> px icon size
+          </div>
         </div>
 
       </div>

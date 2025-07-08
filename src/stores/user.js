@@ -57,6 +57,7 @@ export const useUserStore = defineStore({
     },
     
     mapHideInactive: 0,
+    mapIconSize: 30,
 
     palaceEnable: false,
     palaceProfit: 0,
