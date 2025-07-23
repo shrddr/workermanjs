@@ -81,9 +81,9 @@ export default {
 
     fileExport() {
       var a = document.createElement("a")
-      let out = { 
-        regionResources: this.userStore.regionResources,
-        regionResources2: this.userStore.regionResources2,
+      const out = { 
+        regionModifiers: this.userStore.regionResources,
+        regionModifiers2: this.userStore.regionResources2,
       } 
       const str = JSON.stringify(out)
       var file = new Blob([str], {type: 'text/plain'});
