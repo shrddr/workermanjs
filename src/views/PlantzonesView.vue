@@ -177,52 +177,53 @@ export default {
     </div>
 
     <div class="scroll">
-      <table>
-        <tr>
-          <th rowspan="2">Node</th>
-          <th colspan="3">cycle drops <span class="fss">[<input type="checkbox" v-model="showGiantValues"> as giant]</span></th>
-          <th colspan="3">best town</th>
-          <th colspan="2">best worker</th>
-          <th rowspan="2">workload</th>
-          <th colspan="3">daily</th>
-          <th rowspan="2" v-if="userStore.workedPlantzones.size">
-            <abbr class="tooltip nound" title="assigned on Home page?
-(hover for details)
-'X% better' does not consider:
-- worker stats
-- worker skills
-- connection reuse
-- lodging and storage">🏠</abbr>
-          </th>
-        </tr>
-        <tr>
-          <!--Node-->
-          <th>unlucky</th>
-          <th>
-            lucky
-            <abbr title="you always get unlucky items;
-these are ADDITIONAL, with
-chance equal to luck stat" class="tooltip">ℹ</abbr>
-          </th>
-          <th>$ value</th>
-          <th>name</th>
-          <th>walk</th>
-          <th>CP</th>
-          <th>type</th>
-          <th>wspd</th>
-          <th>cycles</th>
-          <th>M$</th>
-          <th>M$/CP</th>
-          <!--taken-->
-        </tr>
-
-        
-        <PlantzonesRow 
-          v-for="e in allPlantzonesNearestCpTownProfit_sorted" :id="'drops'+e.key"
-          :e="e"
-          :showGiantValues="showGiantValues"
-        />
-
+      <table class="stickyhead">
+        <thead>
+          <tr>
+            <th rowspan="2">Node</th>
+            <th colspan="3">cycle drops <span class="fss">[<input type="checkbox" v-model="showGiantValues"> as giant]</span></th>
+            <th colspan="3">best town</th>
+            <th colspan="2">best worker</th>
+            <th rowspan="2">workload</th>
+            <th colspan="3">daily</th>
+            <th rowspan="2" v-if="userStore.workedPlantzones.size">
+              <abbr class="tooltip nound" title="assigned on Home page?
+  (hover for details)
+  'X% better' does not consider:
+  - worker stats
+  - worker skills
+  - connection reuse
+  - lodging and storage">🏠</abbr>
+            </th>
+          </tr>
+          <tr>
+            <!--Node-->
+            <th class="rowspanned colspanned">unlucky</th>
+            <th class="colspanned">
+              lucky
+              <abbr title="you always get unlucky items;
+  these are ADDITIONAL, with
+  chance equal to luck stat" class="tooltip">ℹ</abbr>
+            </th>
+            <th class="colspanned">$ value</th>
+            <th class="colspanned">name</th>
+            <th class="colspanned">walk</th>
+            <th class="colspanned">CP</th>
+            <th class="colspanned">type</th>
+            <th class="colspanned">wspd</th>
+            <th class="colspanned">cycles</th>
+            <th class="colspanned">M$</th>
+            <th class="colspanned">M$/CP</th>
+            <!--taken-->
+          </tr>
+        </thead>
+        <tbody>
+          <PlantzonesRow 
+            v-for="e in allPlantzonesNearestCpTownProfit_sorted" :id="'drops'+e.key"
+            :e="e"
+            :showGiantValues="showGiantValues"
+          />
+        </tbody>
       </table>
     </div>
 
@@ -231,12 +232,18 @@ chance equal to luck stat" class="tooltip">ℹ</abbr>
 
 <style scoped>
 main {
-  display: flex;
+  /*display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: auto;*/
+}
+#toptext {
+  /*position: sticky;
+  top: 0;
+  z-index: 10;
+  flex: 1 1 auto;*/
 }
 .scroll {
-  overflow: auto;
+  /*overflow: 100vh;*/
 }
 .inside {
   font-size: 5px;

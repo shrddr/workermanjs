@@ -50,8 +50,8 @@ export default {
       ],
       [
         {amount: 0.48, kind: 'Normal', mean: 0.74, sigma: 0.20},
-        {amount: 0.76, kind: 'Normal', mean: 1.20, sigma: 0.21},
-        {amount: 1.00, kind: 'Normal', mean: 1.64, sigma: 0.22},
+        {amount: 0.75, kind: 'Normal', mean: 1.19, sigma: 0.21},
+        {amount: 1.00, kind: 'Normal', mean: 1.62, sigma: 0.21},
       ],
       [
         {amount: 0.50, kind: 'Triangular', center: 1.00, width: 0.76},

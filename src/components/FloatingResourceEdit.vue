@@ -377,12 +377,17 @@ export default {
             const wld = p[0].value[1]
             const chance = p[0].value[2]
             const tier = p[0].value[3]
-            return `${formatFixed(chance, 1)}% chance to get<br/>${formatFixed(mod, 1)} or more resource, or<br/>${formatFixed(wld, 1)} or less workload, or<br/>${formatFixed(tier*10, 1)} min → ${Math.ceil(tier)*10} min cycle`
+            return `${formatFixed(chance, 1)}% chance to get<br/>${formatFixed(mod, 1)} or more resource %, or<br/>${formatFixed(wld, 1)} or less workload, or<br/>${formatFixed(tier*10, 1)} min → ${Math.ceil(tier)*10} min cycle`
           },
+          backgroundColor: 'var(--color-background)', 
+          borderColor: 'var(--color-border)',
+          borderWidth: 1,
           textStyle: {
+            color: 'var(--color-text)',
             fontSize: 11,
           },
         },
+        confine: true,
         legend: {
           show: false,
         }

@@ -169,53 +169,55 @@ export default {
     </details>
   </div>
 
-  <table>
-    <tr>
-      <th>RG</th>
-      <th>Resource %</th>
-      <th>Contains nodes with workload (base → current)</th>
-    </tr>
+  <table class="stickyhead">
+    <thead>
+      <tr>
+        <th>RG</th>
+        <th>Resource %</th>
+        <th>Contains nodes with workload (base → current)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="plantzones, rgk in gameStore.regionGroups">
+        <td class="center">
+          {{ rgk }}
+        </td>
 
-    <tr v-for="plantzones, rgk in gameStore.regionGroups">
-      <td class="center">
-        {{ rgk }}
-      </td>
-
-      <td class="center">
-        <template v-if="userStore.allowFloating">
-          <label class="switch mauto">
-            <input type="checkbox" v-model="userStore.useFloatingResources[rgk]">
-            <span class="slider"></span>
-          </label>
-        </template>
-        <template v-if="userStore.allowFloating && userStore.useFloatingResources[rgk]">
-          floating<br/>
-          ~{{ formatFixed(userStore.medianResources[rgk], 2) }}
-          <button @click="showDialog(rgk)">edit</button>
-        </template>
-        <template v-else>
-          constant<br/>
-          <input type="number" v-model.number="userStore.regionResources[rgk]" min="0" max="100" step="0.01" class="w42em">
-        </template>
-      </td>
-
-      <td>
-        <div v-for="pzk in plantzones">
-          <RouterLink tag="a" :to="{path: './', hash: '#node' + pzk}">
-            {{ gameStore.plantzoneName(pzk) }}
-          </RouterLink>
-          {{ gameStore.ready && gameStore.plantzones[pzk].peg.time }}
-
+        <td class="center">
+          <template v-if="userStore.allowFloating">
+            <label class="switch mauto">
+              <input type="checkbox" v-model="userStore.useFloatingResources[rgk]">
+              <span class="slider"></span>
+            </label>
+          </template>
           <template v-if="userStore.allowFloating && userStore.useFloatingResources[rgk]">
-            ⤳ {{ formatFixed(userStore.medianWorkloads[pzk], 2) }}
+            floating<br/>
+            ~{{ formatFixed(userStore.medianResources[rgk], 2) }}
+            <button @click="showDialog(rgk)">edit</button>
           </template>
           <template v-else>
-            → {{ gameStore.ready ? formatFixed(gameStore.plantzones[pzk].activeWorkload, 2) : "" }}
+            constant<br/>
+            <input type="number" v-model.number="userStore.regionResources[rgk]" min="0" max="100" step="0.01" class="w42em">
           </template>
-        </div>
-      </td>
+        </td>
 
-    </tr>
+        <td>
+          <div v-for="pzk in plantzones">
+            <RouterLink tag="a" :to="{path: './', hash: '#node' + pzk}">
+              {{ gameStore.plantzoneName(pzk) }}
+            </RouterLink>
+            {{ gameStore.ready && gameStore.plantzones[pzk].peg.time }}
+
+            <template v-if="userStore.allowFloating && userStore.useFloatingResources[rgk]">
+              ⤳ {{ formatFixed(userStore.medianWorkloads[pzk], 2) }}
+            </template>
+            <template v-else>
+              → {{ gameStore.ready ? formatFixed(gameStore.plantzones[pzk].activeWorkload, 2) : "" }}
+            </template>
+          </div>
+        </td>
+      </tr>
+    </tbody>
   </table>
 
 </template>

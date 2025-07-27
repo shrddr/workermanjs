@@ -117,7 +117,7 @@ export default {
     <div id="clickedTownInfo" v-if="gameStore.isLodgingTown(clickedNode.key)" class="vscrollable">
 
       <div class="vscroll40">
-        <table>
+        <table class="stickyhead">
           <TownWorkers
             :o="gameStore.lodgingPerTown[gameStore.tnk2tk(clickedNode.key)]"
             :tk="gameStore.tnk2tk(clickedNode.key)"
@@ -131,7 +131,6 @@ export default {
 
         </table>
       </div>
-      
       
       <TownWorkshops v-if="userStore.userWorkshops"
         :tk="gameStore.tnk2tk(clickedNode.key)"

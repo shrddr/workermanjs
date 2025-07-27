@@ -290,37 +290,47 @@ export default {
 
     </div>
     <div class="scrollable">
-      <table>
-        <tr><th>Item</th><th>Market</th><th>Custom</th><th>Keep</th><th>Effective</th></tr>
-        <tr v-for="ik in gameStore.itemKeys" :id="'item'+ik">
-          <td>
-            <a :href="this.userStore.itemUrl+ik">
-              <img :src="makeIconSrc(ik)" class="iconitem" :data-key="ik" />
-              {{ gameStore.uloc.item[ik] }}
-            </a>
-            {{ ' ' }}
-            <span v-if="ik in marketStore.calculatedPrices">
-              <abbr class="tooltip" :title="'contains:\n'+Object.entries(marketStore.calculatedPrices[ik]).map(([cik, cqty]) => formatFixed(cqty, 3) + ' ' + gameStore.uloc.item[cik]).join('\n')">ℹ</abbr>
-            </span>
-          </td>
-          <td class="right">
-            <a v-if="ik in marketStore.apiPrices" :href="this.marketStore.itemPriceUrl(ik)">
-              {{ formatFixed(marketStore.apiPrices[ik]) }}
-            </a>
-            <template v-else>
-              {{ formatFixed(gameStore.vendorPrices[ik]) }}
-            </template>
-          </td>
-          <td>
-            <input type="number" class="price right" v-model.number="userStore.customPrices[ik]">
-          </td>
-          <td class="center">
-            <input type="checkbox" :disabled="ik in gameStore.vendorPrices" v-model="userStore.keepItems[ik]">
-          </td>
-          <td class="right">
-            {{ formatFixed(marketStore.prices[ik]) }}
-          </td>
-        </tr>
+      <table class="stickyhead">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Market</th>
+            <th>Custom</th>
+            <th>Keep</th>
+            <th>Effective</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="ik in gameStore.itemKeys" :id="'item'+ik">
+            <td>
+              <a :href="this.userStore.itemUrl+ik">
+                <img :src="makeIconSrc(ik)" class="iconitem" :data-key="ik" />
+                {{ gameStore.uloc.item[ik] }}
+              </a>
+              {{ ' ' }}
+              <span v-if="ik in marketStore.calculatedPrices">
+                <abbr class="tooltip" :title="'contains:\n'+Object.entries(marketStore.calculatedPrices[ik]).map(([cik, cqty]) => formatFixed(cqty, 3) + ' ' + gameStore.uloc.item[cik]).join('\n')">ℹ</abbr>
+              </span>
+            </td>
+            <td class="right">
+              <a v-if="ik in marketStore.apiPrices" :href="this.marketStore.itemPriceUrl(ik)">
+                {{ formatFixed(marketStore.apiPrices[ik]) }}
+              </a>
+              <template v-else>
+                {{ formatFixed(gameStore.vendorPrices[ik]) }}
+              </template>
+            </td>
+            <td>
+              <input type="number" class="price right" v-model.number="userStore.customPrices[ik]">
+            </td>
+            <td class="center">
+              <input type="checkbox" :disabled="ik in gameStore.vendorPrices" v-model="userStore.keepItems[ik]">
+            </td>
+            <td class="right">
+              {{ formatFixed(marketStore.prices[ik]) }}
+            </td>
+          </tr>
+        </tbody>
       </table>
 
     </div>
@@ -330,7 +340,7 @@ export default {
 <style scoped>
 
 .scrollable {
-  overflow: auto;
+  /*overflow: auto;*/
 }
 .spacer {
   height: 0.5em;

@@ -141,4 +141,19 @@ export default {
   text-decoration: none;
 }
 
+/* for stickiness */
+
+td {
+  border-top: none;  /* keep: right, bottom  */
+  border-left: none;
+}
+
+tr td:first-child {
+  border-left: 1px solid gray;  /* re-introduce the left border again */
+}
+
+tr {
+  scroll-margin-top: 100px;  /* for navigating to the row */
+}
+
 </style>

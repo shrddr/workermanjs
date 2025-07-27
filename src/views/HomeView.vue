@@ -704,6 +704,7 @@ summary {
   float: right;
   text-align: right;
   background-color: var(--color-background);
+  z-index: 20;
 }
 #workerlist {
   padding: 0 5px 5px 5px;

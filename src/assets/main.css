@@ -190,20 +190,54 @@ table, tr, td, th {
 
 
 input,
-select {
+select,
+textarea {
   background-color: var(--color-background-soft);
-  color: var(--color-button);           /* light text */
-  border: 1px solid #444;    /* subtle border */
+  color: var(--color-button);
+  border: 1px solid #444;
 }
 
 input[type="checkbox"]:unchecked {
   accent-color: var(--color-background-soft);
 }
 
+textarea {
+  cursor: auto;
+}
+
+.stickyhead {
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--color-background);
+  }
+  border-collapse: separate; /* Don't collapse, doesn't work with stickyness */
+  border-spacing: 0;
+  th {
+    border-left: none;  /* keep: top, right, bottom */
+  }
+
+  th.colspanned {
+    border-top: none;  /* keep: right, bottom */
+  }
+
+  td {
+    border-top: none;  /* keep: right, bottom  */
+    border-left: none;
+  }
+
+  tr th:first-child:not(.rowspanned),
+  tr td:first-child:not(.rowspanned) {
+    border-left: 1px solid gray;  /* re-introduce the left border again */
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   input[type="number"],
   input[type="checkbox"],
   input[type="radio"],
+  textarea,
   select {
     color-scheme: dark;
   }

@@ -403,7 +403,7 @@ export default {
           <th>data</th>
         </tr>
         <template v-for="sizes, ik in alldata">
-          <tr v-if="sizes.length > 800">
+          <tr v-if="sizes.length > 1000">
             <td>
               <template v-if="ik.startsWith('by')">
                 <abbr class="tooltip" :title="ik">group</abbr>

@@ -204,6 +204,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
+    <li>sticky table headers</li>
     <li>show product icon for workshop jobs</li>
     <li>[2025-05-22 patch] Reduced CP costs of houses</li>
     <li>[2025-05-22 patch] Reduced CP costs of nodes</li>
