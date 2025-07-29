@@ -210,7 +210,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <li>[2025-05-22 patch] Reduced CP costs of nodes</li>
     <li>[2025-05-22 patch] Added 12 plantzones in Ulukita + 4 around Keplan</li>
       <ul>
-        <li>droprates: v5 (cycles observed: ~12k)</li>
+        <li>droprates: v6 (cycles observed: ~22k)</li>
       </ul>
     <li>Plantzones page > <strong class="notranslate">hide taken</strong> checkbox</li>
     <li>In Empire > Best untaken, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">ignore storage cost</strong> option.</li>
