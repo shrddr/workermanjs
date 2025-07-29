@@ -60,7 +60,22 @@ export default {
       this.towns = _towns
       this.usages = [..._usages].sort((a,b)=>a-b)
     },
-  }
+
+
+  },
+
+  computed: {
+    craftables() {
+      let count = 0
+      for (const [n, crafts] of Object.entries(this.houseCrafts[this.filterUsage].groups)) {
+        for (const craft of crafts) {
+          if (craft in this.gameStore.craftInputs) count += 1
+        }
+      }
+      return count
+    },
+  },
+
 }
 </script>
 
@@ -78,12 +93,12 @@ export default {
       </select>
 
       <details v-if="filterUsage != -1">
-        <summary>Craftables</summary>
+        <summary>Craftables ({{ craftables }} stackable)</summary>
         <div v-for="crafts, n in this.houseCrafts[filterUsage].groups">
           level {{ n+1 }}:
             <table>
             <tr v-for="craft in crafts">
-              <template v-for="ik in this.gameStore.craftItems[craft]">
+              <template v-for="ik in this.gameStore.craftOutputs[craft]">
                 <a :href="this.userStore.itemUrl+ik">
                   <img :src="makeIconSrc(ik)" class="iconitem" :data-key="ik" />
                   {{ gameStore.uloc.item[ik] }}

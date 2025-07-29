@@ -339,9 +339,6 @@ export default {
 
 <style scoped>
 
-.scrollable {
-  /*overflow: auto;*/
-}
 .spacer {
   height: 0.5em;
 }
@@ -390,6 +387,10 @@ input[type="checkbox"] + label {
 }
 .slider {
     margin-right: 10px; /* Add some space between the slider and the text */
+}
+
+.stickyhead tr {
+  scroll-margin-top: 30px;  /* for navigating to the row */
 }
 
 </style>

@@ -212,7 +212,7 @@ button.unresolved {
   border-color: rgba(255, 0, 0, 0.7);
 }
 .vscroll40 {
-    max-height: 40vh;  /* 40% of the viewport height */
+    max-height: 40vh;  /* percents of viewport height */
     overflow-y: auto;   /* Show scrollbar only when needed */
 }
 </style>

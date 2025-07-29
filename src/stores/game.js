@@ -32,6 +32,8 @@ export const useGameStore = defineStore({
     vendorPrices: {},
     _tk2tnk: {},
     _tnk2tk: {},
+    craftInputs: {},
+    craftOutputs: {},
   }),
   
   actions: {
@@ -371,7 +373,8 @@ export const useGameStore = defineStore({
         8: '🐢',  // lotml
       }
 
-      this.craftItems = await (await fetch(`data/house_craft_outputs.json`)).json()
+      this.craftInputs = await (await fetch(`data/house_craft_inputs.json`)).json()
+      this.craftOutputs = await (await fetch(`data/house_craft_outputs.json`)).json()
 
       this.ready = true
 

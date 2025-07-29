@@ -411,7 +411,7 @@ export default {
             <template v-else-if="gameStore.jobIsWorkshop(workerEditing.job)">
 
               <select v-model="workerEditing.job.recipe" style="width: 13em;">
-                <option v-for="outputs, recipe in gameStore.craftItems" :value="recipe">
+                <option v-for="outputs, recipe in gameStore.craftOutputs" :value="recipe">
                   {{ gameStore.uloc.item[outputs[0]] }}
                 </option>
               </select>

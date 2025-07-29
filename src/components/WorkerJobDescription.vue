@@ -57,9 +57,9 @@ export default {
   </template>
   <template v-else-if="gameStore.jobIsWorkshop(w.job)">
 
-     <template v-if="w.job.recipe && gameStore.craftItems[w.job.recipe]">
-      <a :href="userStore.itemUrl + gameStore.craftItems[w.job.recipe]">
-        <img :src="makeIconSrc(gameStore.craftItems[w.job.recipe])" class="iconitem" :data-key="gameStore.craftItems[w.job.recipe]" />
+     <template v-if="w.job.recipe && gameStore.craftOutputs[w.job.recipe]">
+      <a :href="userStore.itemUrl + gameStore.craftOutputs[w.job.recipe]">
+        <img :src="makeIconSrc(gameStore.craftOutputs[w.job.recipe])" class="iconitem" :data-key="gameStore.craftOutputs[w.job.recipe]" />
       </a>
     </template>
     <template v-else>

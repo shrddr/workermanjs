@@ -231,20 +231,7 @@ export default {
 </template>
 
 <style scoped>
-main {
-  /*display: flex;
-  flex-direction: column;
-  overflow: auto;*/
-}
-#toptext {
-  /*position: sticky;
-  top: 0;
-  z-index: 10;
-  flex: 1 1 auto;*/
-}
-.scroll {
-  /*overflow: 100vh;*/
-}
+
 .inside {
   font-size: 5px;
   position: absolute;
@@ -252,7 +239,6 @@ main {
   left: 6px;
   z-index: -2;
 }
-
 
 .anim {
   background-color: var(--color-background);

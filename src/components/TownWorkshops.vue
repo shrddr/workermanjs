@@ -137,7 +137,7 @@ summary {
   cursor: pointer;
 }
 .vscroll30 {
-    max-height: 30vh;  /* 40% of the viewport height */
+    max-height: 30vh;  /* percents of viewport height */
     overflow-y: auto;   /* Show scrollbar only when needed */
 }
 </style>
