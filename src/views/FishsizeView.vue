@@ -1,6 +1,6 @@
 <script>
 import binomialTest from '@stdlib/stats-binomial-test';
-import { formatFixed, isNumber, makeIconSrc } from '../util.js'
+import { formatFixed, isNumber } from '../util.js'
 import FishModel from '../components/droprateModels/FishModel.vue'
 
 import { jStat } from 'jstat-esm';
@@ -271,7 +271,6 @@ export default {
   methods: {
     formatFixed,
     isNumber,
-    makeIconSrc,
     binomialTest,
 
     async fetchObservations() {

@@ -1,8 +1,9 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
-import {formatFixed,makeIconSrc} from '../util.js'
+import {formatFixed} from '../util.js'
 import WorkerJobDescription from '../components/WorkerJobDescription.vue'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 
 export default {
   setup() {
@@ -29,6 +30,7 @@ export default {
 
   components: {
     WorkerJobDescription,
+    ItemIcon,
   },
 
   data: () => ({
@@ -93,7 +95,6 @@ export default {
 
   methods: {
     formatFixed,
-    makeIconSrc,
 
     houseCraftPickedTooltip(tk) {
       const ret = []
@@ -107,7 +108,7 @@ export default {
     },
 
     itemTooltip(tk, ik) {
-      const head = ik + ' ' + this.gameStore.uloc.item[ik]
+      const head = this.gameStore.uloc.item[ik]
       let from = ""
       this.userStore.workingWorkers.forEach(worker => {
         if (this.gameStore.jobIsPz(worker.job)) {
@@ -115,8 +116,9 @@ export default {
           const witemkeys = this.gameStore.plantzones[worker.job.pzk].itemkeys
           if (wstk == tk && witemkeys.has(ik)) {
             const pzk = worker.job.pzk
-            if (from.length == 0) from += " from:\n"
-            from += `${this.gameStore.parentNodeName(pzk)}\n`
+            if (from.length == 0) from += " brought by:\n"
+            const worker_town = this.gameStore.uloc.node[worker.tnk]
+            from += `${worker_town} worker ${worker.label} from ${this.gameStore.parentNodeName(pzk)}\n`
           }
         }
       })
@@ -234,8 +236,8 @@ export default {
             }">
               <span class="textItem" v-if="n-1 > ingameSortedItems.length"></span>
               <span class="textItem" v-else-if="isNaN(ingameSortedItems[n-1])">{{ ingameSortedItems[n-1] }}</span>
-              <abbr v-else :title="itemTooltip(tk, ingameSortedItems[n-1])">
-                <img :src="makeIconSrc(ingameSortedItems[n-1])" class="iconitem">
+              <abbr v-else :title="itemTooltip(tk, ingameSortedItems[n-1])" class="hastooltip">
+                <ItemIcon :ik="Number(ingameSortedItems[n-1])"/>
               </abbr>
               
             </div>

@@ -3,6 +3,7 @@ import {useMarketStore} from './market'
 import {useUserStore} from './user'
 import Heap from 'heap';
 import {extractNumbers, binarySearch} from '../util.js';
+import init, { WasmNodeRouter } from '../pkg/nwsf_rust.js';
 
 export const useGameStore = defineStore({
   id: "game",
@@ -34,6 +35,9 @@ export const useGameStore = defineStore({
     _tnk2tk: {},
     craftInputs: {},
     craftOutputs: {},
+    wasmNodesLinks: {},
+    wasmBaseTowns: new Set(),
+    wasmRouter: null,
   }),
   
   actions: {
@@ -202,7 +206,7 @@ export const useGameStore = defineStore({
       console.log('plantzoneStatic', this.plantzoneStatic[1879])
 
       // info for sorting
-      this.itemInfo = await (await fetch(`data/manual/item_info.json`)).json()
+      this.itemInfo = await (await fetch(`data/item_info.json`)).json()
 
       // from drops (could have calculated in here)
       this.itemKeys = await (await fetch(`data/manual/plantzone_uniques.json`)).json()
@@ -375,6 +379,26 @@ export const useGameStore = defineStore({
 
       this.craftInputs = await (await fetch(`data/house_craft_inputs.json`)).json()
       this.craftOutputs = await (await fetch(`data/house_craft_outputs.json`)).json()
+      this.craftInfo = await (await fetch(`data/house_craft_info.json`)).json()
+
+      this.craftInputItemKeySet = new Set()
+      for (const inputs of Object.values(this.craftInputs)) {
+        for (const ik of Object.keys(inputs)) {
+          this.craftInputItemKeySet.add(Number(ik))
+        }
+      }
+      //console.log('craftInputItemKeySet', this.craftInputItemKeySet)
+
+      this.traders = await (await fetch(`data/manual/traders.json`)).json()
+
+
+      this.wasmNodesLinks = await (await fetch(`data/nodes_links.json`)).json()
+      this.wasmBaseTowns = new Set(Object.values(this.wasmNodesLinks)
+        .filter(entry => entry.is_base_town)
+        .map(entry => entry.waypoint_key)
+      )
+      await init();
+      this.wasmRouter = new WasmNodeRouter(this.wasmNodesLinks)
 
       this.ready = true
 
@@ -1069,12 +1093,22 @@ export const useGameStore = defineStore({
       return result
     },
 
-    route(autotakenGrindNodes, routees) {
+    /*route(autotakenGrindNodes, routees) {
+      const userStore = useUserStore()
+      if (userStore.wasmRouting) {
+        return this.routeWasm(autotakenGrindNodes, routees)
+      }
+      return this.routeOld(autotakenGrindNodes, routees)
+    },*/
+
+    routeOld(autotakenGrindNodes, routees) {
       const ret = {
         routeInfos: {},
         totalCost: 0,
         //nodeContainsRoute: {},
       }
+      const startTime = performance.now()
+
       const localTaken = new Set([...autotakenGrindNodes])
       routees.forEach(routee => {
         const [usedPath, usedPathCost] = this.dijkstraPath(routee.target, routee.source, localTaken)
@@ -1093,7 +1127,92 @@ export const useGameStore = defineStore({
       for (const nk of localTaken) {
         ret.totalCost += this.nodes[nk].CP
       }
+      const took = performance.now() - startTime
+      console.log('routeOld took', took.toFixed(2), 'ms')
+
       return ret
+    },
+
+    routeWasm(grindTakenList, routees) {
+      const ret = {
+        routeInfos: {},
+        totalCost: 0,
+      }
+      
+      const terminalPairs = []
+      for (const r of routees) terminalPairs.push([r.target, r.source])
+      for (const n of grindTakenList) terminalPairs.push([n, 99999])
+      if (terminalPairs.length == 0) return ret
+      console.log('wasm', terminalPairs)
+
+      const startTime = performance.now()
+      const activatedNodes = this.wasmRouter.solveForTerminalPairs(terminalPairs)
+      const took = performance.now() - startTime
+      //console.log('wasm', terminalPairs, 'took', took.toFixed(2), 'ms', activatedNodes)
+      console.log('wasm took', took.toFixed(2), 'ms')
+      
+      routees.forEach(r => {
+        const [usedPath, usedPathCost] = this.miniDijkstra(activatedNodes, r.target, r.source)
+        const routeInfo = { usedPath, usedPathCost }
+        if (!(r.source in ret.routeInfos)) ret.routeInfos[r.source] = {}
+        ret.routeInfos[r.source][r.target] = routeInfo
+      })
+
+      for (const nk of activatedNodes) {
+        ret.totalCost += this.nodes[nk].CP
+      }
+
+      return ret
+    },
+
+    miniDijkstra(filteredNodes, start, finish) {
+      const ts = Date.now()
+      //console.log('miniDijkstra', filteredNodes, start, finish)
+      const filteredSet = new Set(filteredNodes)
+
+      const prev = {[start]: null}
+      const pathCosts = {[start]: this.nodes[start].CP}
+      const unvisited = new Heap((a, b) => pathCosts[a] - pathCosts[b])  // note order, must have access
+      unvisited.push(start)
+      
+      var current
+      while (unvisited.size()) {
+        current = unvisited.pop()
+        //console.log('miniDijkstra current', current, this.links[current])
+        if (current == finish) break
+        if (finish == 99999 && this.wasmBaseTowns.has(current)) break
+        
+        this.links[current].forEach(neighbor => {
+          //console.log('miniDijkstra neighbor', neighbor)
+          if (filteredSet.has(neighbor)) {
+            const nbrCost = this.nodes[neighbor].CP
+            const newDistance = pathCosts[current] + nbrCost
+            if (neighbor in pathCosts) {
+              // already met before, already in heap
+              if (newDistance < pathCosts[neighbor]) {
+                pathCosts[neighbor] = newDistance
+                prev[neighbor] = current
+              }
+            }
+            else {
+              pathCosts[neighbor] = newDistance
+              prev[neighbor] = current
+              unvisited.push(neighbor)  // note order, must have access
+            }
+          }
+        })
+      }
+      //console.log('miniDijkstra done', prev)
+      const needTakes = [current]
+      let cur = current
+      while (prev[cur] !== null) {
+        //console.log('miniDijkstra reversing, cur', cur, 'prev', prev[cur])
+        needTakes.push(prev[cur])
+        cur = prev[cur]
+        //if (!cur) throw Error('???')
+      }
+      //console.log('miniDijkstra took', Date.now()-ts, needTakes.reverse())
+      return [needTakes.reverse(), pathCosts[finish]]
     },
 
   },
@@ -1103,7 +1222,15 @@ export const useGameStore = defineStore({
       const userStore = useUserStore()
       if (this.ready)
         return this.loc[userStore.selectedLang]
-      return {town:{}, housetype:{}, char:{}, item:{}, node:{}, skill:{}, skilldesc:{}}
+      return {
+        town: {},  // 5 (tk) = velia
+        housetype: {}, 
+        char: {}, 
+        item: {}, 
+        node: {},  // 1 (tnk) = velia
+        skill: {}, 
+        skilldesc: {},
+      }
     },
     townsWithLodgingSet() {
       return new Set(this.townsWithLodging)

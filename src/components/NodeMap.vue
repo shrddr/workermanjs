@@ -206,7 +206,7 @@ export default {
       let ret = []
       this.lineData.forEach(([a, b]) => {
         const active = this.userStore.autotakenNodes.has(a) && this.userStore.autotakenNodes.has(b)
-        const grind = this.userStore.autotakenGrindNodes.has(a) && this.userStore.autotakenGrindNodes.has(b)
+        const grind = this.userStore.routing.autotakenGrindNodes.has(a) && this.userStore.routing.autotakenGrindNodes.has(b)
         ret.push({
           start: this.iconPositions[a],
           end: this.iconPositions[b],

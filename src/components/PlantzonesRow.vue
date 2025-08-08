@@ -1,7 +1,8 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
-import {makeIconSrc, formatFixed} from '../util.js'
+import {formatFixed} from '../util.js'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 
 export default {
   setup() {
@@ -15,8 +16,11 @@ export default {
     showGiantValues: Boolean
   },
 
+  components: {
+    ItemIcon,
+  },
+
   methods: {
-    makeIconSrc,
     formatFixed,
 
     formatDropQty(val) {
@@ -76,8 +80,7 @@ export default {
         <RouterLink tag="a" :to="{path: './settings', hash: '#item' + k}">
           <span>
             {{ formatDropQty(q) }}
-            <img :src="makeIconSrc(k)" class="iconitem" />
-            {{ gameStore.uloc.item[k] }}
+            <ItemIcon :ik="Number(k)" :with_name="true"/>
           </span>
         </RouterLink>
         <span class="fss" v-if="showGiantValues"> [{{ formatDropQty(e.unlucky_gi[k]) }}] </span>
@@ -86,7 +89,7 @@ export default {
     <td class="tac">
       <div v-for="q, k in e.lucky">
         <RouterLink tag="a" :to="{path: './settings', hash: '#item' + k}">
-          {{ formatDropQty(q) }}&nbsp;<img :src="makeIconSrc(k)" class="iconitem" />
+          {{ formatDropQty(q) }}&nbsp;<ItemIcon :ik="Number(k)"/>
         </RouterLink>
       </div>
     </td>

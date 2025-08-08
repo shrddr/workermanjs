@@ -1,7 +1,7 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
-import {makeIconSrc} from '../util.js'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 
 export default {
   setup() {
@@ -15,6 +15,11 @@ export default {
     visible: Boolean,
   },
   emits: ["close", "select"],
+
+  components: {
+    ItemIcon,
+  },
+
   data() {
     return {
       searchQuery: "",
@@ -82,8 +87,6 @@ export default {
     },
   },
   methods: {
-    makeIconSrc,
-
     onInput() {
       if (this.searchQuery === "") {
         this.searchResults = {}
@@ -145,7 +148,7 @@ export default {
           @click="selectItem(data.hlSet)">
 
         <template v-if="data.type == 'dropsItem'">
-          <img :src="makeIconSrc(data.itemKey)" class="iconitem" /> {{ str }} ({{ data.hlSet.size }} nodes)
+          <ItemIcon :ik="data.itemKey"/> {{ str }} ({{ data.hlSet.size }} nodes)
         </template>
         <template v-else-if="data.type == 'name'">
           🗺️ {{ str }}

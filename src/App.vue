@@ -9,12 +9,16 @@ import {useMapStore} from './stores/map'
 <script>
 export default {
   async beforeCreate() {
-    const gameStore = useGameStore()
-    gameStore.fetchData()
-
     const userStore = useUserStore()
     const u = localStorage.getItem('user')
     userStore.migrate(u)
+
+    const mapStore = useMapStore()
+    const p = localStorage.getItem('map')
+    mapStore.$patch(JSON.parse(p))
+
+    const gameStore = useGameStore()
+    await gameStore.fetchData()  // is needed by Market to access craftables
 
     const marketStore = useMarketStore()
     const m = localStorage.getItem('market')
@@ -27,10 +31,6 @@ export default {
       // todo: handle failure
       marketStore.fetchData()
     }
-
-    const mapStore = useMapStore()
-    const p = localStorage.getItem('map')
-    mapStore.$patch(JSON.parse(p))
   }
 }
 </script>

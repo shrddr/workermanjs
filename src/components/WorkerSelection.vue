@@ -1,7 +1,7 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
-import {makeIconSrc, formatFixed} from '../util.js'
+import {formatFixed} from '../util.js'
 import { ref } from 'vue';
 
 export default {
@@ -36,7 +36,6 @@ export default {
   },
 
   methods: {
-    makeIconSrc,
     formatFixed,
     
     workshopNearestTownsFreeWorkersProfits(townsLimit) {

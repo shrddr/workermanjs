@@ -1,7 +1,7 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
-import {makeIconSrc, formatFixed, randBetween, levelup} from '../util.js'
+import {formatFixed, randBetween, levelup} from '../util.js'
 import FloatingResourceEdit from './FloatingResourceEdit.vue'
 import WorkerJobDescription from '../components/WorkerJobDescription.vue'
 
@@ -74,7 +74,6 @@ export default {
   },
 
   methods: {
-    makeIconSrc,
     formatFixed,
     randBetween,
     levelup,

@@ -26,9 +26,12 @@ export const useMarketStore = defineStore({
       console.log('uset', uset)
 
       const apiPrices = {}
-      bdolytics.data.forEach(rec => {
-        if (uset.has(rec.item_id)) {
-          apiPrices[rec.item_id] = rec.price
+      bdolytics.data.forEach(entry => {
+        if (uset.has(entry.item_id)) {
+          apiPrices[entry.item_id] = entry.price
+        }
+        else if (gameStore.ready && gameStore.craftInputItemKeySet.has(entry.item_id)) {
+          apiPrices[entry.item_id] = entry.price
         }
       })
 
@@ -36,7 +39,7 @@ export const useMarketStore = defineStore({
         userStore.keepItems[key] = true
       }
 
-      //this.calculatedPrices = { 1024: {5201: 0.125, 5203: 0.125, 5205: 0.125, 5207: 0.125, 5209: 0.125, 5211: 0.125, 5213: 0.125, 5215: 0.125, }}
+      // openable sacks
       this.calculatedPrices = await (await fetch(`data/manual/calculated_prices.json`)).json()
 
       if (4202 in apiPrices) {
@@ -63,7 +66,10 @@ export const useMarketStore = defineStore({
         return null
       let ret = 0
       for (const [k, q] of Object.entries(bunch)) {
-        ret += this.prices[k] * q
+        if (k in this.prices)
+          ret += this.prices[k] * q
+        else
+          ret = NaN
       }
       return ret
     },

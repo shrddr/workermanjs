@@ -3,7 +3,8 @@ import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
 import {useMarketStore} from '../stores/market'
 import MakeAWorker from '../components/MakeAWorker.vue'
-import {formatFixed,makeIconSrc} from '../util.js'
+import {formatFixed} from '../util.js'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 
 export default {
   setup() {
@@ -31,6 +32,7 @@ export default {
 
   components: {
     MakeAWorker,
+    ItemIcon,
   },
 
   data: () => ({
@@ -39,7 +41,6 @@ export default {
 
   methods: {
     formatFixed,
-    makeIconSrc,
 
     plantzoneNearestTownsFreeWorkersProfits(pzk, townsLimit) {
       const townsData = []
@@ -93,7 +94,7 @@ export default {
     <span v-if="pzk in this.gameStore.plantzones">
       <RouterLink v-for="k in this.gameStore.plantzones[pzk].itemkeys" tag="a" :to="{path: './settings', hash: '#item' + k}">
         <abbr :title="gameStore.itemName(k) + ' ' + formatFixed(marketStore.prices[k]) + '$'">
-          <img :src="makeIconSrc(k)" class="iconitem">
+          <ItemIcon :ik="Number(k)"/>
         </abbr>
       </RouterLink>
       

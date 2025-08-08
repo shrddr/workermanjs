@@ -3,7 +3,7 @@ import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
 import {useMarketStore} from '../stores/market'
 import {useMapStore} from '../stores/map'
-import {makeIconSrc, formatFixed} from '../util.js'
+import {formatFixed} from '../util.js'
 import PlantzonesRow from '../components/PlantzonesRow.vue'
 
 export default {
@@ -42,7 +42,6 @@ export default {
     hideTaken: false,
   }),
   methods: {
-    makeIconSrc,
     formatFixed,
 
     highlightHash() {

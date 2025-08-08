@@ -3,7 +3,7 @@ import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
 import {useMarketStore} from '../stores/market'
 import {useMapStore} from '../stores/map'
-import {makeIconSrc, formatFixed} from '../util.js'
+import {formatFixed} from '../util.js'
 import Worker from '../components/Worker.vue'
 import TownWorkers from './TownWorkers.vue'
 import TownWorkshops from './TownWorkshops.vue'
@@ -52,7 +52,6 @@ export default {
     
   }),
   methods: {
-    makeIconSrc,
     formatFixed,
     jobCashFlowPercent(job) {
       return job.profit.priceDaily / this.userStore.currentNodesCashflow[this.clickedNode.key]
@@ -148,7 +147,7 @@ export default {
     <div id="clickedNodeName" v-if="gameStore.isConnectionNode(clickedNode.key)">
       <p>
         {{ gameStore.uloc.node[clickedNode.key] }}
-        <template v-if="userStore.autotakenGrindNodes.has(clickedNode.key)">
+        <template v-if="userStore.routing.autotakenGrindNodes.has(clickedNode.key)">
           <s>{{ clickedNode.thisCpCost }}CP</s> <abbr class="tooltip" title="is involved in a zero-cost path">ℹ</abbr>
         </template>
         <template v-else>

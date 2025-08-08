@@ -2,8 +2,9 @@
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
 import {useMarketStore} from '../stores/market'
-import {makeIconSrc, formatFixed, strShortenLeft} from '../util.js'
+import {formatFixed, strShortenLeft} from '../util.js'
 import WorkerJobDescription from '../components/WorkerJobDescription.vue'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 
 export default {
   setup() {
@@ -26,6 +27,7 @@ export default {
 
   components: {
     WorkerJobDescription,
+    ItemIcon,
   },
 
   data: () => ({
@@ -34,7 +36,6 @@ export default {
   }),
 
   methods: {
-    makeIconSrc,
     formatFixed,
     strShortenLeft,
   },
@@ -108,10 +109,7 @@ export default {
       <tbody>
         <tr v-for="count, ik in userStore.jobsTally">
           <td>
-            <a :href="this.userStore.itemUrl+ik">
-              <img :src="makeIconSrc(ik)" class="iconitem" :data-key="ik" />
-              {{ gameStore.uloc.item[ik] }}
-            </a>
+            <ItemIcon :ik="Number(ik)" :with_name="true"/>
           </td>
           <td class="right">
             {{ formatFixed(count, count < 1 ? 2 : (count < 10 ? 1 : 0)) }}
@@ -167,7 +165,7 @@ export default {
               <span class="hlim right">
                 <template v-for="k in gameStore.plantzones[w.job.pzk].itemkeys">
                   <RouterLink tag="a" :to="{path: './settings', hash: '#item' + k}">
-                    <img :src="makeIconSrc(k)" class="iconitem" />
+                    <ItemIcon :ik="Number(k)"/>
                   </RouterLink>
                 </template>
               </span>
@@ -228,7 +226,7 @@ export default {
               <span class="hlim right">
                 <template v-for="k in j.itemkeys">
                   <RouterLink tag="a" :to="{path: './settings', hash: '#item' + k}">
-                    <img :src="makeIconSrc(k)" class="iconitem" />
+                    <ItemIcon :ik="Number(k)"/>
                   </RouterLink>
                 </template>
               </span>

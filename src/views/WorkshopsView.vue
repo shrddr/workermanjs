@@ -1,7 +1,7 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
-import {makeIconSrc} from '../util.js'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 
 export default {
   setup() {
@@ -15,6 +15,10 @@ export default {
     })*/
 
     return { gameStore, userStore }
+  },
+
+  components: {
+    ItemIcon,
   },
 
   data: () => ({
@@ -37,7 +41,6 @@ export default {
   },
 
   methods: {
-    makeIconSrc,
     async fetchData() {
       this.houseCrafts = await (await fetch(`data/houseinforeceipe.json`)).json()
       this.houses = await (await fetch(`data/houseinfo.json`)).json()
@@ -100,8 +103,7 @@ export default {
             <tr v-for="craft in crafts">
               <template v-for="ik in this.gameStore.craftOutputs[craft]">
                 <a :href="this.userStore.itemUrl+ik">
-                  <img :src="makeIconSrc(ik)" class="iconitem" :data-key="ik" />
-                  {{ gameStore.uloc.item[ik] }}
+                  <ItemIcon :ik="ik" :with_name="true"/>
                 </a>
               </template>
             </tr>

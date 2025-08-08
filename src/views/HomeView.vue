@@ -6,7 +6,7 @@ import {useMapStore} from '../stores/map'
 import Worker from '../components/Worker.vue'
 import TownWorkers from '../components/TownWorkers.vue'
 import Plantzone from '../components/Plantzone.vue'
-import {makeIconSrc, formatFixed, randBetween, levelup} from '../util.js'
+import {formatFixed, randBetween, levelup} from '../util.js'
 import ModalDialog from '../components/ModalDialog.vue'
 import WorkerEdit from '../components/WorkerEdit.vue'
 import WorkerSendSelection from '../components/WorkerSendSelection.vue'
@@ -18,6 +18,7 @@ import EmpireOverview from '../components/EmpireOverview.vue'
 import FloatingResourceEdit from '../components/FloatingResourceEdit.vue'
 import WorkerSelection from '../components/WorkerSelection.vue'
 import SearchBar from '../components/SearchBar.vue'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 import { ref, nextTick } from "vue";
 
 
@@ -38,6 +39,7 @@ export default {
   },
   
   components: {
+    ItemIcon,
     Worker,
     TownWorkers,
     Plantzone,
@@ -107,7 +109,6 @@ export default {
   },
 
   methods: {
-    makeIconSrc,
     formatFixed,
     randBetween,
     levelup,
@@ -449,7 +450,7 @@ export default {
       <div v-if="hoverInfo && hoverInfo.object" id="tooltip" :style="{left:hoverInfo.x+'px', top:hoverInfo.y+'px'}">
         {{ hoverInfo.object.key }} {{ gameStore.uloc.node[hoverInfo.object.key] }} {{ hoverInfo.object.thisCpCost }}CP
         <span v-if="hoverInfo.object.key in this.gameStore.plantzones">
-          <img v-for="k in this.gameStore.plantzones[hoverInfo.object.key].itemkeys" :src="makeIconSrc(k)" class="iconitem">
+          <ItemIcon v-for="k in this.gameStore.plantzones[hoverInfo.object.key].itemkeys" :ik="Number(k)"/>
         </span>
         <span v-if="this.gameStore.townsConnectionRoots.has(hoverInfo.object.key)">
           <br/>[town {{ this.gameStore._tnk2tk[hoverInfo.object.key] }}]
@@ -526,9 +527,9 @@ export default {
           <details>
             <summary>Total CP: {{ formatFixed(userStore.totalCP + userStore.autotakenGrindNodesCP) }}</summary>
             <p class="fsxs">
-              <template v-if="userStore.autotakenGrindNodesCP">
+              <template v-if="userStore.routing.autotakenGrindNodesCP">
                 invested for droprate: <abbr class="tooltip" :title="userStore.grindTakenDesc">
-                  {{ userStore.autotakenGrindNodesCP }}
+                  {{ userStore.routing.autotakenGrindNodesCP }}
                 </abbr><br/>
               </template>
 
@@ -585,6 +586,9 @@ export default {
               </template>
             </p>
           </details>
+
+          <input type="checkbox" id="wr_cb" v-model="userStore.wasmRouting">
+            <label for="wr_cb"> wasm routing</label>
         </div>
 
         <div style="clear:both;"></div>

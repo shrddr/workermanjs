@@ -2,10 +2,12 @@
 import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
 import {useMarketStore} from '../stores/market'
-import {makeIconSrc, formatFixed} from '../util.js'
+import {formatFixed} from '../util.js'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 import ModalDialog from '../components/ModalDialog.vue'
 import WorkerEdit from '../components/WorkerEdit.vue'
 import WorkshopsConfig from '../components/WorkshopsConfig.vue'
+import TradingConfig from '../components/TradingConfig.vue'
 
 export default {
   setup() {
@@ -22,13 +24,16 @@ export default {
     return { gameStore, userStore, marketStore }
   },
   components: {
+    ItemIcon,
     ModalDialog,
     WorkerEdit,
     WorkshopsConfig,
+    TradingConfig,
   },
   data: () => ({
     workerDialogVisible: false,
     workshopsConfigVisible: false,
+    tradingConfigVisible: false,
     highlightPending: false,
     importDialogVisible: false,
   }),
@@ -40,7 +45,6 @@ export default {
     },
   },
   methods: {
-    makeIconSrc,
     formatFixed,
 
     reload() {
@@ -132,6 +136,9 @@ export default {
   </ModalDialog>
   <ModalDialog v-model:show="workshopsConfigVisible">
     <WorkshopsConfig/>
+  </ModalDialog>
+  <ModalDialog v-model:show="tradingConfigVisible">
+    <TradingConfig/>
   </ModalDialog>
   <main>
     <div id="toptext">
@@ -243,6 +250,7 @@ export default {
           🏭Workshops
           <div>
             <button @click="workshopsConfigVisible = true">config</button>
+            <button @click="tradingConfigVisible = true">trading</button>
           </div>
         </div>
 
@@ -304,8 +312,7 @@ export default {
           <tr v-for="ik in gameStore.itemKeys" :id="'item'+ik">
             <td>
               <a :href="this.userStore.itemUrl+ik">
-                <img :src="makeIconSrc(ik)" class="iconitem" :data-key="ik" />
-                {{ gameStore.uloc.item[ik] }}
+                <ItemIcon :ik="ik" :with_name="true"/>
               </a>
               {{ ' ' }}
               <span v-if="ik in marketStore.calculatedPrices">

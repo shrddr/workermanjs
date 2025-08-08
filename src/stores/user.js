@@ -58,10 +58,13 @@ export const useUserStore = defineStore({
     
     mapHideInactive: 0,
     mapIconSize: 30,
+    wasmRouting: false,
 
     palaceEnable: false,
     palaceProfit: 0,
 
+    tradeDestinations: {},
+    tradingLevel: 91,
   }),
   actions: {
 
@@ -558,6 +561,106 @@ export const useUserStore = defineStore({
       return ret
     },
 
+    routing(state) {
+      // old method - grind nodes first, then worker jobs
+      if (!state.wasmRouting) {
+        return {
+          autotakenGrindNodes: this.autotakenGrindNodes,
+          pzWsJobs: this.pzWsJobs,
+        }
+      }
+
+      // wasm routing - simultaneous
+      const ret = {
+        autotakenGrindNodes: new Set(),
+        pzWsJobs: {
+          pz: {},
+          ws: [],
+          map: [],
+          nodeUsedbyJob: {},
+        }
+      }
+
+      const gameStore = useGameStore()
+      if (!gameStore.ready) return ret
+
+      const terminalPairs = []
+      const workerIndices = []
+      for (const n of state.grindTakenList) terminalPairs.push([n, 99999])
+      this.workingWorkers.forEach(worker => {
+        const source = worker.tnk
+        var target
+        if (gameStore.jobIsPz(worker.job)) {
+          target = worker.job.pzk
+        }
+        else if (gameStore.jobIsWorkshop(worker.job)) {
+          const hk = worker.job.hk
+          const houseTk = gameStore.houseInfo[hk].affTown
+          const houseTnk = gameStore.tk2tnk(houseTk)
+          target = houseTnk
+        }
+        else return
+        workerIndices.push(terminalPairs.length)
+        terminalPairs.push([target, source])
+      })
+
+      const startTime = performance.now()
+      const activatedNodes = gameStore.wasmRouter.solveForTerminalPairs(terminalPairs)
+      const took = performance.now() - startTime
+      //console.log('wasm', terminalPairs, 'took', took.toFixed(2), 'ms', activatedNodes)
+      console.log('wasm took', took.toFixed(2), 'ms')
+
+      const routeInfos = {}
+      for (const n of state.grindTakenList) {
+        const [usedPath, usedPathCost] = gameStore.miniDijkstra(activatedNodes, n, 99999)
+        usedPath.forEach(nk => ret.autotakenGrindNodes.add(nk))
+      }
+      console.log('autotakenGrindNodes', ret.autotakenGrindNodes)
+      workerIndices.forEach(i => {
+        const [target, source] = terminalPairs[i]
+        const [usedPath, usedPathCost] = gameStore.miniDijkstra(activatedNodes, target, source)
+        const routeInfo = { usedPath, usedPathCost }
+        if (!(source in routeInfos)) routeInfos[source] = {}
+        routeInfos[source][target] = routeInfo
+      })
+
+      this.workingWorkers.forEach(worker => {
+        if (gameStore.jobIsPz(worker.job)) {
+          const pzk = worker.job.pzk
+          if (!pzk) return
+          const stats = gameStore.workerStatsOnPlantzone(worker)
+          const profit = gameStore.profitPzTownStats(pzk, worker.tnk, stats.wspd, stats.mspd, stats.luck, gameStore.isGiant(worker.charkey))
+          const route = routeInfos[worker.tnk][pzk]
+          const job = {
+            pzk,
+            worker,
+            profit,
+            ...route
+          }
+          ret.pzWsJobs.pz[pzk] = job
+          ret.pzWsJobs.map.push(job)
+        }
+        else if (gameStore.jobIsWorkshop(worker.job)) {
+          const hk = worker.job.hk
+          const workshop = this.userWorkshops[hk]
+          const houseTk = gameStore.houseInfo[hk].affTown
+          const houseTnk = gameStore.tk2tnk(houseTk)
+          const profit = gameStore.profitWorkshopWorker(hk, workshop, worker)
+          const route = routeInfos[worker.tnk][houseTnk]
+          const job = {
+            hk,
+            worker,
+            profit,
+            ...route
+          }
+          ret.pzWsJobs.ws.push(job)
+          ret.pzWsJobs.map.push(job)
+        }
+      })
+
+      return ret
+    },
+
     grindTakenDesc(state) {
       let ret = ""
       const gameStore = useGameStore()
@@ -582,8 +685,47 @@ export const useUserStore = defineStore({
         })
       } 
 
-      //console.log('autotakenGrindNodes getter', ret)
+      console.log('autotakenGrindNodes', ret)
       return ret
+    },
+
+    autotakenGrindNodesCP(state) {
+      const gameStore = useGameStore()
+      const ret = [...state.routing.autotakenGrindNodes].reduce((acc, v) => acc + gameStore.nodes[v].CP, 0)
+      //console.log('autotakenGrindNodesCP', ret)
+      return ret
+    },
+
+    autotakenNodes(state) {
+      // grind
+      const start = Date.now()
+      const ret = new Set([...state.routing.autotakenGrindNodes])
+      // platzones and workshops
+      for (const job of state.mapJobs) {
+        if (job.usedPath)
+          job.usedPath.forEach(nk => ret.add(nk))
+      }
+      // connect ancado
+      const gameStore = useGameStore()
+      if (gameStore.ready) {
+        if (state.activateAncado) {
+          const toTowns = gameStore.dijkstraNearestTowns(1343, 4, ret, false, true)
+          const list = toTowns.sort((a,b)=>a[1]-b[1])
+          //console.log('list', list)
+          const [tnk, addCp, usedPath] = list[0]
+          usedPath.forEach(nk => ret.add(nk))
+        }
+      }
+
+      //console.log('autotakenNodes', Date.now()-start, 'ms', ret)
+      return ret
+    },
+
+    autotakenNodesCP(state) {
+      const gameStore = useGameStore()
+      const sum = [...state.autotakenNodes].reduce((acc, v) => acc + gameStore.nodes[v].CP, 0)
+      //console.log('autotakenNodesCP', sum, state.autotakenGrindNodesCP)
+      return sum - state.autotakenGrindNodesCP
     },
 
     pzWsJobs(state) {
@@ -616,7 +758,13 @@ export const useUserStore = defineStore({
         routees.push(routee)
       })
 
-      const routeInfos = gameStore.route(state.autotakenGrindNodes, routees).routeInfos
+      var routeInfos
+      if (state.wasmRouting) {
+        routeInfos = gameStore.routeWasm(state.grindTakenList, routees).routeInfos
+
+      } else {
+        routeInfos = gameStore.routeOld(state.autotakenGrindNodes, routees).routeInfos
+      }
 
       this.workingWorkers.forEach(worker => {
         if (gameStore.jobIsPz(worker.job)) {
@@ -651,36 +799,6 @@ export const useUserStore = defineStore({
           ret.map.push(job)
         }
       })
-
-      /*const usualSuspects = [304]    // commonly taken excessive nodes
-      usualSuspects.forEach(nk => {
-        if (nk in ret.nodeUsedbyJob) {
-          const affected = ret.nodeUsedbyJob[nk]
-
-          const altTaken = localTaken.difference(new Set([nk]))
-          let success = true
-          let freed = 0
-          for (const job of affected) {
-            const [newPath, newPathCost] = gameStore.dijkstraPath(job.pzk, job.worker.tnk, altTaken)
-            if (newPath) {
-              job.newPath = newPath
-              job.newPathCost = newPathCost
-              freed += (job.usedPathCost - newPathCost)
-            } else {
-              success = false
-              break
-            }
-          }
-
-          if (success && freed > 0) {
-            console.log(`post-routing: removing ${nk} freed ${freed} CP`)
-            for (const job of affected) {
-              job.usedPath = job.newPath
-              job.usedPathCost = job.newPathCost
-            }
-          }
-        }
-      })*/
 
       //console.log('pzWsJobs getter', ret)
       return ret
@@ -734,7 +852,7 @@ export const useUserStore = defineStore({
         }
         if (job.usedPath) {
           job.usedPath.forEach(function(nk) {
-            if (state.autotakenGrindNodes.has(nk)) {
+            if (state.routing.autotakenGrindNodes.has(nk)) {
               return ret // zero-cost
             }
             const nodeCostShare = job.profit.priceDaily / state.currentNodesCashflow[nk]
@@ -963,7 +1081,6 @@ export const useUserStore = defineStore({
         ret[tk] = []
       })
       for (const [pzk, w] of Object.entries(state.workingWorkers)) {
-        //gameStore.dijkstraPath(start, finish, takens)
         townsUntakenJobs[gameStore.tnk2tk(w.tnk)].push(w)
       }
 
@@ -1190,44 +1307,6 @@ export const useUserStore = defineStore({
       //const jobList = this.workingWorkers.map(({job}) => job)
       const jobList = Object.keys(state.pzJobs)
       return new Set(jobList)
-    },
-
-    autotakenGrindNodesCP(state) {
-      const gameStore = useGameStore()
-      const ret = [...state.autotakenGrindNodes].reduce((acc, v) => acc + gameStore.nodes[v].CP, 0)
-      console.log('autotakenGrindNodesCP', ret)
-      return ret
-    },
-
-    autotakenNodes(state) {
-      // grind
-      const start = Date.now()
-      const ret = new Set([...state.autotakenGrindNodes])
-      // platzones and workshops
-      for (const job of state.mapJobs) {
-        if (job.usedPath)
-          job.usedPath.forEach(nk => ret.add(nk))
-      }
-      // connect ancado
-      const gameStore = useGameStore()
-      if (gameStore.ready) {
-        if (state.activateAncado) {
-          const toTowns = gameStore.dijkstraNearestTowns(1343, 4, ret, false, true)
-          const list = toTowns.sort((a,b)=>a[1]-b[1])
-          //console.log('list', list)
-          const [tnk, addCp, usedPath] = list[0]
-          usedPath.forEach(nk => ret.add(nk))
-        }
-      }
-
-      console.log('autotakenNodes getter took ', Date.now()-start, 'ms', ret)
-      return ret
-    },
-
-    autotakenNodesCP(state) {
-      const gameStore = useGameStore()
-      const sum = [...state.autotakenNodes].reduce((acc, v) => acc + gameStore.nodes[v].CP, 0)
-      return sum - state.autotakenGrindNodesCP
     },
 
     pzJobsTotalDailyProfit(state) {
@@ -1502,6 +1581,10 @@ export const useUserStore = defineStore({
       }
 
       return ret
+    },
+
+    bargainBonus() {
+      return this.tradingLevel * 0.005;
     },
     
   },

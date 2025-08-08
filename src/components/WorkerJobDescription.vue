@@ -1,7 +1,8 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
-import {formatFixed, extractNumbers, makeIconSrc} from '../util.js'
+import {formatFixed, extractNumbers} from '../util.js'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 
 export default {
   setup() {
@@ -15,10 +16,13 @@ export default {
     w: Object,
   },
 
+  components: {
+    ItemIcon,
+  },
+
   methods: {
     formatFixed,
     extractNumbers,
-    makeIconSrc,
 
     workshop_text(w) {
       const contextTnk = w.tnk
@@ -58,9 +62,9 @@ export default {
   <template v-else-if="gameStore.jobIsWorkshop(w.job)">
 
      <template v-if="w.job.recipe && gameStore.craftOutputs[w.job.recipe]">
-      <a :href="userStore.itemUrl + gameStore.craftOutputs[w.job.recipe]">
-        <img :src="makeIconSrc(gameStore.craftOutputs[w.job.recipe])" class="iconitem" :data-key="gameStore.craftOutputs[w.job.recipe]" />
-      </a>
+      <template v-for="ik in gameStore.craftOutputs[w.job.recipe]">
+        <ItemIcon :ik="ik"/>
+      </template>
     </template>
     <template v-else>
       [{{ gameStore.jobIcon(w.job) }}]

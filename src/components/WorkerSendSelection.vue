@@ -1,7 +1,8 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useGameStore} from '../stores/game'
-import {makeIconSrc, formatFixed} from '../util.js'
+import {formatFixed} from '../util.js'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 import { ref } from 'vue';
 
 export default {
@@ -27,6 +28,10 @@ export default {
     }
   },
 
+  components: {
+    ItemIcon,
+  },
+
   data: () => ({
     customProfit: 0,
     customCP: 0,
@@ -43,7 +48,6 @@ export default {
   },
 
   methods: {
-    makeIconSrc,
     formatFixed,
     assignWorkerPz(worker, pzk) {
       console.log('assigning to', this.selectedRedirect)
@@ -184,7 +188,7 @@ export default {
           <template v-for="k in this.gameStore.plantzones[job.pz.key].itemkeys">
             {{ ' ' }}
             <RouterLink tag="a" :to="{path: './settings', hash: '#item' + k}">
-              <img :src="makeIconSrc(k)" class="iconitem">
+              <ItemIcon :ik="Number(k)"/>
             </RouterLink>
           </template>
         </td>

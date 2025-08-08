@@ -204,6 +204,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
+    <li>a consistent fast way to build optimal connections (orderless) by @Thell</li>
     <li>sticky table headers</li>
     <li>show product icon for workshop jobs</li>
     <li>[2025-05-22 patch] Reduced CP costs of houses</li>
@@ -449,6 +450,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
 
+    <li>check the blank town on house usage page</li>
     <li>[2024-11-21 patch] palace stuff maybe</li>
     <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
     <li>worker ranks are in linear stat space, should probably rework it to use "chance of achieving" space
@@ -499,7 +501,6 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <ul>
         <li>don't optimize +2 wspd into +2 wspd with no benefit</li>
       </ul>
-    <li>find a consistent fast way to build optimal connections (orderless)</li>
     <li>add lodging/storage support to workshop system</li>
     <li>on item icon hover: show tooltip with name and price</li>
     <li>workerlist: show drops instead of pzname</li>

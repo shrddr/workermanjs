@@ -2,7 +2,8 @@
 import binomialTest from '@stdlib/stats-binomial-test';
 import { useDropratesStore } from '../stores/droprates'
 import { useGameStore } from '../stores/game'
-import { formatFixed, makeIconSrc } from '../util.js'
+import { formatFixed } from '../util.js'
+import ItemIcon from '../components/lo/ItemIcon.vue'
 import DRMA from '../components/droprateModels/DRMA.vue'
 import DRMB from '../components/droprateModels/DRMB.vue'
 import DRMC from '../components/droprateModels/DRMC.vue'
@@ -57,6 +58,7 @@ export default {
   },
 
   components: {
+    ItemIcon,
     VChart,
     DRMA,
     DRMB,
@@ -326,7 +328,6 @@ export default {
 
   methods: {
     formatFixed,
-    makeIconSrc,
     binomialTest,
 
     async fetchObservations() {
@@ -397,7 +398,7 @@ export default {
             <td>
               <RouterLink tag="a" :to="{path: './settings', hash: '#item' + ik}">
                 <span>
-                  <img :src="makeIconSrc(ik)" class="iconitem" />
+                  <ItemIcon :ik="Number(ik)"/>
                 </span>
               </RouterLink>
               {{ gameStore.itemName(ik) }}

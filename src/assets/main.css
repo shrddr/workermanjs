@@ -143,6 +143,10 @@ p.todo {
   cursor: pointer;
 }
 
+.hastooltip {
+  cursor: help;
+}
+
 button {
   background-color: var(--color-background-soft);
   color: var(--color-button);
@@ -209,7 +213,7 @@ textarea {
   thead {
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 5;
     background-color: var(--color-background);
   }
   border-collapse: separate; /* Don't collapse, doesn't work with stickyness */
