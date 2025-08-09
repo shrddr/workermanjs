@@ -604,11 +604,14 @@ export const useUserStore = defineStore({
         terminalPairs.push([target, source])
       })
 
-      const startTime = performance.now()
-      const activatedNodes = gameStore.wasmRouter.solveForTerminalPairs(terminalPairs)
-      const took = performance.now() - startTime
-      //console.log('wasm', terminalPairs, 'took', took.toFixed(2), 'ms', activatedNodes)
-      console.log('wasm took', took.toFixed(2), 'ms')
+      let activatedNodes = []
+        if (terminalPairs.length > 0) {
+        const startTime = performance.now()
+        activatedNodes = gameStore.wasmRouter.solveForTerminalPairs(terminalPairs)
+        const took = performance.now() - startTime
+        //console.log('wasm', terminalPairs, 'took', took.toFixed(2), 'ms', activatedNodes)
+        console.log('wasm took', took.toFixed(2), 'ms')
+      }
 
       const routeInfos = {}
       for (const n of state.grindTakenList) {

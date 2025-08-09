@@ -1143,7 +1143,7 @@ export const useGameStore = defineStore({
       for (const r of routees) terminalPairs.push([r.target, r.source])
       for (const n of grindTakenList) terminalPairs.push([n, 99999])
       if (terminalPairs.length == 0) return ret
-      console.log('wasm', terminalPairs)
+      console.log('wasm input', terminalPairs)
 
       const startTime = performance.now()
       const activatedNodes = this.wasmRouter.solveForTerminalPairs(terminalPairs)
