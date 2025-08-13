@@ -562,14 +562,22 @@ export const useUserStore = defineStore({
     },
 
     routing(state) {
-      // old method - grind nodes first, then worker jobs
-      if (!state.wasmRouting) {
-        return {
-          autotakenGrindNodes: this.autotakenGrindNodes,
-          pzWsJobs: this.pzWsJobs,
-        }
+      if (state.wasmRouting) {
+        return this.routingWasm
       }
+      
+      return this.routingOld
+    },
 
+    routingOld(state) {
+      // old method - grind nodes first, then worker jobs
+      return {
+        autotakenGrindNodes: this.autotakenGrindNodes,
+        pzWsJobs: this.pzWsJobs,
+      }
+    },
+
+    routingWasm(state) {
       // wasm routing - simultaneous
       const ret = {
         autotakenGrindNodes: new Set(),
