@@ -3,7 +3,7 @@ import {useMarketStore} from './market'
 import {useUserStore} from './user'
 import Heap from 'heap';
 import {extractNumbers, binarySearch} from '../util.js';
-import init, { WasmNodeRouter } from '../pkg/nwsf_rust.js';
+import init, { WasmNodeRouter } from '../pkg/noderouter.js';
 
 export const useGameStore = defineStore({
   id: "game",
@@ -391,18 +391,34 @@ export const useGameStore = defineStore({
 
       this.traders = await (await fetch(`data/manual/traders.json`)).json()
 
-
-      this.wasmNodesLinks = await (await fetch(`data/nodes_links.json`)).json()
-      this.wasmBaseTowns = new Set(Object.values(this.wasmNodesLinks)
-        .filter(entry => entry.is_base_town)
-        .map(entry => entry.waypoint_key)
-      )
-      await init();
-      this.wasmRouter = new WasmNodeRouter(this.wasmNodesLinks)
-
+      await this.initWasmRouter()
+      
       this.ready = true
 
       console.log('fetchGame took', Date.now()-start, 'ms')
+    },
+
+    async initWasmRouter() {
+      this.wasmBaseTowns = new Set()
+
+      //const nodesLinks = await (await fetch(`data/nodes_links.json`)).json()
+      const nodesLinks = {}
+
+      for (const [nk, link_list] of Object.entries(this.links)) {
+        nodesLinks[nk] = { link_list }
+      }
+      for (const [nk, nd] of Object.entries(this.nodes)) {
+        if (nk in nodesLinks) {
+          const is_base_town = (0 < nd.kind) && (nd.kind < 3) && (nd.CP == 0)
+          if (is_base_town) this.wasmBaseTowns.add(nd.key)
+          nodesLinks[nk].waypoint_key = nd.key
+          nodesLinks[nk].need_exploration_point = nd.CP
+          nodesLinks[nk].is_base_town = is_base_town
+        }
+      }
+      //console.log('wasm init data', nodesLinks)
+      await init()
+      this.wasmRouter = new WasmNodeRouter(nodesLinks)
     },
 
     isGiant(charkey) {
@@ -1092,14 +1108,6 @@ export const useGameStore = defineStore({
       //console.log('bestLookup', result, 'took', (performance.now()-start).toFixed(1), 'ms')
       return result
     },
-
-    /*route(autotakenGrindNodes, routees) {
-      const userStore = useUserStore()
-      if (userStore.wasmRouting) {
-        return this.routeWasm(autotakenGrindNodes, routees)
-      }
-      return this.routeOld(autotakenGrindNodes, routees)
-    },*/
 
     routeOld(autotakenGrindNodes, routees) {
       const ret = {

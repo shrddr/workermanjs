@@ -68,9 +68,16 @@ export default {
   },
 
   computed: {
-    craftables() {
+    craftableCount() {
       let count = 0
-      for (const [n, crafts] of Object.entries(this.houseCrafts[this.filterUsage].groups)) {
+      for (const crafts of Object.values(this.houseCrafts[this.filterUsage].groups)) {
+        count += crafts.length
+      }
+      return count
+    },
+    stackableCount() {
+      let count = 0
+      for (const crafts of Object.values(this.houseCrafts[this.filterUsage].groups)) {
         for (const craft of crafts) {
           if (craft in this.gameStore.craftInputs) count += 1
         }
@@ -87,7 +94,7 @@ export default {
     <div id="toptext">
       Town:
       <select v-model="filterTown">
-        <option v-for="tk in towns" :value="tk">{{ tk>=0 ? gameStore.uloc.town[tk] : 'any'}}</option>
+        <option v-for="tk in towns" :value="tk">{{ (tk>=0 ? gameStore.uloc.town[tk] : 'any') }}</option>
       </select>
 
       Usage:
@@ -96,7 +103,7 @@ export default {
       </select>
 
       <details v-if="filterUsage != -1">
-        <summary>Craftables ({{ craftables }} stackable)</summary>
+        <summary>{{ craftableCount }} craftables, {{ stackableCount }} stackable</summary>
         <div v-for="crafts, n in this.houseCrafts[filterUsage].groups">
           level {{ n+1 }}:
             <table>

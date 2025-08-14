@@ -449,8 +449,6 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     
 
     <h2>Todo</h2>
-
-    <li>check the blank town on house usage page</li>
     <li>[2024-11-21 patch] palace stuff maybe</li>
     <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
     <li>worker ranks are in linear stat space, should probably rework it to use "chance of achieving" space

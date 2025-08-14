@@ -621,6 +621,8 @@ export const useUserStore = defineStore({
         console.log('wasm took', took.toFixed(2), 'ms')
       }
 
+      activatedNodes = this.applyWorkarounds(activatedNodes, terminalPairs)
+
       const routeInfos = {}
       for (const n of state.grindTakenList) {
         const [usedPath, usedPathCost] = gameStore.miniDijkstra(activatedNodes, n, 99999)
@@ -1596,6 +1598,36 @@ export const useUserStore = defineStore({
 
     bargainBonus() {
       return this.tradingLevel * 0.005;
+    },
+
+    applyWorkarounds: (state) => (currentSolution, currentInput) => {
+      const gameStore = useGameStore()
+      const grindNodeTryTown = {
+        1152: 1002,
+      }
+
+      for (const nd of state.grindTakenList) {
+        if (nd in grindNodeTryTown) {
+          const grindNode = nd
+          const tryTown = grindNodeTryTown[nd]
+          const altInput = []  
+          for (const pair of currentInput) {
+            // replace a "wildcard town" 99999 with specific town
+            altInput.push(pair[0] == grindNode && pair[1] == 99999 ? [grindNode, tryTown]: pair)
+          }
+          const altSolution = gameStore.wasmRouter.solveForTerminalPairs(altInput)
+          const altCost = altSolution.reduce((sum, item) => sum + gameStore.nodes[item].CP, 0)
+          const currentCost = currentSolution.reduce((sum, item) => sum + gameStore.nodes[item].CP, 0)
+          if (altCost < currentCost) {
+            console.log(`workaround applied (${altCost} < ${currentCost})`)
+            return altSolution
+          }
+          else {
+            // console.log(`workaround not applied (${altCost} >= ${currentCost})`)
+          }
+        }
+      }
+      return currentSolution
     },
     
   },
