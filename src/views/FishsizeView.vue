@@ -1,5 +1,4 @@
 <script>
-import binomialTest from '@stdlib/stats-binomial-test';
 import { formatFixed, isNumber } from '../util.js'
 import FishModel from '../components/droprateModels/FishModel.vue'
 
@@ -271,7 +270,6 @@ export default {
   methods: {
     formatFixed,
     isNumber,
-    binomialTest,
 
     async fetchObservations() {
       const start = Date.now()

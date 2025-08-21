@@ -35,12 +35,12 @@ tr, td, th {
   border: none;
 }
 
-.center {
-  text-align: center;
-}
 
-.right {
+.tar {
   text-align: right;
+}
+.tac {
+  text-align: center;
 }
 
 input.mid {
@@ -59,6 +59,10 @@ input.price {
 
 .w42em {
   width: 4.2em;
+}
+
+.w33em {
+  width: 3.3em;
 }
 
 .w3em {
@@ -249,4 +253,13 @@ textarea {
   input[type="checkbox"]:disabled {
     opacity: 0.5;
   }
+}
+
+abbr {
+  text-decoration-thickness: 1px;
+}
+
+.slider-container {
+  display: inline-flex;
+  align-items: center; /* Align items vertically */
 }

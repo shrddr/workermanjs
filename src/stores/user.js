@@ -3,6 +3,7 @@ import {useGameStore} from './game'
 import {searchSorted} from '../util.js'
 import {formatFixed} from '../util.js';
 
+
 export const useUserStore = defineStore({
   id: "user",
   state: () => ({
@@ -64,6 +65,9 @@ export const useUserStore = defineStore({
     palaceProfit: 0,
 
     tradeDestinations: {},
+    tradeRouteAlwaysOn: {},
+    tradeInfraCp: {},
+    tradeRouteCp: {},
     tradingLevel: 91,
   }),
   actions: {
@@ -801,11 +805,32 @@ export const useUserStore = defineStore({
           const houseTk = gameStore.houseInfo[hk].affTown
           const houseTnk = gameStore.tk2tnk(houseTk)
           const profit = gameStore.profitWorkshopWorker(hk, workshop, worker)
+          let thriftyPercent = 0
+          let thriftyWorks = false
+          const rcp = worker.job.recipe
+          if (gameStore.craftInputs && rcp in gameStore.craftInputs) {
+            const inputs = gameStore.craftInputs[rcp]
+            for (const ik of Object.keys(inputs)) {
+              if (inputs[ik] >= 10) {
+                thriftyWorks = true
+              }
+            }
+            if (thriftyWorks) {
+              for (const sk of worker.skills) {
+                if (sk > 0) {
+                  if ('thrifty5' in gameStore.skillData[sk]) thriftyPercent += 5
+                  if ('thrifty7' in gameStore.skillData[sk]) thriftyPercent += 7
+                  if ('thrifty10' in gameStore.skillData[sk]) thriftyPercent += 10
+                }
+              }
+            }
+          }
           const route = routeInfos[worker.tnk][houseTnk]
           const job = {
             hk,
             worker,
             profit,
+            thriftyPercent,
             ...route
           }
           ret.ws.push(job)
@@ -972,9 +997,8 @@ export const useUserStore = defineStore({
         - state.storageP2W[tk]
         - state.baseStorage
         //- (tk == 955 ? 3 : 0)  // oddy
+      //if (tk==1553) debugger
       const best = gameStore.lsLookup(tk, wantLodging, wantStorage)
-      //if (tk==1382)
-        //console.log('townInfra', tk, wantLodging, wantStorage, best)
       return best
     },
 
@@ -1573,7 +1597,7 @@ export const useUserStore = defineStore({
             state.userWorkshops[hk] = { ...state.defaultUserWorkshop }
           }
           const workshop = state.userWorkshops[hk]
-          ret.workshop += gameStore.cyclesWorkshopWorker(hk, workshop, worker).cyclesDaily
+          ret.workshop += gameStore.measureWorkshopWorker(hk, workshop, worker).cyclesDaily
         }
       })
       
@@ -1629,6 +1653,6 @@ export const useUserStore = defineStore({
       }
       return currentSolution
     },
-    
   },
+
 });

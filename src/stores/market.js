@@ -1,6 +1,7 @@
 import {defineStore} from "pinia";
 import {useGameStore} from './game'
 import {useUserStore} from './user'
+import { formatFixed } from "../util";
 
 export const useMarketStore = defineStore({
   id: "market",
@@ -23,7 +24,8 @@ export const useMarketStore = defineStore({
 
       const gameStore = useGameStore()
       const uset = new Set(gameStore.itemKeys)
-      console.log('uset', uset)
+      uset.add(9492)  // feed
+      //console.log('uset', uset)
 
       const apiPrices = {}
       bdolytics.data.forEach(entry => {
@@ -60,24 +62,39 @@ export const useMarketStore = defineStore({
     },
 
     priceBunch(bunch) {
-      if (bunch === null)
-        return null
-      if (typeof bunch === 'undefined')
-        return null
-      let ret = 0
+      const ret = {
+        val: null,
+        desc: '',
+      }
+      if (bunch === null) {
+        return ret
+      }
+      if (typeof bunch === 'undefined') {
+        return ret
+      }
+      ret.val = 0
       for (const [k, q] of Object.entries(bunch)) {
-        if (k in this.prices)
-          ret += this.prices[k] * q
-        else
-          ret = NaN
+        if (k in this.prices) {
+          const stackPrice = this.prices[k] * q
+          ret.val += stackPrice
+          const p = this.prices[k]
+          const pStr = `${p}`.length < 8 ? `${p}` : formatFixed(p, 3)
+          const qStr = `${q}`.length < 8 ? `${q}` : formatFixed(q, 3)
+          const spStr = `${stackPrice}`.length < 8 ? `${stackPrice}` : formatFixed(stackPrice)
+          ret.desc += `${pStr} x ${qStr} = ${spStr}\n`
+        }
+        else {
+          ret.val = NaN
+          ret.desc += `??? x ${q} = ???\n`
+        }
       }
       return ret
     },
 
     pricePzd(pzd, luck) {
-      const u = this.priceBunch(pzd.unlucky)
+      const u = this.priceBunch(pzd.unlucky).val
       if (pzd.lucky) {
-        const l = this.priceBunch(pzd.lucky)
+        const l = this.priceBunch(pzd.lucky).val
         return luck/100 * l + (1 - luck/100) * u
       }
       return u

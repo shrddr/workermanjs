@@ -180,6 +180,11 @@ export default {
     </div>
 
     <div id="clickedPlantzoneInfo" v-if="gameStore.isPlantzone(clickedNode.key)">
+      <template v-if="userStore.grindTakenSet.has(clickedNode.key)">
+        <input type="checkbox" @change="userStore.modifyGrindTakens($event, clickedNode.key)" :checked="userStore.grindTakenSet.has(clickedNode.key)">
+        zero-cost connection to nearest town (invested for droprate)
+      </template>
+      
       <Plantzone
         :pzk="clickedNode.key"
         @showResourceDialog="showResourceDialog"

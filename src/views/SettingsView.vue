@@ -218,7 +218,7 @@ export default {
           
           🌻Farming 
           <input type="checkbox" id="fe_t" v-model="userStore.farmingEnable">
-          <label for="fe_t">enable</label>
+          <label for="fe_t" style="margin-right: 0.4em;">enable</label>
           <span v-if="userStore.farmingEnable">
             <div class="slider-container">
               <span>F2P</span>
@@ -249,8 +249,8 @@ export default {
         <div class="settings-tile">
           🏭Workshops
           <div>
-            <button @click="workshopsConfigVisible = true">config</button>
-            <button @click="tradingConfigVisible = true">trading</button>
+            <button @click="tradingConfigVisible = true">crates</button>
+            <button @click="workshopsConfigVisible = true">other</button>
           </div>
         </div>
 
@@ -319,7 +319,7 @@ export default {
                 <abbr class="tooltip" :title="'contains:\n'+Object.entries(marketStore.calculatedPrices[ik]).map(([cik, cqty]) => formatFixed(cqty, 3) + ' ' + gameStore.uloc.item[cik]).join('\n')">ℹ</abbr>
               </span>
             </td>
-            <td class="right">
+            <td class="tar">
               <a v-if="ik in marketStore.apiPrices" :href="this.marketStore.itemPriceUrl(ik)">
                 {{ formatFixed(marketStore.apiPrices[ik]) }}
               </a>
@@ -328,12 +328,12 @@ export default {
               </template>
             </td>
             <td>
-              <input type="number" class="price right" v-model.number="userStore.customPrices[ik]">
+              <input type="number" class="price tar" v-model.number="userStore.customPrices[ik]">
             </td>
-            <td class="center">
+            <td class="tac">
               <input type="checkbox" :disabled="ik in gameStore.vendorPrices" v-model="userStore.keepItems[ik]">
             </td>
-            <td class="right">
+            <td class="tar">
               {{ formatFixed(marketStore.prices[ik]) }}
             </td>
           </tr>
@@ -384,16 +384,6 @@ input[type="checkbox"] + label {
   margin: 2px;
   border: 1px solid gray;
   border-radius: 2px;
-}
-
-
-.slider-container {
-    display: inline-flex;
-    margin-left: 0.4em;
-    align-items: center; /* Align items vertically */
-}
-.slider {
-    margin-right: 10px; /* Add some space between the slider and the text */
 }
 
 .stickyhead tr {

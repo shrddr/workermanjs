@@ -259,6 +259,9 @@ export default {
 
     sweepRange() {
       const ret = {
+        // this doesn't work great when giant works at plantzone with 1.68npU > npU+npL
+        // (ex: pz#1911 npL=1.5 npU=0.5) because a significant portion of top samples are unlucky
+        // workaround: just switch to Model A
         u_lo: Math.max(0, this.stats.meanLo),
         u_init: this.stats.mean,
         u_hi: this.stats.meanHi,
@@ -639,9 +642,9 @@ export default {
 
   <div style="float:left;">
     <div style="width:570px;height:270px;">
-      <v-chart :option="makeChartCGrid" v-if="modelCSweep?.result?.npU"/>
+      <v-chart :option="makeChartCGrid" v-if="modelCSweep?.result?.npU && bestPval"/>
       <div v-else class="inner">
-        search failed (npᵁ=0)
+        npᵁ=0 or no bestPval
       </div>
     </div>
     

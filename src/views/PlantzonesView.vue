@@ -91,8 +91,8 @@ export default {
         
         let workData = {}
         let alt_towns_profits = {}
-        for (let i = 0; i < towns.length; i++) {
-          const [tnk, cp] = towns[i]
+        for (const townPath of Object.values(towns)) {
+          const [tnk, cp] = townPath
           const tempData = this.gameStore.profitPzTownArtisans(pzk, tnk, cp)
           //if (pzk == 1046) console.log(`allPlantzonesNearestCpTownProfit pzk=${pzk}`, tnk, tempData)
           if (tnk == 1343) continue // skip Ancado
@@ -107,7 +107,10 @@ export default {
             }
           }
         }
-        if (!('alt_workers' in workData)) throw new Error(`Failed to calc alt_workers for pzk=${pzk}`)
+        if (!('alt_workers' in workData)) {
+          console.log(workData)
+          throw new Error(`Failed to calc alt_workers for pzk=${pzk}`)
+        }
         const alt_towns = Object.entries(alt_towns_profits).map(([tnk, dailyPerCp]) => ({ tnk, dailyPerCp }))
         alt_towns.sort((a, b) => b.dailyPerCp - a.dailyPerCp) // without lodgage
         workData.alt_towns_profits = alt_towns_profits
@@ -202,7 +205,7 @@ export default {
               lucky
               <abbr title="you always get unlucky items;
   these are ADDITIONAL, with
-  chance equal to luck stat" class="tooltip">ℹ</abbr>
+    chance equal to luck stat" class="tooltip">ℹ</abbr>
             </th>
             <th class="colspanned">$ value</th>
             <th class="colspanned">name</th>

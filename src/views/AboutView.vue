@@ -204,6 +204,13 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
+    <li>[2025-07-21 patch] added new Edania area with 15 plantzones</li>
+      <ul>
+        <li>✓ connections</li>
+        <li>✓ walk distances</li>
+        <li>✓ housecraft</li>
+        <li>✗ droprates</li>
+      </ul>
     <li>a consistent fast way to build optimal connections (orderless) by @Thell</li>
     <li>sticky table headers</li>
     <li>show product icon for workshop jobs</li>
@@ -419,7 +426,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       </ul>
     <li>added farming and workshop job types in Send Worker dialog</li>
     <li>/plantzones page tweaks</li>
-      <ul>
+    <ul>
         <li>node name link navigates to its map location (upd: with permalinks)</li>
         <li>item link navigates to its settings price row</li>
         <li>shows item names to allow in-browser search</li>
@@ -449,8 +456,17 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     
 
     <h2>Todo</h2>
+    <li>crates - show mat usage</li>
+    <li>same value is called M$/day/CP in Empire, but efficiency in node pane</li>
+    <li>monk's branch rate is sus on plantzones where it is both unlucky and lucky</li>
+    <li>worker send dialog > stash > ulukita towns = error</li>
+    <li>price input up/down spinner should imitate CM steps</li>
+    <li>leveling a worker up/down needs to be faster</li>
     <li>[2024-11-21 patch] palace stuff maybe</li>
     <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
+      <ul>
+        <li>what's "max pearlable"?</li>
+      </ul>
     <li>worker ranks are in linear stat space, should probably rework it to use "chance of achieving" space
       <ul>
         <li>ex: 98.55 workspeed giant shows as 56% rank when actually it is top 10% in "chance of achieving" space</li>
@@ -474,7 +490,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>investigate via worker registration items (id 64000+)</li>
         </ul>
       </ul>
-    <li>totals > split out personal items storage CP</li>
+    <li>totals pane > split out personal items storage CP</li>
       <ul>
         <li>make multiple queries to housecraft and compare</li>
       </ul>

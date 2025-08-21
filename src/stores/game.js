@@ -271,7 +271,8 @@ export const useGameStore = defineStore({
         // 1727,1834,1843,1850,  // can provide storage, cannot house workers
         // 1001, // lema costs cp, cannot provide storage, cannot house workers
         1853,1857,1858,
-        1834,1843
+        1834,1843,
+        2001
       ]
       // town(1+2) again, but tk-based (TODO: unify)
       this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json()
@@ -293,6 +294,7 @@ export const useGameStore = defineStore({
         1781,1785,1795,
         1853,1857,
         1834,1843,
+        2001
       ]
 
       // town(3a) can be a target of "stash redirect" feature, filled manually
@@ -311,6 +313,7 @@ export const useGameStore = defineStore({
         1781,1785,1795,
         1834,1843,1850,
         1853,1857,1858,
+        2001
       ]
 
       // town(4) can be extracted from here if needed
@@ -738,7 +741,7 @@ export const useGameStore = defineStore({
       const userStore = useUserStore()
       const workshop = userStore.userWorkshops[hk]
       const profit = this.profitWorkshopWorker(hk, workshop, worker)
-      const addInfraInfo = userStore.townInfraAddCost(storageTk, 1, [])  // no items
+      const addInfraInfo = userStore.townInfraAddCost(storageTk, 1, [])  // TODO: store something
       const totalCp = mapCp + houseCp + addInfraInfo.cost
       const jobEntry = {
         hk,
@@ -807,6 +810,7 @@ export const useGameStore = defineStore({
       const pzd = this.plantzones[pzk]
       let stat_gob = this.medianGoblin(tnk)
       let profitData = this.profitPzTownStats(pzk, tnk, stat_gob.wspd+5, stat_gob.mspd, stat_gob.luck, false)
+      // debugger
       if (profitData.dist > 1E6) {
         return {connected: false}
       }
@@ -865,6 +869,7 @@ export const useGameStore = defineStore({
       workData_best2.connected = true
       workData_best2.cycleValue_gob = workData_gob.cycleValue
       workData_best2.cycleValue_gi = workData_gi.cycleValue
+      
       return workData_best2
     },
 
@@ -901,6 +906,7 @@ export const useGameStore = defineStore({
       if (tnk==1857) return this.makeMedianChar(8050) // lotml2
       if (tnk==1858) return this.makeMedianChar(8050) // lotml2
       if (tnk==1853) return this.makeMedianChar(8050) // lotml2
+      if (tnk==2001) return this.makeMedianChar(8050) // edania
       return this.makeMedianChar(7572)
     },
 
@@ -915,6 +921,7 @@ export const useGameStore = defineStore({
       if (tnk==1857) return this.makeMedianChar(8058) // lotml2
       if (tnk==1858) return this.makeMedianChar(8058) // lotml2
       if (tnk==1853) return this.makeMedianChar(8058) // lotml2
+      if (tnk==2001) return this.makeMedianChar(8058) // edania
       return this.makeMedianChar(7571)
     },
 
@@ -929,13 +936,14 @@ export const useGameStore = defineStore({
       if (tnk==1857) return this.makeMedianChar(8054) // lotml2
       if (tnk==1858) return this.makeMedianChar(8054) // lotml2
       if (tnk==1853) return this.makeMedianChar(8054) // lotml2
+      if (tnk==2001) return this.makeMedianChar(8054) // edania
       return this.makeMedianChar(7573)
     },
 
-    cyclesWorkshopWorker(hk, workshop, worker) {
+    measureWorkshopWorker(hk, workshop, worker) {
       const userStore = useUserStore()
       const statsOnWs = this.workerStatsOnIndustry(worker, workshop.industry)
-      //console.log('cyclesWorkshopWorker', hk, stats)
+      //console.log('measureWorkshopWorker', hk, stats)
       const distance = this.houseDistance(worker.tnk, hk)
       const moveMinutes = userStore.calcWalkMinutes(distance, statsOnWs.mspd)
 
@@ -964,7 +972,7 @@ export const useGameStore = defineStore({
       //cyclesDaily = userStore.calcCyclesDaily(pzd.workload, pzd.regiongroup, wspd, ret.dist, mspd)
       //priceDaily = ret.cyclesDaily * ret.cycleValue / 1000000
 
-      const {statsOnWs, distance, cyclesDaily} = this.cyclesWorkshopWorker(hk, workshop, worker)
+      const {statsOnWs, distance, cyclesDaily} = this.measureWorkshopWorker(hk, workshop, worker)
       const repeats = this.repeatsWorkshopWorker(worker, workshop.industry)
       //console.log('profitWorkshopWorker', workshop.manualWorkload, stats.wspd, workMinutes, stats.mspd, moveMinutes, cycleMinutes)
       const priceDaily = repeats * cyclesDaily * workshop.manualCycleIncome / 1000000
@@ -1301,11 +1309,12 @@ export const useGameStore = defineStore({
         const pzd = { ...drop, ...this.plantzoneStatic[pzk] }
 
         pzd.name = this.plantzoneName(pzk)
-        const luckyPart = marketStore.priceBunch(pzd.lucky)
-        pzd.unluckyValue = marketStore.priceBunch(pzd.unlucky)
+        const luckyPart = marketStore.priceBunch(pzd.lucky).val
+        //debugger
+        pzd.unluckyValue = marketStore.priceBunch(pzd.unlucky).val
         pzd.luckyValue = pzd.unluckyValue + luckyPart
 
-        pzd.unluckyValue_gi = marketStore.priceBunch(pzd.unlucky_gi)
+        pzd.unluckyValue_gi = marketStore.priceBunch(pzd.unlucky_gi).val
         pzd.luckyValue_gi = pzd.unluckyValue_gi + luckyPart
         
         pzd.activeWorkload = pzd.workload * (2 - userStore.productivity(pzd.regiongroup))

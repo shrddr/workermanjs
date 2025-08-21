@@ -115,7 +115,7 @@ export default {
             {{ formatFixed(count, count < 1 ? 2 : (count < 10 ? 1 : 0)) }}
           </td>
           <td class="right">
-            {{ formatFixed(this.marketStore.priceBunch({[ik]: count}) / 1E6, 2) }}
+            {{ formatFixed(this.marketStore.priceBunch({[ik]: count}).val / 1E6, 2) }}
           </td> 
         </tr>
       </tbody>
@@ -131,57 +131,65 @@ export default {
   </div>
 
 
-  <table class="stickyhead" v-if="activeTab == 'worst'">
-    <thead>
-      <tr>
-        <th rowspan="2">town</th>
-        <th rowspan="2">job</th>
-        <th rowspan="2">M$/day</th>
-        <th colspan="2">CP</th>
-        <th rowspan="2">M$/day/CP</th>
-      </tr>
-      <tr>
-        <th class="rowspanned colspanned">
-          &nbsp;job <abbr class="tooltip" title="cost of the node (for plantzones) OR cost of the house (for workshops)">ℹ</abbr>
-        </th>
-        <th class="colspanned">
-          town <abbr class="tooltip" title="worker lodging + material storage">ℹ</abbr>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="{w, i, ipc} in userStore.workersSortedByIncomePerCp">
-        <td>
-          <span @click="$emit('panToPaPos', this.gameStore.nodes[w.tnk].pos, -7)" class="clickable">
-            {{ gameStore.uloc.town[gameStore.tnk2tk(w.tnk)] }}
-          </span>
-        </td>
-        <td class="">
-          <div class="hlim parent">
-            <template v-if="this.gameStore.jobIsPz(w.job)">
-              <span class="hlim left clickable" @click="$emit('panToPaPos', this.gameStore.nodes[w.job.pzk].pos)">
-                {{ gameStore.parentNodeName(w.job.pzk) }}
-              </span>
-              <span class="hlim right">
-                <template v-for="k in gameStore.plantzones[w.job.pzk].itemkeys">
-                  <RouterLink tag="a" :to="{path: './settings', hash: '#item' + k}">
-                    <ItemIcon :ik="Number(k)"/>
-                  </RouterLink>
-                </template>
-              </span>
-            </template>
-            <span v-else class="hlim left">
-              <WorkerJobDescription :w="w"/>
+  <template v-if="activeTab == 'worst'">
+    <span class="fsxs">
+      Sorted by efficiency with your currently assigned worker. Might be the node is alright but is using a bad worker!
+    </span>
+    <table class="stickyhead">
+      <thead>
+        <tr>
+          <th rowspan="2">town</th>
+          <th rowspan="2">job</th>
+          <th rowspan="2">M$/day</th>
+          <th colspan="2">CP</th>
+          <th rowspan="2">
+            efficiency
+            <abbr class="tooltip" title="profit divided by CP">ℹ</abbr>
+          </th>
+        </tr>
+        <tr>
+          <th class="rowspanned colspanned">
+            &nbsp;job <abbr class="tooltip" title="cost of the node (for plantzones) OR cost of the house (for workshops)">ℹ</abbr>
+          </th>
+          <th class="colspanned">
+            town <abbr class="tooltip" title="worker lodging + material storage">ℹ</abbr>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="{w, i, ipc} in userStore.workersSortedByIncomePerCp">
+          <td>
+            <span @click="$emit('panToPaPos', this.gameStore.nodes[w.tnk].pos, -7)" class="clickable">
+              {{ gameStore.uloc.town[gameStore.tnk2tk(w.tnk)] }}
             </span>
-          </div>
-        </td>
-        <td class="tac">{{ formatFixed(i, 2) }}</td>
-        <td class="tac">{{ formatFixed(userStore.workerSharedConnectionCP(w), 2) }}</td>
-        <td class="tac">{{ formatFixed(userStore.workerSharedLodgageCP(w).value, 2) }}</td>
-        <td class="tac">{{ formatFixed(ipc, 2) }}</td>
-      </tr>
-    </tbody>
-  </table>
+          </td>
+          <td class="">
+            <div class="hlim parent">
+              <template v-if="this.gameStore.jobIsPz(w.job)">
+                <span class="hlim left clickable" @click="$emit('panToPaPos', this.gameStore.nodes[w.job.pzk].pos)">
+                  {{ gameStore.parentNodeName(w.job.pzk) }}
+                </span>
+                <span class="hlim right">
+                  <template v-for="k in gameStore.plantzones[w.job.pzk].itemkeys">
+                    <RouterLink tag="a" :to="{path: './settings', hash: '#item' + k}">
+                      <ItemIcon :ik="Number(k)"/>
+                    </RouterLink>
+                  </template>
+                </span>
+              </template>
+              <span v-else class="hlim left">
+                <WorkerJobDescription :w="w"/>
+              </span>
+            </div>
+          </td>
+          <td class="tac">{{ formatFixed(i, 2) }}</td>
+          <td class="tac">{{ formatFixed(userStore.workerSharedConnectionCP(w), 2) }}</td>
+          <td class="tac">{{ formatFixed(userStore.workerSharedLodgageCP(w).value, 2) }}</td>
+          <td class="tac">{{ formatFixed(ipc, 2) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </template>
 
   <template v-if="activeTab == 'best'">
     <span class="fsxs">
@@ -309,13 +317,6 @@ nav span.green:hover {
 
 .hlim.right {
   flex: 0 0 auto;
-}
-
-.tar {
-  text-align: right;
-}
-.tac {
-  text-align: center;
 }
 
 .tooltip {

@@ -179,11 +179,11 @@ export default {
     </thead>
     <tbody>
       <tr v-for="plantzones, rgk in gameStore.regionGroups">
-        <td class="center">
+        <td class="tac">
           {{ rgk }}
         </td>
 
-        <td class="center">
+        <td class="tac">
           <template v-if="userStore.allowFloating">
             <label class="switch mauto">
               <input type="checkbox" v-model="userStore.useFloatingResources[rgk]">

@@ -332,7 +332,7 @@ export default {
 
     async fetchObservations() {
       const start = Date.now()
-      this.alldata = await (await fetch(`data/manual/yields_observed.json`)).json()
+      this.alldata = await (await fetch(`data/manual/yields_observed_202505_202508.json`)).json()
       
       const pz = this.dropratesStore.selected_pzk
       this.dropratesStore.selected_pzk = (pz && this.alldata[pz]) ? pz : Object.keys(this.alldata)[0]

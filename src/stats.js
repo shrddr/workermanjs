@@ -2,8 +2,32 @@ import { jStat } from 'jstat-esm';
 
 export function makeLognormalArray(mean, samples, bins, sigma) {
   let ret = []
+  const bias = 0
+  // -14 = 650k
+  //   0 = 443k
+  // +13 = 358k
+  // +14 = 356k
+  // +15 = 356k
+  // +16 = 347k
+  // +17 = 345k
+  // +18 = 347k
+  // +19 = 338k
+  // +20 = 335k
+  // +21 = 338k
+  // +22 = 332k
+  // +25 = 330k
+  // +30 = 318k
+  // +34 = 316k
+  // +35 = 315k
+  // +36 = 319k
+  // +37 = 321k
+  // +39 = 314k
+  // +40 = 316k
+  // +41 = 322k
+  // +50 = 320k
+  // +70 = 352k
   for (let k = 0; k <= bins; k++) {
-    const binCenter = 0.5 + k
+    const binCenter = 0.5 + k + bias
     const probability = jStat.lognormal.pdf( binCenter, mean, sigma )
     const y = probability * samples
     if (y < 0.01) continue
@@ -14,8 +38,14 @@ export function makeLognormalArray(mean, samples, bins, sigma) {
 
 export function makeGammaArray(alpha, samples, bins, theta) {
   let ret = []
+  const bias = 0
+  // -28 = 371k
+  // -14 = 263k
+  //   0 = 261k
+  // +14 = 289k
+  // -28 = 328k
   for (let k = 0; k <= bins; k++) {
-    const binCenter = 0.5 + k
+    const binCenter = 0.5 + k + bias
     const probability = jStat.gamma.pdf( binCenter, alpha, theta )
     const y = probability * samples
     if (y < 0.01) continue
