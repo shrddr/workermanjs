@@ -228,7 +228,9 @@ export default {
         const inputsCount = Object.entries(inputs).length
         for (const ik of Object.keys(inputs)) {
           if (inputs[ik] >= 10) {
-            inputsCopy[ik] = inputs[ik] * (1 - thriftyPercent/inputsCount/100)
+            const thriftable = Math.floor(inputs[ik] / 10)
+            const thrifted = thriftable * (1 - thriftyPercent/inputsCount/100)
+            inputsCopy[ik] = inputs[ik] - thriftable + thrifted
             //console.log('applied thrifty', rcp, ik, thriftyPercent, inputsCopy[ik])
           }
           else {
@@ -244,11 +246,11 @@ export default {
       if (!(this.gameStore.ready)) return NaN
       if (!tnka) return NaN
       if (!tnkb) return NaN
-      const a = this.gameStore.traders[tnka]
+      const a = this.gameStore.nodes[tnka].pos
       const b = this.gameStore.traders[tnkb]
-      const dx = a[0]-b[0]
+      const dx = a.x-b[0]
       const dy = 0
-      const dz = a[1]-b[1]
+      const dz = a.z-b[1]
       const dist = Math.sqrt(dx*dx+dy*dy+dz*dz)
       return dist
     },

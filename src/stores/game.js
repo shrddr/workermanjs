@@ -906,7 +906,6 @@ export const useGameStore = defineStore({
       if (tnk==1857) return this.makeMedianChar(8050) // lotml2
       if (tnk==1858) return this.makeMedianChar(8050) // lotml2
       if (tnk==1853) return this.makeMedianChar(8050) // lotml2
-      if (tnk==2001) return this.makeMedianChar(8050) // edania
       return this.makeMedianChar(7572)
     },
 
@@ -921,7 +920,6 @@ export const useGameStore = defineStore({
       if (tnk==1857) return this.makeMedianChar(8058) // lotml2
       if (tnk==1858) return this.makeMedianChar(8058) // lotml2
       if (tnk==1853) return this.makeMedianChar(8058) // lotml2
-      if (tnk==2001) return this.makeMedianChar(8058) // edania
       return this.makeMedianChar(7571)
     },
 
@@ -936,7 +934,6 @@ export const useGameStore = defineStore({
       if (tnk==1857) return this.makeMedianChar(8054) // lotml2
       if (tnk==1858) return this.makeMedianChar(8054) // lotml2
       if (tnk==1853) return this.makeMedianChar(8054) // lotml2
-      if (tnk==2001) return this.makeMedianChar(8054) // edania
       return this.makeMedianChar(7573)
     },
 
