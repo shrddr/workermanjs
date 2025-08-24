@@ -55,10 +55,24 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </QnaItem>
     <QnaItem>
       <template #q>
-        What is M$/day/CP?
+        What is <strong class="notranslate">M$/day/CP</strong>?
       </template>
-      M$ is a million silver; M$/day is silver profit per IRL day; (M$/day)/CP is silver profit per one CP point spent. In all cases, higher is better.
+      M$ is a million silver. M$/day is silver profit per IRL day. [M$/day] / CP is silver profit per one CP spent. In all cases, higher is better.
     </QnaItem>
+
+    <QnaItem>
+      <template #q>
+        What is <strong class="notranslate">efficiency</strong>?
+        Why in <strong class="notranslate">Empire > Best Untaken</strong> last column is called <strong class="notranslate">M$/day/CP</strong>, but in <strong class="notranslate">Worst Taken</strong> it's called <strong class="notranslate">efficiency</strong>? 
+        Why after taking the job its efficiency ends up considerably less than M$/day/CP shown in Best Untaken?
+      </template>
+      M$/day/CP of untaken plantzone is just additional profit divided by (integer) additional CP.
+      For example, taking Keplan Quarry Mining brings 2.8M$/day and only costs 1CP if Keplan Quarry node is already activated = 2.8M$/day/CP in Best Untaken.
+      After taking the Mining job it starts sharing the node connection and town infrastructure with other jobs.
+      1CP for Mining plantzone + 0.35CP shared connection + 0.45CP in lodging and storage = 1.8CP (fractional); 2.8M$/day / 1.8CP = 1.5 efficiency.
+      Taking this job however reduces other Keplan jobs shared CP costs and raises their efficiency.
+    </QnaItem>
+
     <QnaItem>
       <template #q>
         I checked the plantzones page X months ago and it showed best worker is Y and now shows Z, why?
@@ -73,11 +87,12 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         it ignores the fact that there is already taken 
         node <strong class="notranslate">C</strong> on the way.
       </template>
-      Connections are resolved in same order the jobs were given. 
+      <s>Connections are resolved in same order the jobs were given. 
       The worker who received the job first doesn't know yet about all others, and builds connection in a beeline.
       Each next worker sees and uses more and more connections made by previous workers in queue.
       You can push the worker at <strong class="notranslate">B</strong> to the end of queue by restarting his job in workerman (press <strong class="notranslate">stop</strong> and assign again). 
-      His connection will then be built last, with full knowledge of previous connections including the one that activated <strong class="notranslate">C</strong>.
+      His connection will then be built last, with full knowledge of previous connections including the one that activated <strong class="notranslate">C</strong>.</s>
+      Use <strong class="notranslate">wasm router</strong> checkbox!
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -87,8 +102,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <details><summary>these</summary>
         <img src="/data/images/steiner.png">
       </details>
-      can't be routed optimally by workerman, you'll get either B←A→C, A→B→C or A→C→B all costing 4 CP.<br/>
-      To get both B and C with 3 CP you need to activate node S manually (mark it as invested for droprate).
+      can't be routed optimally by old router, you'll get either B←A→C, A→B→C or A→C→B all costing 4 CP.<br/>
+      To get both B and C with 3 CP you need to use <strong class="notranslate">wasm router</strong>.
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -209,7 +224,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <li>✓ connections</li>
         <li>✓ walk distances</li>
         <li>✓ housecraft</li>
-        <li>✓ droprates v3 (cycles observed: 325)</li>
+        <li>✓ droprates v4 (cycles observed: ~400)</li>
       </ul>
     <li>a consistent fast way to build optimal connections (orderless) by @Thell</li>
     <li>sticky table headers</li>
@@ -457,7 +472,6 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
     <li>crates - show mat usage</li>
-    <li>same value is called M$/day/CP in Empire, but efficiency in node pane</li>
     <li>monk's branch rate is sus on plantzones where it is both unlucky and lucky</li>
     <li>worker send dialog > stash > ulukita towns = error</li>
     <li>price input up/down spinner should imitate CM steps</li>
