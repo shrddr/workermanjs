@@ -92,7 +92,7 @@ export default {
 <template>
   <main>
     <div id="toptext">
-      Town:
+      Region:
       <select v-model="filterTown">
         <option v-for="tk in towns" :value="tk">{{ (tk>=0 ? gameStore.uloc.town[tk] : 'any') }}</option>
       </select>
@@ -124,7 +124,7 @@ export default {
       <th>town</th>
       <th>node</th>
       <th>name</th>
-      <th>CP</th>
+      <th>CP (with chain)</th>
       <th>usage/level</th>
     </tr>
     <template v-for="v, k in houses">

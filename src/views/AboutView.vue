@@ -224,7 +224,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <li>✓ connections</li>
         <li>✓ walk distances</li>
         <li>✓ housecraft</li>
-        <li>✓ droprates v4 (cycles observed: ~400)</li>
+        <li>✓ droprates v5 (cycles observed: 566)</li>
       </ul>
     <li>a consistent fast way to build optimal connections (orderless) by @Thell</li>
     <li>sticky table headers</li>

@@ -115,16 +115,20 @@ export const useMarketStore = defineStore({
       const gameStore = useGameStore()
       
       let ret = {}
-      for (const [key, value] of Object.entries(this.apiPrices)) {
-        ret[key] = value
+      for (const [key, custom] of Object.entries(userStore.customPrices)) {
+        if (custom === "") continue
+        ret[key] = custom
       }
-      for (const [key, value] of Object.entries(gameStore.vendorPrices)) {
-        ret[key] = value
+      for (const [key, api] of Object.entries(this.apiPrices)) {
+        if (key in ret) continue
+        ret[key] = api
+      }
+      for (const [key, vendor] of Object.entries(gameStore.vendorPrices)) {
+        if (key in ret) continue
+        ret[key] = vendor
       }
 
       for (const key of Object.keys(ret)) {
-        if (key in userStore.customPrices && userStore.customPrices[key] !== "")
-          ret[key] = userStore.customPrices[key]
         // apply tax
         if (key in userStore.keepItems && userStore.keepItems[key])
           continue
@@ -137,8 +141,8 @@ export const useMarketStore = defineStore({
         if (key in userStore.customPrices && userStore.customPrices[key] !== "")
           continue
         ret[key] = 0
-        for (const [component_ik, qty] of Object.entries(value)) {
-          ret[key] += ret[component_ik] * qty
+        for (const [component_ik, component_qty] of Object.entries(value)) {
+          ret[key] += ret[component_ik] * component_qty
         }
         //console.log('calculated price:', key, ret[key])
       }
