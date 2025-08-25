@@ -40,10 +40,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         How do i make an empire optimized for cooking/alchemy?
       </template>
-      Only difference is you don't tax cooking/alchemy mats (mark as Keep in <RouterLink to="/settings">Settings</RouterLink>).
+      Only difference is you don't tax cooking/alchemy mats (mark as <strong class="notranslate">Keep</strong> in Settings).
       You are still going to be recommended nodes that have nothing to do with cooking/alchemy. 
       Just sell the output and use that silver to buy whatever you need.
-      If you want to completely avoid some item, go to <RouterLink to="/settings">Settings</RouterLink> and put 0 as its Custom Value.
+      If you want to completely avoid some item, go to Settings and put 0 as its <strong class="notranslate">Custom Value</strong>.
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -149,6 +149,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       4. Morning Land drops: observed at summer 2023 - regular nodes are fine, excavations are approximate, too rare to judge confidently (see <a href="https://discord.com/channels/371035077037129729/404532586246045696/1284834924381212704">table</a>).<br/>
       5. Seoul drops: observed non-thoroughly in september 2024, when in doubt picked values most similar to existing node drops from (1).<br/>
       6. Ulukita drops: observed in june 2025.<br/>
+      7. Edania drops: observed in august 2025.<br/>
       I've been adjusting all of the above over time (when relevant changes are published in patch notes, like "increased yields at node X by Y%").
     </QnaItem>
 
@@ -213,7 +214,11 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           </ul>
         </ul>
       </li>
-      <li>Try <a href="https://github.com/Thell/bdo-empire">bdo-empire</a> which takes a while to run, but creates an empire from scratch given a target amount of CP (and its output can be imported back into workerman)
+      <li>
+        Try <a href="https://github.com/Thell/bdo-empire">bdo-empire</a> which takes a while to run, but creates an empire from scratch given a target amount of CP (and its output can be imported back into workerman)
+        <ul>
+          <li>It uses Calpheon as stash for all workers so you may spread that out after the import</li>
+        </ul>
       </li>
     </ul>
 
@@ -471,6 +476,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     
 
     <h2>Todo</h2>
+    <li>empty personal items are treated as 1 personal item</li>
     <li>crates - show mat usage</li>
     <li>monk's branch rate is sus on plantzones where it is both unlucky and lucky</li>
     <li>worker send dialog > stash > ulukita towns = error</li>
@@ -561,7 +567,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <p><RouterLink to="/droprates">Droprates</RouterLink></p>
     <p><RouterLink to="/fishsize">Fishsize</RouterLink></p>
     <p><RouterLink to="/routertests">Router Tests</RouterLink></p>
-    <p><RouterLink to="/regionmap">Region Map</RouterLink></p>
+    <p><RouterLink to="/regionmap">RegionGroup Map</RouterLink></p>
     <p><RouterLink to="/lodging">All Towns Lodging (deprecated)</RouterLink></p>
   </div>
 </template>

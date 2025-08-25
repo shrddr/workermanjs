@@ -92,7 +92,7 @@ export default {
     makeGeoLayer() {
       return new GeoJsonLayer({
         id: 'GeoJsonLayerCur',
-        data: 'data/rg_2025-05_1_5.geojson',
+        data: 'data/rg_latest_1_5.geojson',
 
         stroked: false,  // default: true
         getLineWidth: 50,  
