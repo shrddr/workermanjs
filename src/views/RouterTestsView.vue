@@ -35,7 +35,7 @@ export default {
       rtp_results: [],
 
       real_pair_count: 10,
-      real_max_distance: 10,
+      real_steps: 10,
       real_results: [],
 
       retry_until_red: false,
@@ -104,7 +104,6 @@ export default {
 
     run_rtp() {
       const start = Date.now()
-      this.green_retries = 0
       while (1) {
         const badNodes = new Set()
         const testcase = {
@@ -119,7 +118,9 @@ export default {
           testcase.pairs.push([source, target])
         }
         const result = this.run_case(testcase)
-        if (this.retry_until_red && !result.red) this.green_retries++
+        if (this.retry_until_red && !result.red) {
+          this.green_retries++
+        }
         if (!this.retry_until_red || result.red || Date.now()-start > this.max_ms) {
           this.rtp_results.push(result)
           break
@@ -130,7 +131,6 @@ export default {
     run_real() {
       const gameStore = useGameStore()
       const start = Date.now()
-      this.green_retries = 0
 
       while (1) {
         const badNodes = new Set()
@@ -145,22 +145,20 @@ export default {
           const source = goodTowns[Math.floor(Math.random() * goodTowns.length)]
           // random walk around town
           let target = source
-          for (let dist = 0; dist < this.real_max_distance; dist++) {
+          for (let dist = 0; dist < this.real_steps; dist++) {
             const links = gameStore.links[target]
             const goodLinks = links.filter(n => !badNodes.has(n))
             target = goodLinks[Math.floor(Math.random() * goodLinks.length)]
             // one more step if didn't move at all
             if (target == source) dist--
           }
-          if (target == undefined) {
-            i -= 1
-            continue
-          }
           badNodes.add(target)
           testcase.pairs.push([source, target])
         }
         const result = this.run_case(testcase)
-        if (this.retry_until_red && !result.red) this.green_retries++
+        if (this.retry_until_red && !result.red) {
+          this.green_retries++
+        }
         if (!this.retry_until_red || result.red || Date.now()-start > this.max_ms) {
           this.real_results.push(result)
           break
@@ -274,10 +272,10 @@ export default {
         > {{ real_pair_count }}<br/>
         Steps <input 
           type="range"
-          v-model.number="real_max_distance" 
+          v-model.number="real_steps" 
           min="1"
           max="80"
-        > {{ real_max_distance }}<br/>
+        > {{ real_steps }}<br/>
         <button @click="run_real">run</button>
         <table>
           <thead>
