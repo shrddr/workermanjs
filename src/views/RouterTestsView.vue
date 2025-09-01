@@ -59,7 +59,10 @@ export default {
 
     const gameStore = useGameStore()
     this.all_origins = gameStore.townsWithLodging
-    this.all_destinations = [...Object.keys(gameStore.plantzones)]
+    this.all_destinations = []
+    for (const nk of Object.keys(gameStore.plantzones)) {
+      this.all_destinations.push(Number(nk))
+    }
   },
 
   computed: {
@@ -103,13 +106,16 @@ export default {
       const start = Date.now()
       this.retries_until_fail = 0
       while (1) {
+        const badNodes = new Set()
         const testcase = {
           'label': `rtp${this.rtp_results.length}`,
           'pairs': [],
         }
         for (let i = 0; i < this.rtp_pair_count; i++) {
           const source = this.all_origins[Math.floor(Math.random() * this.all_origins.length)]
-          const target = Number(this.all_destinations[Math.floor(Math.random() * this.all_destinations.length)])
+          const goodNodes = this.all_destinations.filter(n => !badNodes.has(n)) 
+          const target = goodNodes[Math.floor(Math.random() * goodNodes.length)]
+          badNodes.add(target)
           testcase.pairs.push([source, target])
         }
         const result = this.run_case(testcase)
