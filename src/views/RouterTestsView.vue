@@ -39,6 +39,7 @@ export default {
       real_results: [],
 
       retry_until_fail: false,
+      retries_until_fail: 0,
       max_ms: 5000,
     }
   },
@@ -79,7 +80,7 @@ export default {
 
       testcase.str = ""
       for (const pair of testcase.pairs) {
-        testcase.str += `${pair[0]},${pair[1]} `
+        testcase.str += `${pair[1]},${pair[0]} `
       }
 
       const ret = { 
@@ -100,6 +101,7 @@ export default {
 
     run_rtp() {
       const start = Date.now()
+      this.retries_until_fail = 0
       while (1) {
         const testcase = {
           'label': `rtp${this.rtp_results.length}`,
@@ -111,6 +113,7 @@ export default {
           testcase.pairs.push([source, target])
         }
         const result = this.run_case(testcase)
+        if (this.retry_until_fail && !result.regressed) this.retries_until_fail++
         if (!this.retry_until_fail || result.regressed || Date.now()-start > this.max_ms) {
           this.rtp_results.push(result)
           break
@@ -121,6 +124,7 @@ export default {
     run_real() {
       const gameStore = useGameStore()
       const start = Date.now()
+      this.retries_until_fail = 0
 
       while (1) {
         const badNodes = new Set()
@@ -154,6 +158,7 @@ export default {
           testcase.pairs.push([source, target])
         }
         const result = this.run_case(testcase)
+        if (this.retry_until_fail && !result.regressed) this.retries_until_fail++
         if (!this.retry_until_fail || result.regressed || Date.now()-start > this.max_ms) {
           this.real_results.push(result)
           break
@@ -168,8 +173,11 @@ export default {
 <template>
   <main>
     
-    <input type="checkbox" v-model="retry_until_fail"> retry until first fail
-    (up to <input type="number" class="w5em" v-model.number="max_ms">ms)
+    <input type="checkbox" v-model="retry_until_fail"> retry until first fail 
+    up to <input type="number" class="w5em" v-model.number="max_ms">ms
+    <template v-if="retry_until_fail">
+      ({{ retries_until_fail }}✔️ ignored)
+    </template>
 
     <div class="column-container">
       <div class="column" v-if="0">
@@ -180,7 +188,7 @@ export default {
             <tr>
               <td>old</td>
               <td>wasm</td>
-              <td>better?</td>
+              <td>≥</td>
               <td>label</td>
             </tr>
           </thead>
@@ -224,7 +232,7 @@ export default {
             <tr>
               <td>old</td>
               <td>wasm</td>
-              <td>better?</td>
+              <td>≥</td>
               <td>label</td>
             </tr>
           </thead>
@@ -254,7 +262,7 @@ export default {
       <div class="column">
         <h3>
           Realistic
-          <abbr class="tooltip" title="plantzones nodes tend to be near hometowns (~sqrt of steps)">ℹ</abbr>
+          <abbr class="tooltip" title="plantzones tend to be near hometowns (~sqrt of steps)">ℹ</abbr>
         </h3>
         Pairs <input 
           type="range"
@@ -274,7 +282,7 @@ export default {
             <tr>
               <td>old</td>
               <td>wasm</td>
-              <td>better?</td>
+              <td>≥</td>
               <td>label</td>
             </tr>
           </thead>
