@@ -229,7 +229,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <li>✓ connections</li>
         <li>✓ walk distances</li>
         <li>✓ housecraft</li>
-        <li>✓ droprates v5 (cycles observed: 566)</li>
+        <li>✓ droprates v6 (cycles observed: 1200)</li>
       </ul>
     <li>a consistent fast way to build optimal connections (orderless) by @Thell</li>
     <li>sticky table headers</li>
@@ -474,6 +474,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <li>combined repeated items in node 1035 (ty @Yazel)</li>
     <li>[2022-08-31 patch] modified nodes 463 & 487 for lucky drop 5422 instead of 5402</li>
     
+
+
+
+
 
     <h2>Todo</h2>
     <li>empty personal items are treated as 1 personal item</li>

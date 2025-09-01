@@ -91,10 +91,46 @@ export default {
       return `${i}`
     },
 
+    townStat() {
+      const ret = {}
+      const usedOrigins = new Set()
+      for (const [origin, rcps] of Object.entries(this.perTownPerRecipePerThrifty)) {
+        usedOrigins.add(origin)
+
+        ret[origin] = { 
+          workers: 0,
+          completionsPerDay: 0,
+          completionsPerDayDoubleEnded: 0,  // A→B & B→A connection combined
+          reverseConnection: false,
+        }
+        const destination = this.userStore.tradeDestinations[origin]
+        if (usedOrigins.has(destination)) {
+          if (this.userStore.tradeDestinations[destination] == origin)
+            ret[origin].reverseConnection = true
+        }
+
+        for (const thrifties of Object.values(rcps)) {
+          for (const perf of Object.values(thrifties)) {
+            ret[origin].workers += perf.workers
+            ret[origin].completionsPerDay += perf.completionsPerDay
+            //ret[origin].lt += perf.completionsPerDay * // crateWeight
+          }
+        }
+
+        if (!ret[origin].reverseConnection) {
+          ret[origin].completionsPerDayDoubleEnded += ret[origin].completionsPerDay
+        }
+        else {
+          ret[destination].completionsPerDayDoubleEnded += ret[origin].completionsPerDay
+          ret[origin].completionsPerDayDoubleEnded = ret[destination].completionsPerDayDoubleEnded
+        }
+      }
+      return ret
+    },
+
     rows() {
       const ret = {
         towns: {},  // tnk: { row, row, ... }
-        townStat: {},
         transport: {},
         total: {
           silver: 0,
@@ -103,20 +139,21 @@ export default {
         },
       }
       if (!this.gameStore.ready) return ret
-      for (const [tnk, rcps] of Object.entries(this.perTownPerRecipePerThrifty)) {
-        ret.towns[tnk] = []
+      for (const [origin, rcps] of Object.entries(this.perTownPerRecipePerThrifty)) {
+        ret.towns[origin] = []
+        const destination = this.userStore.tradeDestinations[origin]
+        const routeBase = this.townStat[origin].reverseConnection ? destination : origin
 
-        const destination = this.userStore.tradeDestinations[tnk]
-        const hours = this.transportHours(tnk, destination)
+        const hours = this.transportHours(origin, destination)
         const wagonRuns = Math.ceil(this.pcHours / hours)
         const transportCycles = Math.ceil(this.pcHours / hours)
         const transportLtPerDay = 5 * transportCycles * 30000
-        if (!(tnk in this.userStore.tradeRouteCp)) this.userStore.tradeRouteCp[tnk] = 0
-        const routeCp = this.userStore.tradeRouteCp[tnk]  // TODO: f(origin, destination)
-        if (!(tnk in this.userStore.tradeInfraCp)) this.userStore.tradeInfraCp[tnk] = 0
-        const workshopCostDaily = this.userStore.tradeInfraCp[tnk] * this.cpCost * 1000000
+        if (!(origin in this.userStore.tradeRouteCp)) this.userStore.tradeRouteCp[origin] = 0
+        
+        const routeCp = this.userStore.tradeRouteCp[routeBase] // TODO: f(origin, destination)
+        if (!(origin in this.userStore.tradeInfraCp)) this.userStore.tradeInfraCp[origin] = 0
 
-        const origDest = `${this.gameStore.uloc.node[tnk]} → ${this.gameStore.uloc.node[destination]}`
+        const origDest = `${this.gameStore.uloc.node[origin]} → ${this.gameStore.uloc.node[destination]}`
         if (!(origDest in ret.transport)) {
           //console.log(this.pcHours, hours, wagonRuns)
           const haveWagons = 5 * wagonRuns
@@ -129,16 +166,8 @@ export default {
           }
         }
 
-        for (const [rcp, thrs] of Object.entries(rcps)) {
-          for (const perf of Object.values(thrs)) {
-            if (!(tnk in ret.townStat)) ret.townStat[tnk] = { completionsPerDay: 0 }
-            ret.townStat[tnk].completionsPerDay += perf.completionsPerDay
-            //ret.townStat[tnk].lt += perf.completionsPerDay * // crateWeight
-          }
-        }
-
-        for (const [rcp, thrs] of Object.entries(rcps)) {
-          for (const [thriftyPercent, perf] of Object.entries(thrs)) {
+        for (const [rcp, thrifties] of Object.entries(rcps)) {
+          for (const [thriftyPercent, perf] of Object.entries(thrifties)) {
             const makeCost = this.recipeCost(rcp, Number(thriftyPercent))
             const avgRepeats = perf.completionsPerDay / perf.cyclesPerDay
             const feedCost = this.marketStore.prices[9492]
@@ -150,27 +179,26 @@ export default {
             //makeCost.val += workshopCostPerCrate
             //makeCost.desc += `${formatFixed(workshopCostDaily/1000000, 2)}M x ${perf.workers} / ${formatFixed(perf.completionsPerDay)} = ${formatFixed(workshopCostPerCrate)}\n`
 
-            const tradeInfo = this.tradeInfo(rcp, tnk, destination)
+            const tradeInfo = this.tradeInfo(rcp, origin, destination)
 
             tradeInfo.delta = tradeInfo.sellPrice - makeCost.val - tradeInfo.transportFee
             tradeInfo.deltaDesc = `${formatFixed(tradeInfo.sellPrice)} - ${formatFixed(makeCost.val)} - ${formatFixed(tradeInfo.transportFee)}`
             tradeInfo.roi = tradeInfo.delta / (makeCost.val + tradeInfo.transportFee)
             tradeInfo.dailyProfit = tradeInfo.delta * perf.completionsPerDay / 1000000
-            tradeInfo.routeCp = this.userStore.tradeRouteAlwaysOn[tnk] 
-              ? routeCp * perf.completionsPerDay / ret.townStat[tnk].completionsPerDay
+            tradeInfo.routeCp = this.userStore.tradeRouteAlwaysOn[routeBase] 
+              ? routeCp * perf.completionsPerDay / this.townStat[origin].completionsPerDayDoubleEnded
               : routeCp * perf.completionsPerDay * tradeInfo.crateWeight / transportLtPerDay
-            const routeCpDesc = this.userStore.tradeRouteAlwaysOn[tnk] 
-              ? `${routeCp}CP * ${formatFixed(perf.completionsPerDay)} / ${formatFixed(ret.townStat[tnk].completionsPerDay)} crates`
+            const routeCpDesc = this.userStore.tradeRouteAlwaysOn[origin]
+              ? `${routeCp}CP * ${formatFixed(perf.completionsPerDay)} / ${formatFixed(this.townStat[origin].completionsPerDayDoubleEnded)} crates`
               : `${routeCp}CP * ${formatFixed(perf.completionsPerDay * tradeInfo.crateWeight / transportLtPerDay * 100, 3)}% utilization`
-            const infraCp = this.userStore.tradeInfraCp[tnk] * perf.workers
-            tradeInfo.cp = infraCp + tradeInfo.routeCp
-            tradeInfo.cpDesc = `${this.userStore.tradeInfraCp[tnk]}CP x ${perf.workers} workers + ${routeCpDesc}`
+            tradeInfo.cp = this.userStore.tradeInfraCp[origin] / this.townStat[origin].workers * perf.workers + tradeInfo.routeCp
+            tradeInfo.cpDesc = `${this.userStore.tradeInfraCp[origin]}CP / ${this.townStat[origin].workers} x ${perf.workers} workers + ${routeCpDesc}`
             tradeInfo.eff = tradeInfo.dailyProfit / tradeInfo.cp
 
-            const prevRow = ret.towns[tnk][ret.towns[tnk].length - 1]
+            const prevRow = ret.towns[origin][ret.towns[origin].length - 1]
             const collapsed = (prevRow && rcp == prevRow.rcp)
 
-            ret.towns[tnk].push({
+            ret.towns[origin].push({
               rcp, collapsed, rowspan: 1,
               thriftyPercent,
               makeCost,
@@ -196,9 +224,11 @@ export default {
     },
 
     table() {
+      // semantic sugar to not call this.rows from template twice
       const a = this.rows
+      // collapse `out` and `sell`
       let incrementingRow
-      for (const [tnk, rows] of Object.entries(a.towns)) {
+      for (const [origin, rows] of Object.entries(a.towns)) {
         for (const row of rows) {
           if (!row.collapsed) incrementingRow = row
           else incrementingRow.rowspan++
@@ -336,6 +366,8 @@ export default {
 }
 </script>
 
+
+
 <template>
   <div class="container">
 
@@ -366,10 +398,16 @@ export default {
             </th>
             <th>make $</th>
             <th>wagon $</th>
-            <th>total $</th>
-            <th>ROI</th>
+            <th>profit $</th>
+            <th>
+              ROI
+              <abbr class="tooltip" title="make $ / profit $">ℹ</abbr>
+            </th>
             <th>M$/day</th>
-            <th>CP</th>
+            <th>
+              CP
+              <abbr class="tooltip" title="infra + connection">ℹ</abbr>
+            </th>
             <th>M$/day/CP</th>
           </tr>
         </thead>
@@ -380,11 +418,11 @@ export default {
                 {{ gameStore.uloc.node[origin] }}
               </td>
               <td colspan="4" class="tac">
-                <abbr class="tooltip" title="average town infrastructure per 1 packer 
+                <abbr class="tooltip" title="total town infrastructure per 1 packer 
 (workshops, storage, house connections)
 ON TOP of the houses autoassigned 
 on Home page (lodging is autoassigned)">infra</abbr>{{  }}
-                <input type="number" class="w33em" step="0.1" v-model.number="userStore.tradeInfraCp[origin]">
+                <input type="number" class="w33em" v-model.number="userStore.tradeInfraCp[origin]">
                 CP
               </td>
               <td colspan="6">
@@ -396,12 +434,18 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
                   </option>
                 </select>
                 
-                cost
-                <input type="number" class="w3em" v-model.number="userStore.tradeRouteCp[origin]">
-                CP
-                
-                <span class="spacer"></span>
-                <input type="checkbox" v-model="userStore.tradeRouteAlwaysOn[origin]"> always on
+                <template v-if="townStat[origin].reverseConnection == false">
+                  cost
+                  <input 
+                    v-model.number="userStore.tradeRouteCp[origin]"
+                    type="number" 
+                    class="w3em">
+                  CP
+                  
+                  <span class="spacer"></span>
+                  <input type="checkbox" v-model="userStore.tradeRouteAlwaysOn[origin]"> always on
+                </template>
+                <template v-else>(reusing)</template>
               </td>
             </tr>
 
@@ -466,17 +510,19 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
       {{ formatFixed(table.total.CP, 2) }} CP,
       {{ formatFixed(table.total.eff, 3) }} M$/day/CP
 
+
+
       <details>
         <summary>Wagons</summary>
         Order issuing hours: <input type="number" class="w3em" v-model.number="pcHours">
         <br/>
-        At over 100% capacity, cost of transporting 214kLT:
+        <!--At over 100% capacity, cost of transporting 214kLT:-->
         <table>
           <thead>
             <tr>
               <th>route</th>
-              <th>wagons</th>
               <th>duration</th>
+              <th>needed</th>
               <th>capacity</th>
               <th>utilization</th>
             </tr>
@@ -484,8 +530,8 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
           <tbody>
             <tr v-for="tinfo, origDest in table.transport">
               <td>{{ origDest }}</td>
-              <td class="tar">{{ formatFixed(tinfo.needWagons, 2) }}</td>
               <td>{{ tinfo.duration }}</td>
+              <td class="tar">{{ formatFixed(tinfo.needWagons, 2) }}</td>
               <td class="tar">{{ tinfo.haveWagons }}</td>
               <td class="tar">
                 {{ formatFixed(tinfo.utilization * 100, 2) }}%
@@ -559,6 +605,10 @@ summary {
 
 .spacer {
   padding-left: 0.6em;
+}
+
+.striked {
+  text-decoration: line-through;
 }
 
 </style>
