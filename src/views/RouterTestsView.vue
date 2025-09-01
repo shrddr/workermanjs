@@ -21,12 +21,12 @@ export default {
         {
           'label': 'ehwaz-pinto',
           'expected': 5,  // now 6
-          'pairs': [[1, 160], [1, 136]],
+          'pairs': [[160, 1], [136, 1]],
         },
         {
           'label': 'glish-lynch_f/heidel-glish_r',
           'expected': 9,  // now 10
-          'pairs': [[302, 488], [301, 480]],
+          'pairs': [[488, 302], [480, 301]],
         },
       ],
       predefined_results: [],
@@ -38,8 +38,8 @@ export default {
       real_max_distance: 10,
       real_results: [],
 
-      retry_until_fail: false,
-      retries_until_fail: 0,
+      retry_until_red: false,
+      green_retries: 0,
       max_ms: 5000,
     }
   },
@@ -90,7 +90,7 @@ export default {
         testcase,
         resultOld,
         resultWasm,
-        regressed: resultWasm.totalCost > resultOld.totalCost
+        red: resultWasm.totalCost > resultOld.totalCost
       }
       return ret
     },
@@ -104,7 +104,7 @@ export default {
 
     run_rtp() {
       const start = Date.now()
-      this.retries_until_fail = 0
+      this.green_retries = 0
       while (1) {
         const badNodes = new Set()
         const testcase = {
@@ -119,8 +119,8 @@ export default {
           testcase.pairs.push([source, target])
         }
         const result = this.run_case(testcase)
-        if (this.retry_until_fail && !result.regressed) this.retries_until_fail++
-        if (!this.retry_until_fail || result.regressed || Date.now()-start > this.max_ms) {
+        if (this.retry_until_red && !result.red) this.green_retries++
+        if (!this.retry_until_red || result.red || Date.now()-start > this.max_ms) {
           this.rtp_results.push(result)
           break
         }
@@ -130,7 +130,7 @@ export default {
     run_real() {
       const gameStore = useGameStore()
       const start = Date.now()
-      this.retries_until_fail = 0
+      this.green_retries = 0
 
       while (1) {
         const badNodes = new Set()
@@ -148,13 +148,9 @@ export default {
           for (let dist = 0; dist < this.real_max_distance; dist++) {
             const links = gameStore.links[target]
             const goodLinks = links.filter(n => !badNodes.has(n))
-            if (goodLinks.length > 0) {
-              target = goodLinks[Math.floor(Math.random() * goodLinks.length)]
-            }
-            else {
-              target = undefined
-              break
-            }
+            target = goodLinks[Math.floor(Math.random() * goodLinks.length)]
+            // one more step if didn't move at all
+            if (target == source) dist--
           }
           if (target == undefined) {
             i -= 1
@@ -164,8 +160,8 @@ export default {
           testcase.pairs.push([source, target])
         }
         const result = this.run_case(testcase)
-        if (this.retry_until_fail && !result.regressed) this.retries_until_fail++
-        if (!this.retry_until_fail || result.regressed || Date.now()-start > this.max_ms) {
+        if (this.retry_until_red && !result.red) this.green_retries++
+        if (!this.retry_until_red || result.red || Date.now()-start > this.max_ms) {
           this.real_results.push(result)
           break
         }
@@ -179,10 +175,10 @@ export default {
 <template>
   <main>
     
-    <input type="checkbox" v-model="retry_until_fail"> retry until first fail 
+    <input type="checkbox" v-model="retry_until_red"> retry until first fail 
     up to <input type="number" class="w5em" v-model.number="max_ms">ms
-    <template v-if="retry_until_fail">
-      ({{ retries_until_fail }}✔️ ignored)
+    <template v-if="retry_until_red">
+      ({{ green_retries }}✔️ ignored)
     </template>
 
     <div class="column-container">
@@ -207,7 +203,7 @@ export default {
                 {{ r.resultWasm.totalCost }}
               </td>
               <td>
-                {{ r.regressed ? '❌' : '✔️' }} 
+                {{ r.red ? '❌' : '✔️' }} 
               </td>
               <td>
                 <details>
@@ -251,7 +247,7 @@ export default {
                 {{ r.resultWasm.totalCost }}
               </td>
               <td>
-                {{ r.regressed ? '❌' : '✔️' }} 
+                {{ r.red ? '❌' : '✔️' }} 
               </td>
               <td>
                 <details>
@@ -301,7 +297,7 @@ export default {
                 {{ r.resultWasm.totalCost }}
               </td>
               <td>
-                {{ r.regressed ? '❌' : '✔️' }} 
+                {{ r.red ? '❌' : '✔️' }} 
               </td>
               <td>
                 <details>
