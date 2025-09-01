@@ -1162,7 +1162,7 @@ export const useGameStore = defineStore({
       const activatedNodes = this.wasmRouter.solveForTerminalPairs(terminalPairs)
       const took = performance.now() - startTime
       //console.log('wasm', terminalPairs, 'took', took.toFixed(2), 'ms', activatedNodes)
-      console.log('wasm took', took.toFixed(2), 'ms')
+      console.log('routeWasm took', took.toFixed(2), 'ms')
       
       routees.forEach(r => {
         const [usedPath, usedPathCost] = this.miniDijkstra(activatedNodes, r.target, r.source)

@@ -14,45 +14,148 @@ export default {
 
   data() {
     return {
-      cases: [
+      all_origins: [],
+      all_destinations: [],
+
+      predefined_cases: [
         {
           'label': 'ehwaz-pinto',
           'expected': 5,  // now 6
-          'tasks': [[1, 160], [1, 136]],
+          'pairs': [[1, 160], [1, 136]],
         },
         {
           'label': 'glish-lynch_f/heidel-glish_r',
           'expected': 9,  // now 10
-          'tasks': [[302, 488], [301, 480]],
+          'pairs': [[302, 488], [301, 480]],
         },
       ],
+      predefined_results: [],
+
+      rtp_pair_count: 10,
+      rtp_log_good: true,
+      rtp_results: [],
+
+      real_pair_count: 10,
+      real_max_distance: 10,
+      real_log_good: true,
+      real_results: [],
     }
   },
 
-  computed: {
-    run_all() {
-      const ret = []
-      for (const tc of this.cases) {
-        ret.push(this.run_case(tc))
+  async mounted() {
+    function until(conditionFunction) {
+      const poll = resolve => {
+        if (conditionFunction()) resolve();
+        else setTimeout(_ => poll(resolve), 100);
       }
-      return ret
-    },
+      return new Promise(poll);
+    }
+
+    console.log('mounted, sleeping')
+    await until(_ => this.gameStore.ready == true)
+    console.log('resuming')
+
+    const gameStore = useGameStore()
+    this.all_origins = gameStore.townsWithLodging
+    this.all_destinations = [...Object.keys(gameStore.plantzones)]
+  },
+
+  computed: {
+    
   },
 
   methods: {
-    run_case(tc) {
+    run_case(testcase) {
       const gameStore = useGameStore()
       const routees = []
-      for (const task of tc.tasks) {
-        routees.push({source: task[0], target: task[1]})
+      for (const pair of testcase.pairs) {
+        routees.push({source: pair[0], target: pair[1]})
       }
-      const routes = gameStore.route([], routees)
+
+      //console.log('running', testcase)
+      const resultOld = gameStore.routeOld([], routees)
+      const resultWasm = gameStore.routeWasm([], routees)
+
+      testcase.str = ""
+      for (const pair of testcase.pairs) {
+        testcase.str += `${pair[0]},${pair[1]} `
+      }
+
       const ret = { 
-        ...tc,
-        ...routes,
-        passed: routes.totalCost == tc.expected
+        testcase,
+        resultOld,
+        resultWasm,
+        regressed: resultWasm.totalCost > resultOld.totalCost
       }
       return ret
+    },
+
+    run_predefined() {
+      this.predefined_results.length = 0
+      for (const tc of this.predefined_cases) {
+        this.predefined_results.push(this.run_case(tc))
+      }
+    },
+
+    run_rtp() {
+      while (1) {
+        const testcase = {
+          'label': `rtp${this.rtp_results.length}`,
+          'pairs': [],
+        }
+        for (let i = 0; i < this.rtp_pair_count; i++) {
+          const source = this.all_origins[Math.floor(Math.random() * this.all_origins.length)]
+          const target = Number(this.all_destinations[Math.floor(Math.random() * this.all_destinations.length)])
+          testcase.pairs.push([source, target])
+        }
+        const result = this.run_case(testcase)
+        if (this.rtp_log_good || result.regressed) {
+          this.rtp_results.push(result)
+          break
+        }
+      }
+    },
+
+    run_real() {
+      const gameStore = useGameStore()
+
+      while (1) {
+        const badNodes = new Set()
+        const testcase = {
+          'label': `real${this.real_results.length}`,
+          'pairs': [],
+        }
+        for (let i = 0; i < this.real_pair_count; i++) {
+          // random town
+          const goodTowns = this.all_origins.filter(n => !badNodes.has(n))
+          if (goodTowns.length == 0) break;
+          const source = goodTowns[Math.floor(Math.random() * goodTowns.length)]
+          // random walk around town
+          let target = source
+          for (let dist = 0; dist < this.real_max_distance; dist++) {
+            const links = gameStore.links[target]
+            const goodLinks = links.filter(n => !badNodes.has(n))
+            if (goodLinks.length > 0) {
+              target = goodLinks[Math.floor(Math.random() * goodLinks.length)]
+            }
+            else {
+              target = undefined
+              break
+            }
+          }
+          if (target == undefined) {
+            i -= 1
+            continue
+          }
+          badNodes.add(target)
+          testcase.pairs.push([source, target])
+        }
+        const result = this.run_case(testcase)
+        if (this.real_log_good || result.regressed) {
+          this.real_results.push(result)
+          break
+        }
+      }
     },
   }
 }
@@ -60,21 +163,157 @@ export default {
 
 <template>
   <main>
-    <div id="tests">
-      <div v-for="r in run_all">
-        {{ r.label }} {{ r.totalCost }} {{ r.passed ? '✔️' : '❌' }} 
-        <button @click="">view</button>
+    <div class="column-container">
+      <div class="column" v-if="0">
+        <h3>Predefined testcases</h3>
+        <button @click="run_predefined">run</button>
+        <table>
+          <thead>
+            <tr>
+              <td>old</td>
+              <td>wasm</td>
+              <td>better?</td>
+              <td>label</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in predefined_results">
+              <td>
+                {{ r.resultOld.totalCost }}
+              </td>
+              <td>
+                {{ r.resultWasm.totalCost }}
+              </td>
+              <td>
+                {{ r.regressed ? '❌' : '✔️' }} 
+              </td>
+              <td>
+                <details>
+                  <summary>{{ r.testcase.label }}</summary>
+                  <pre>{{ r.testcase.str }}</pre>
+                </details>
+              </td>
+            </tr>
+          </tbody>
+          
+        </table>
       </div>
-    </div>
 
-    <div id="content">
+      <div class="column">
+        <h3>
+          Random town-plantzone pairs
+          <abbr class="tooltip" title="completely random, including on the other side of the map">ℹ</abbr>
+        </h3>
+        Pairs <input 
+          type="range"
+          v-model.number="rtp_pair_count" 
+          min="1"
+          max="80"
+        > {{ rtp_pair_count }}<br/>
+        <input type="checkbox" v-model="rtp_log_good"> log good<br/>
+        <button @click="run_rtp">run</button>
+        <table>
+          <thead>
+            <tr>
+              <td>old</td>
+              <td>wasm</td>
+              <td>better?</td>
+              <td>label</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in rtp_results">
+              <td>
+                {{ r.resultOld.totalCost }}
+              </td>
+              <td>
+                {{ r.resultWasm.totalCost }}
+              </td>
+              <td>
+                {{ r.regressed ? '❌' : '✔️' }} 
+              </td>
+              <td>
+                <details>
+                  <summary>{{ r.testcase.label }}</summary>
+                  <pre>{{ r.testcase.str }}</pre>
+                </details>
+              </td>
+            </tr>
+          </tbody>
+          
+        </table>
+      </div>
 
-      
+      <div class="column">
+        <h3>
+          Realistic
+          <abbr class="tooltip" title="plantzones nodes tend to be near hometowns (~sqrt of steps)">ℹ</abbr>
+        </h3>
+        Pairs <input 
+          type="range"
+          v-model.number="real_pair_count" 
+          min="1"
+          max="80"
+        > {{ real_pair_count }}<br/>
+        Steps <input 
+          type="range"
+          v-model.number="real_max_distance" 
+          min="1"
+          max="80"
+        > {{ real_max_distance }}<br/>
+        <input type="checkbox" v-model="real_log_good"> log good<br/>
+        <button @click="run_real">run</button>
+        <table>
+          <thead>
+            <tr>
+              <td>old</td>
+              <td>wasm</td>
+              <td>better?</td>
+              <td>label</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in real_results">
+              <td>
+                {{ r.resultOld.totalCost }}
+              </td>
+              <td>
+                {{ r.resultWasm.totalCost }}
+              </td>
+              <td>
+                {{ r.regressed ? '❌' : '✔️' }} 
+              </td>
+              <td>
+                <details>
+                  <summary>{{ r.testcase.label }}</summary>
+                  <pre>{{ r.testcase.str }}</pre>
+                </details>
+              </td>
+            </tr>
+          </tbody>
+          
+        </table>
+      </div>
 
     </div>
   </main>
 </template>
 
 <style scoped>
+.column-container {
+  display: flex;
+}
 
+.column {
+  height: 100%;
+  overflow-y: auto;
+  padding: 5px;
+  width: auto;
+
+  padding-left: 1em;
+}
+
+.tooltip {
+  cursor: help;
+}
 </style>

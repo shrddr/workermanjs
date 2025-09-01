@@ -418,7 +418,7 @@ export default {
                 {{ gameStore.uloc.node[origin] }}
               </td>
               <td colspan="4" class="tac">
-                <abbr class="tooltip" title="total town infrastructure per 1 packer 
+                <abbr class="tooltip" title="total town infrastructure 
 (workshops, storage, house connections)
 ON TOP of the houses autoassigned 
 on Home page (lodging is autoassigned)">infra</abbr>{{  }}
