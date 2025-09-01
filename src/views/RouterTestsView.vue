@@ -32,13 +32,14 @@ export default {
       predefined_results: [],
 
       rtp_pair_count: 10,
-      rtp_log_good: true,
       rtp_results: [],
 
       real_pair_count: 10,
       real_max_distance: 10,
-      real_log_good: true,
       real_results: [],
+
+      retry_until_fail: false,
+      max_ms: 5000,
     }
   },
 
@@ -98,6 +99,7 @@ export default {
     },
 
     run_rtp() {
+      const start = Date.now()
       while (1) {
         const testcase = {
           'label': `rtp${this.rtp_results.length}`,
@@ -109,7 +111,7 @@ export default {
           testcase.pairs.push([source, target])
         }
         const result = this.run_case(testcase)
-        if (this.rtp_log_good || result.regressed) {
+        if (!this.retry_until_fail || result.regressed || Date.now()-start > this.max_ms) {
           this.rtp_results.push(result)
           break
         }
@@ -118,6 +120,7 @@ export default {
 
     run_real() {
       const gameStore = useGameStore()
+      const start = Date.now()
 
       while (1) {
         const badNodes = new Set()
@@ -151,10 +154,11 @@ export default {
           testcase.pairs.push([source, target])
         }
         const result = this.run_case(testcase)
-        if (this.real_log_good || result.regressed) {
+        if (!this.retry_until_fail || result.regressed || Date.now()-start > this.max_ms) {
           this.real_results.push(result)
           break
         }
+
       }
     },
   }
@@ -163,6 +167,10 @@ export default {
 
 <template>
   <main>
+    
+    <input type="checkbox" v-model="retry_until_fail"> retry until first fail
+    (up to <input type="number" class="w5em" v-model.number="max_ms">ms)
+
     <div class="column-container">
       <div class="column" v-if="0">
         <h3>Predefined testcases</h3>
@@ -210,7 +218,6 @@ export default {
           min="1"
           max="80"
         > {{ rtp_pair_count }}<br/>
-        <input type="checkbox" v-model="rtp_log_good"> log good<br/>
         <button @click="run_rtp">run</button>
         <table>
           <thead>
@@ -261,7 +268,6 @@ export default {
           min="1"
           max="80"
         > {{ real_max_distance }}<br/>
-        <input type="checkbox" v-model="real_log_good"> log good<br/>
         <button @click="run_real">run</button>
         <table>
           <thead>
