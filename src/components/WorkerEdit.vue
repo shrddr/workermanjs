@@ -411,7 +411,7 @@ export default {
 
               <select v-model="workerEditing.job.recipe" style="width: 13em;">
                 <option v-for="outputs, recipe in gameStore.craftOutputs" :value="recipe">
-                  {{ gameStore.uloc.item[outputs[0]] }}
+                  {{ gameStore.uloc.recipe[recipe] }}
                 </option>
               </select>
 

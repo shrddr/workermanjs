@@ -63,7 +63,7 @@ export default {
         const cyclesPerDay = this.gameStore.measureWorkshopWorker(hk, workshop, wsj.worker).cyclesDaily
         ret[tnk][rcp][thriftyPercent].cyclesPerDay += cyclesPerDay
         const repeats = this.gameStore.repeatsWorkshopWorker(wsj.worker, industry)
-        const completionsPerDay = cyclesPerDay * repeats
+        const completionsPerDay = cyclesPerDay * this.gameStore.craftInfo[rcp].aoc * repeats
         //console.log(industry, cyclesPerDay, repeats, completionsPerDay)
         ret[tnk][rcp][thriftyPercent].completionsPerDay += completionsPerDay
       }
@@ -174,6 +174,12 @@ export default {
             const crateFeedCost = feedCost / 3 / avgRepeats
             makeCost.val += crateFeedCost
             makeCost.desc += `${feedCost} / 3 / ${formatFixed(avgRepeats, 2)} = ${formatFixed(crateFeedCost)}\n`
+            const aoc = this.gameStore.craftInfo[rcp].aoc
+            if (aoc != 1) {
+              makeCost.val /= aoc
+              makeCost.desc += `----------------------\n`
+              makeCost.desc += `divided by ${aoc}\n`
+            }
 
             //const workshopCostPerCrate = workshopCostDaily * perf.workers / perf.completionsPerDay
             //makeCost.val += workshopCostPerCrate
@@ -326,7 +332,7 @@ export default {
       const ik = this.gameStore.craftOutputs[rcp][0]
       if (!(ik in this.gameStore.itemInfo)) return NaN
 
-      const basePrice = this.gameStore.itemInfo[ik].vendorPrice
+      const basePrice = this.gameStore.itemInfo[ik].vendorPrice// * this.gameStore.craftInfo[rcp].aoc
       const distanceBonus = this.distancePriceBonus(origin, destination)
       const sellPrice = basePrice * (1 + distanceBonus) * (1 + this.userStore.bargainBonus)
       const sellPriceDesc = `${basePrice} x ${1 + distanceBonus} x ${(1 + this.userStore.bargainBonus)}`
@@ -388,13 +394,19 @@ export default {
             <th>out</th>
             <th>sell $</th>
             <th>
-              <abbr class="tooltip" title="workers">w</abbr>
+              <abbr class="tooltip" title="workers">
+                w
+              </abbr>
             </th>
             <th>
-              <abbr class="tooltip" title="crates/day">c/d</abbr>
+              <abbr class="tooltip" title="crates/day">
+                c/d
+              </abbr>
             </th>
             <th>
-              <abbr class="tooltip" title="thrifty %">🧪</abbr>
+              <abbr class="tooltip" title="thrifty %">
+                🧪
+              </abbr>
             </th>
             <th>make $</th>
             <th>wagon $</th>
@@ -453,6 +465,9 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
               <td v-if="!row.collapsed" :rowspan="row.rowspan">
                 <template v-if="row.rcp && gameStore.craftOutputs[row.rcp]">
                   <template v-for="ik in gameStore.craftOutputs[row.rcp]">
+                    <template v-if="gameStore.craftInfo[row.rcp].aoc != 1">
+                      {{ gameStore.craftInfo[row.rcp].aoc }}
+                    </template>
                     <ItemIcon :ik="ik"/>
                   </template>
                 </template>

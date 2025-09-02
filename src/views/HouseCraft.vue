@@ -164,7 +164,7 @@ export default {
           }
         }
       }
-      //console.log('townTree', ret)
+      if (this.tk == 1553) console.log('townTree', ret)
       return ret
     },
     chartOption() {

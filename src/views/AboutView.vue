@@ -481,7 +481,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
     <li>empty personal items are treated as 1 personal item</li>
-    <li>crates - show mat usage</li>
+    <li>personal items increase worker CP</li>
+    <li>crates - show mat usage per day</li>
     <li>monk's branch rate is sus on plantzones where it is both unlucky and lucky</li>
     <li>worker send dialog > stash > ulukita towns = error</li>
     <li>price input up/down spinner should imitate CM steps</li>

@@ -1243,6 +1243,7 @@ export const useGameStore = defineStore({
         node: {},  // 1 (tnk) = velia
         skill: {}, 
         skilldesc: {},
+        recipe: {},  // 9212 = paprika crate
       }
     },
     townsWithLodgingSet() {
