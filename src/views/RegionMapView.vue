@@ -1,6 +1,5 @@
 <script>
 import {useGameStore} from '../stores/game'
-import {useUserStore} from '../stores/user'
 import {Deck, OrthographicView, COORDINATE_SYSTEM} from '@deck.gl/core';
 import {BitmapLayer, GeoJsonLayer, IconLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
@@ -8,8 +7,7 @@ import {TileLayer} from '@deck.gl/geo-layers';
 export default {
   setup() {
     const gameStore = useGameStore()
-    const userStore = useUserStore()
-    return { gameStore, userStore }
+    return { gameStore }
   },
 
   components: {

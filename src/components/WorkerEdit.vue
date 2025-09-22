@@ -31,7 +31,7 @@ export default {
     newProfit() {
       const ret = this.profit(this.workerEditing)
       //console.log('newProfit', this.workerEditing.job, ret)
-      return this.profit(this.workerEditing)
+      return ret
     },
     initialProfit() {
       return this.profit(this.workerInitial)
@@ -96,13 +96,16 @@ export default {
       if (this.gameStore.jobIsPz(worker.job)) {
         const stats = this.gameStore.workerStatsOnPlantzone(worker)
         const profit = this.gameStore.profitPzTownStats(
-          worker.job.pzk, worker.tnk, stats.wspd, stats.mspd, stats.luck, this.gameStore.isGiant(worker.charkey))
-        return profit.priceDaily
+          worker.job.pzk, worker.tnk, 
+          stats.wspd, stats.mspd, stats.luck, 
+          this.gameStore.isGiant(worker.charkey)
+        )
+        return profit//.priceDaily
       }
       if (this.gameStore.jobIsWorkshop(worker.job)) {
         const hk = worker.job.hk
         const workshop = this.userStore.userWorkshops[hk]
-        const profit = this.gameStore.profitWorkshopWorker(hk, workshop, worker).priceDaily
+        const profit = this.gameStore.profitWorkshopWorker(hk, workshop, worker)//.priceDaily
         return profit
       }
     },
@@ -132,11 +135,11 @@ export default {
 
       for (let i = 1; i <= maxSkills; i++) {
         const tempSkills = wSkills.slice(0, i).map( ({key}) => (key) )
-        const newProfit = this.profit({
+        const newDaily = this.profit({
           ...this.workerEditing,
           skills: tempSkills
-        })
-        wBonuses[i] = {skills: tempSkills, profit: newProfit}
+        }).priceDaily
+        wBonuses[i] = {skills: tempSkills, daily: newDaily}
         // if wSkills doesn't contain +2w+7m, try to replace the last one with +2w+7m
         // if doing doesn't increase profit, do nothing 
         // - it will be considered in mlSkill section
@@ -145,12 +148,12 @@ export default {
           const wmSkills = wSkills.filter(ss => ss.mspd > 0)
           if (wmSkills.length > 0) {
             modSkills[modSkills.length - 1] = wmSkills[0]
-            const modProfit = this.profit({
+            const modDaily = this.profit({
               ...this.workerEditing,
               skills: modSkills
-            })
-            if (modProfit > newProfit) {
-              wBonuses[i] = {skills: modSkills, profit: modProfit}
+            }).priceDaily
+            if (modDaily > newDaily) {
+              wBonuses[i] = {skills: modSkills, daily: modDaily}
               console.log('using wmSkill')
             }
           }
@@ -180,16 +183,16 @@ export default {
           if (wBonuses[maxSkills-i].skills.some(k => k==sk))
             continue
           const tempSkills = [...stepBaseSkills, sk]
-          const newProfit = this.profit({...this.workerEditing, skills: tempSkills})
-          stepCandidates.push({sk, profit: newProfit})
+          const newDaily = this.profit({...this.workerEditing, skills: tempSkills}).priceDaily
+          stepCandidates.push({sk, daily: newDaily})
         }
         
         if (stepCandidates.length > 0) {
-          stepCandidates.sort((a,b) => b.profit-a.profit)
+          stepCandidates.sort((a,b) => b.daily-a.daily)
           // best of wl candidates at i-th step
           const stepBestSkill = stepCandidates[0].sk
           const stepSkills = [...stepBaseSkills, stepBestSkill]
-          stepResults[i] = {skills: stepSkills, profit: stepCandidates[0].profit}
+          stepResults[i] = {skills: stepSkills, daily: stepCandidates[0].daily}
           //console.log(i, 'ml', 9-i, 'w =', stepResults[i])
           mlBestSkills.push(stepBestSkill)
           mlSkills.delete(stepBestSkill)
@@ -198,7 +201,7 @@ export default {
           mlBestSkills.push(0)
       }
 
-      stepResults.sort((a,b) => b.profit-a.profit)
+      stepResults.sort((a,b) => b.daily-a.daily)
       if (stepResults.length > 0) {
         const newSet = new Set(stepResults[0].skills)
         console.log(newSet)
@@ -386,9 +389,9 @@ export default {
             <template v-else-if="gameStore.jobIsPz(workerEditing.job)">
               {{ gameStore.plantzoneName(workerEditing.job.pzk) }}
               / 
-              <span v-if="gameStore.ready && workerEditing.job && workerEditing.job.pzk &&gameStore.plantzones[workerEditing.job.pzk].regiongroup && userStore.allowFloating && userStore.useFloatingResources[gameStore.plantzones[workerEditing.job.pzk].regiongroup]">
+              <span v-if="gameStore.ready && workerEditing.job && workerEditing.job.pzk && gameStore.plantzones[workerEditing.job.pzk].regiongroup && userStore.allowFloating && userStore.useFloatingResources[gameStore.plantzones[workerEditing.job.pzk].regiongroup]">
                 ~{{ formatFixed(userStore.medianWorkloads[workerEditing.job.pzk], 2) }}
-                <span @click="showChartPane = !showChartPane">{{ showChartPane ? "◀" : "▶" }}</span>
+                <span id="spoiler" @click="showChartPane = !showChartPane">{{ showChartPane ? "◀" : "▶" }}</span>
               </span>
               <span v-else>
                 {{ formatFixed(gameStore.plantzones[workerEditing.job.pzk].activeWorkload, 2) }}
@@ -442,29 +445,31 @@ export default {
           </td>
         </tr>
 
+        <tr v-if="workerEditing.job && gameStore.jobIsPz(workerEditing.job)">
+          <td>cycle:</td>
+          <td>
+            {{ formatFixed(24*60 / initialProfit.cyclesDaily, 1) }} 
+            <span v-if="newProfit.cyclesDaily != initialProfit.cyclesDaily">
+              → {{ formatFixed(24*60 / newProfit.cyclesDaily, 1) }}
+            </span>
+            minutes
+          </td>
+        </tr>
+
         <tr v-if="workerEditing.job">
           <td>$/day:</td>
           <td>
-            <template v-if="gameStore.jobIsPz(workerEditing.job)">
-              {{ spaceSep(initialProfit) }} 
-              <span v-if="newProfit != initialProfit">
-                → {{ spaceSep(newProfit) }} 
-                <span :class="{ greenText: newProfit > initialProfit, redText: newProfit < initialProfit, fsxs: 1 }">
-                  {{ formatFixed(100 * (newProfit - initialProfit) / initialProfit, 2, true) }}%
+            <template v-if="gameStore.jobIsPz(workerEditing.job) || gameStore.jobIsFarming(workerEditing.job)">
+              {{ spaceSep(initialProfit.priceDaily) }} 
+              <span v-if="newProfit.priceDaily != initialProfit.priceDaily">
+                → {{ spaceSep(newProfit.priceDaily) }} 
+                <span :class="{ greenText: newProfit.priceDaily > initialProfit.priceDaily, redText: newProfit.priceDaily < initialProfit.priceDaily, fsxs: 1 }">
+                  {{ formatFixed(100 * (newProfit.priceDaily - initialProfit.priceDaily) / initialProfit.priceDaily, 2, true) }}%
                 </span>
               </span>
             </template>
             <template v-else-if="gameStore.jobIsFarming(workerEditing.job)">
               {{ spaceSep(userStore.workerIncome(workerEditing)) }}
-            </template>
-            <template v-else-if="gameStore.jobIsWorkshop(workerEditing.job)">
-              {{ spaceSep(initialProfit) }} 
-              <span v-if="newProfit != initialProfit">
-                → {{ spaceSep(newProfit) }} 
-                <span :class="{ greenText: newProfit > initialProfit, redText: newProfit < initialProfit, fsxs: 1 }">
-                  {{ formatFixed(100 * (newProfit - initialProfit) / initialProfit, 2, true) }}%
-                </span>
-              </span>
             </template>
           </td>
         </tr>
@@ -619,5 +624,9 @@ select.animable {
 
 .tooltip {
   cursor: help;
+}
+
+#spoiler {
+  cursor: pointer;
 }
 </style>

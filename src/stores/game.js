@@ -944,7 +944,9 @@ export const useGameStore = defineStore({
       const distance = this.houseDistance(worker.tnk, hk)
       const moveMinutes = userStore.calcWalkMinutes(distance, statsOnWs.mspd)
 
-      const workMinutes = Math.ceil(workshop.manualWorkload / statsOnWs.wspd)
+      const autoWorkload = worker.job.recipe ? this.craftInfo[worker.job.recipe].wl : NaN
+      const workload = workshop.manualWorkload ? workshop.manualWorkload : autoWorkload
+      const workMinutes = Math.ceil(workload / statsOnWs.wspd)
       const cycleMinutes = 5 * workMinutes + moveMinutes
       const cyclesDaily = 24 * 60 / cycleMinutes  // TODO: afk time
       return {statsOnWs, distance, cyclesDaily}

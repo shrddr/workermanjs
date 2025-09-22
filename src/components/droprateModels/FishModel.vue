@@ -46,10 +46,10 @@ export default {
       ],
       [
         {amount: 0.81, kind: 'Normal', mean: 1.09, sigma: 0.38},
-        {amount: 1.00, kind: 'Normal', mean: 0.70, sigma: 0.16},
+        {amount: 1.00, kind: 'Normal', mean: 0.70, sigma: 0.17},
       ],
       [
-        {amount: 0.48, kind: 'Normal', mean: 0.74, sigma: 0.20},
+        {amount: 0.49, kind: 'Normal', mean: 0.74, sigma: 0.21},
         {amount: 0.75, kind: 'Normal', mean: 1.19, sigma: 0.21},
         {amount: 1.00, kind: 'Normal', mean: 1.62, sigma: 0.21},
       ],
@@ -59,9 +59,9 @@ export default {
         {amount: 1.00, kind: 'Normal',       mean: 1.25, sigma: 0.42},
       ],
       [
-        {amount: 0.25, kind: 'Normal', mean: 0.62, sigma: 0.16},
-        {amount: 0.34, kind: 'Normal', mean: 0.87, sigma: 0.15},
-        {amount: 0.50, kind: 'Normal', mean: 1.18, sigma: 0.18},
+        {amount: 0.24, kind: 'Normal', mean: 0.62, sigma: 0.16},
+        {amount: 0.36, kind: 'Normal', mean: 0.87, sigma: 0.16},
+        {amount: 0.49, kind: 'Normal', mean: 1.18, sigma: 0.18},
         {amount: 1.00, kind: 'Normal', mean: 1.47, sigma: 0.28},
       ],
     ],

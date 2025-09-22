@@ -64,7 +64,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         What is <strong class="notranslate">efficiency</strong>?
         Why in <strong class="notranslate">Empire > Best Untaken</strong> last column is called <strong class="notranslate">M$/day/CP</strong>, but in <strong class="notranslate">Worst Taken</strong> it's called <strong class="notranslate">efficiency</strong>? 
-        Why after taking the job its efficiency ends up considerably less than M$/day/CP shown in Best Untaken?
+        Why after taking the job its efficiency ends up being considerably less than M$/day/CP promised by Best Untaken?
       </template>
       M$/day/CP of untaken plantzone is just additional profit divided by (integer) additional CP.
       For example, taking Keplan Quarry Mining brings 2.8M$/day and only costs 1CP if Keplan Quarry node is already activated = 2.8M$/day/CP in Best Untaken.
@@ -81,29 +81,36 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     </QnaItem>
     <QnaItem>
       <template #q>
-        Why are node connections so bad? When building path 
-        from town <strong class="notranslate">A</strong> 
-        to node <strong class="notranslate">B</strong>, 
-        it ignores the fact that there is already taken 
-        node <strong class="notranslate">C</strong> on the way.
+        What does <strong class="notranslate">wasm router</strong> checkbox do?
       </template>
-      <s>Connections are resolved in same order the jobs were given. 
-      The worker who received the job first doesn't know yet about all others, and builds connection in a beeline.
-      Each next worker sees and uses more and more connections made by previous workers in queue.
-      You can push the worker at <strong class="notranslate">B</strong> to the end of queue by restarting his job in workerman (press <strong class="notranslate">stop</strong> and assign again). 
-      His connection will then be built last, with full knowledge of previous connections including the one that activated <strong class="notranslate">C</strong>.</s>
-      Use <strong class="notranslate">wasm router</strong> checkbox!
-    </QnaItem>
-    <QnaItem>
-      <template #q>
-        No matter how I change the order of jobs, I still can't achieve the optimal routing I have in mind.
-      </template>
-      Cases like 
-      <details><summary>these</summary>
-        <img src="/data/images/steiner.png">
+      This is an experimental new way of connecting nodes, better than the old one in most cases.<br/>
+      <details><summary>By default (if not checked) you are using the old order-dependent routing which has the following limitations:</summary>
+        <div style="padding-left: 1em;">
+          <QnaItem>
+            <template #q>
+              Why are node connections so bad? When building path 
+              from town <strong class="notranslate">A</strong> 
+              to node <strong class="notranslate">B</strong>, 
+              it ignores the fact that there is already taken 
+              node <strong class="notranslate">C</strong> on the way.
+            </template>
+            Connections are resolved in same order the jobs were given. 
+            The worker who received the job first doesn't know yet about all others, and builds connection in a beeline.
+            Each next worker sees and uses more and more connections made by previous workers in queue.
+            You can push the worker at <strong class="notranslate">B</strong> to the end of queue by restarting his job in workerman (press <strong class="notranslate">stop</strong> and assign again). 
+            His connection will then be built last, with full knowledge of previous connections including the one that activated <strong class="notranslate">C</strong>.
+          </QnaItem>
+          <QnaItem>
+            <template #q>
+              No matter how I change the order of jobs, I still can't achieve the optimal routing I have in mind.
+            </template>
+            Cases like these<br/>
+            <img src="/data/images/steiner.png"><br/>
+            can't be routed optimally by old router, you'll get either B←A→C, A→B→C or A→C→B all costing 4 CP.<br/>
+            To get both B and C with 3 CP you need to mark S as <strong class="notranslate">zero-cost (invested for droprate)</strong>.
+          </QnaItem>
+        </div>
       </details>
-      can't be routed optimally by old router, you'll get either B←A→C, A→B→C or A→C→B all costing 4 CP.<br/>
-      To get both B and C with 3 CP you need to use <strong class="notranslate">wasm router</strong>.
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -224,12 +231,13 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
+    <li>[2025-08-28 patch] updated Edania housing</li>
     <li>[2025-07-21 patch] added new Edania area with 15 plantzones</li>
       <ul>
         <li>✓ connections</li>
         <li>✓ walk distances</li>
         <li>✓ housecraft</li>
-        <li>✓ droprates v6 (cycles observed: 1200)</li>
+        <li>✓ droprates v7 (cycles observed: ~2400)</li>
       </ul>
     <li>a consistent fast way to build optimal connections (orderless) by @Thell</li>
     <li>sticky table headers</li>
@@ -480,6 +488,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Todo</h2>
+    <li>copy calcs button</li>
+    <li>show qty in town pane - yield tooltip</li>
     <li>empty personal items are treated as 1 personal item</li>
     <li>personal items increase worker CP</li>
     <li>crates - show mat usage per day</li>

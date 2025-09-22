@@ -186,8 +186,8 @@ In this case, use average CP value (sum up all workshop-related CP costs and div
         <option value="pack_ore">pack_ore</option>
       </select></td>
       <td><input type="number" class="w5em" v-model.number="v.manualWorkload"/></td>
-      <td><input type="number" class="w5em" v-model.number="v.manualCycleIncome"/></td>
-      <td><input type="number" class="float4" v-model.number="v.manualCp"/></td>
+      <td><input type="number" class="w7em" v-model.number="v.manualCycleIncome"/></td>
+      <td><input type="number" class="w5em" v-model.number="v.manualCp"/></td>
       <td><button @click="deleteWorkshop(hk)">delete</button></td>
     </tr>
 

@@ -249,8 +249,8 @@ export default {
         <div class="settings-tile">
           🏭Workshops
           <div>
-            <button @click="tradingConfigVisible = true">crates</button>
-            <button @click="workshopsConfigVisible = true">other</button>
+            <button @click="workshopsConfigVisible = true">config</button>
+            <button @click="tradingConfigVisible = true">tradecalc</button>
           </div>
         </div>
 

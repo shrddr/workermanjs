@@ -53,6 +53,10 @@ input.price {
   margin-right: 3px;
 }
 
+.w7em {
+  width: 7em;
+}
+
 .w5em {
   width: 5em;
 }
@@ -69,20 +73,20 @@ input.price {
   width: 3em;
 }
 
-input.short {
-  width: 2.5em;
+.w2em {
+  width: 2em;
 }
 
-input.float4 {
-  width: 3.8em;
+input.short {
+  width: 2.5em;
 }
 
 input.float3 {
   width: 2.5em;
 }
 
-.w2em {
-  width: 2em;
+input.float4 {
+  width: 3.8em;
 }
 
 p.todo {

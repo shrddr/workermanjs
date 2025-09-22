@@ -212,11 +212,7 @@ export default {
 
       stats.meanErr = Math.sqrt(stats.mean/stats.max*(1-stats.mean/stats.max)*stats.max/stats.len)
       stats.meanLo = stats.mean - this.generalSigmas * stats.meanErr
-      stats.meanHi = stats.mean + this.generalSigmas * stats.meanErr
-
-      
-
-           
+      stats.meanHi = stats.mean + this.generalSigmas * stats.meanErr          
 
       console.log('stats', stats)
       return stats
@@ -274,7 +270,7 @@ export default {
     async fetchObservations() {
       const start = Date.now()
       this.alldata = await (await fetch(`data/manual/catches_by_fish.json`)).json()
-      this.fish_info = await (await fetch(`data/manual/fish_info.json`)).json()
+      this.fish_info = await (await fetch(`data/encyclopedia.json`)).json()
 
       if (this.mode_relative) {
         console.log('filling group ALL')
@@ -282,11 +278,11 @@ export default {
         
         for (const [ik, sizes] of Object.entries(this.alldata)) {
           const info = this.get_fish_info(ik)
-          const avg_size = (info.BaseSize + info.FishVarySize) / 2
+          const avg_size = (info.baseSize + info.varySize) / 2
           for (const v of sizes) all.push(this.relative_base * v / avg_size)
         }
         this.alldata['ALL'] = all
-        this.fish_info['ALL'] = {BaseSize: 'x', FishVarySize: 'x', avg_size: this.relative_base}
+        this.fish_info['ALL'] = {baseSize: 'x', varySize: 'x', avg_size: this.relative_base}
       }
 
       const bs_group_sizes = {}
@@ -294,7 +290,7 @@ export default {
 
       for (const [ik, sizes] of Object.entries(this.alldata)) {
         const info = this.get_fish_info(ik)
-        const groupKey = `${info.BaseSize}_${info.FishVarySize}`
+        const groupKey = `${info.baseSize}_${info.varySize}`
         const sample_count = sizes.length
         if (!(groupKey in bs_group_sizes)) {
           bs_group_sizes[groupKey] = {fishes: [], totalSamples: 0}
@@ -321,7 +317,7 @@ export default {
 
       for (const [ik, sizes] of Object.entries(this.alldata)) {
         const info = this.get_fish_info(ik)
-        const bs_groupKey = `${info.BaseSize}_${info.FishVarySize}`
+        const bs_groupKey = `${info.baseSize}_${info.varySize}`
         const bs_group = bs_group_sizes[bs_groupKey]
         if (bs_group.fishes.length > 1 && bs_group.totalSamples > 1500) {
           const groupName = bs_group.fishes.join("+")
@@ -329,7 +325,7 @@ export default {
           if (!(groupName in bs_groups)) {
             bs_groups[groupName] = { 
               sizes: [], 
-              info: {BaseSize: info.BaseSize, FishVarySize: info.FishVarySize}
+              info: {baseSize: info.baseSize, varySize: info.varySize}
             }
           }
           for (const size of sizes) bs_groups[groupName].sizes.push(size)
@@ -344,7 +340,7 @@ export default {
           if (!(groupName in avg_groups)) {
             avg_groups[groupName] = { 
               sizes: [], 
-              info: {BaseSize: 'x', FishVarySize: 'x', avg_size: info.avg_size}
+              info: {baseSize: 'x', varySize: 'x', avg_size: info.avg_size}
             }
           }
           for (const size of sizes) avg_groups[groupName].sizes.push(size)
@@ -364,6 +360,7 @@ export default {
 
       // TODO: scan all data, group by AvgSize and highlight with same
       
+      //console.log(this.fish_info)
       console.log('fetchObservations took', Date.now()-start, 'ms')
     },
 
@@ -372,9 +369,9 @@ export default {
     },
 
     get_fish_info(ik) {
-      const ret = ik in this.fish_info ? this.fish_info[ik] : {"BaseSize": 1, "FishVarySize": 1}
+      const ret = ik in this.fish_info ? this.fish_info[ik] : {"baseSize": 1, "varySize": 1}
       if ('avg_size' in ret) return ret
-      ret.avg_size = (ret.BaseSize + ret.FishVarySize) / 2
+      ret.avg_size = (ret.baseSize + ret.varySize) / 2
       return ret
     },
   }
@@ -410,10 +407,10 @@ export default {
               </template>
             </td>
             <td>
-              {{ get_fish_info(ik).BaseSize }}
+              {{ get_fish_info(ik).baseSize }}
             </td>
             <td>
-              {{ get_fish_info(ik).FishVarySize }}
+              {{ get_fish_info(ik).varySize }}
             </td>
             <td>
               {{ get_fish_info(ik).avg_size }}
@@ -506,5 +503,9 @@ td .r {
 }
 ul {
   padding-left: 0px;
+}
+
+.tooltip {
+  cursor: help;
 }
 </style>

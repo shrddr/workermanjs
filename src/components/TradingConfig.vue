@@ -38,9 +38,31 @@ export default {
   data: () => ({
     cpCost: 0.4,
     pcHours: 16,
+    repeatGroupMeanings: {
+      '0': 'wspd',
+      '1': 'wspd_jewelry',
+      '2': 'wspd_mass',
+      '3': 'wspd_weap',
+      '4': 'wspd_tool',
+      '5': 'wspd_furn',
+      '7': 'wspd_costume',
+      '8': 'wspd_refine',
+      '9': 'wspd_siege',
+      '10': 'wspd_mount',
+      '11': 'wspd_farm',
+      '13': 'wspd_exclus',
+    },
   }),
 
   computed: {
+    repeatGroupIds() {
+      const ret = {}
+      for (const [i, s] of Object.entries(this.repeatGroupMeanings)) {
+        ret[s] = Number(i)
+      }
+      return ret
+    },
+
     perTownPerRecipePerThrifty() {
       const ret = {}
       for (const wsj of this.userStore.wsJobs) {
@@ -54,7 +76,15 @@ export default {
 
         if (!(tnk in ret)) { ret[tnk] = {} }
         if (!(rcp in ret[tnk])) { ret[tnk][rcp] = { } }
-        if (!(thriftyPercent in ret[tnk][rcp])) { ret[tnk][rcp][thriftyPercent] = { workers: 0, cyclesPerDay: 0, completionsPerDay: 0 } }
+        if (!(thriftyPercent in ret[tnk][rcp])) {
+          const rp = this.gameStore.craftInfo[rcp].rp
+          ret[tnk][rcp][thriftyPercent] = {  // `perf`
+            repeatGroup: rp,
+            workers: 0, 
+            cyclesPerDay: 0, 
+            completionsPerDay: 0,
+          } 
+        }
 
         ret[tnk][rcp][thriftyPercent].workers += 1
         const industry = this.gameStore.craftInfo[rcp].rp
@@ -367,6 +397,29 @@ export default {
       ret.sort((a,b) => (b.sellPrice-b.transportFee)-(a.sellPrice-a.transportFee))  // TODO: connection cost
       return ret
     },
+    
+    copyToWorkshops() {
+      for (const wsj of this.userStore.wsJobs) {
+        const origin = wsj.worker.tnk
+        const rcp = wsj.worker.job.recipe
+        const thriftyPercent = wsj.thriftyPercent
+        const hk = wsj.worker.job.hk
+        const workshop = this.userStore.userWorkshops[hk]
+        
+        if (origin in this.table.towns) {
+          for (const row of this.table.towns[origin]) {
+            if (rcp == row.rcp && thriftyPercent == row.thriftyPercent) {
+              console.log(wsj.worker.label, workshop, row)
+              workshop.industry = row.perf.repeatGroup
+              workshop.manualWorkload = null
+              workshop.manualCp = row.tradeInfo.cp
+              workshop.manualCycleIncome = Math.round(row.tradeInfo.delta)
+            }
+          }
+        }
+      }
+    },
+
   },
 
 }
@@ -518,6 +571,9 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
         Trading&nbsp;
         <input type="range" v-model.number="userStore.tradingLevel" min="1" max="140" step="1" >
         &nbsp;{{ tradingLevelString }} → {{ formatFixed(userStore.bargainBonus * 100, 1) }}% bargain
+      </div>
+      <div style="float: right;">
+        <button @click="copyToWorkshops()" title="industry, M$/day, CP">copy to workshops</button>
       </div>
       <br/>
       Total:
