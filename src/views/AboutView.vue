@@ -66,11 +66,12 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         Why in <strong class="notranslate">Empire > Best Untaken</strong> last column is called <strong class="notranslate">M$/day/CP</strong>, but in <strong class="notranslate">Worst Taken</strong> it's called <strong class="notranslate">efficiency</strong>? 
         Why after taking the job its efficiency ends up being considerably less than M$/day/CP promised by Best Untaken?
       </template>
-      M$/day/CP of untaken plantzone is just additional profit divided by (integer) additional CP.
-      For example, taking Keplan Quarry Mining brings 2.8M$/day and only costs 1CP if Keplan Quarry node is already activated = 2.8M$/day/CP in Best Untaken.
-      After taking the Mining job it starts sharing the node connection and town infrastructure with other jobs.
-      1CP for Mining plantzone + 0.35CP shared connection + 0.45CP in lodging and storage = 1.8CP (fractional); 2.8M$/day / 1.8CP = 1.5 efficiency.
-      Taking this job however reduces other Keplan jobs shared CP costs and raises their efficiency.
+      Best Untaken doesn't consider connection sharing and infrastructure sharing.<br/>
+      In Best Untaken, M$/day/CP of an untaken plantzone is just its M$/day divided by its CP cost.<br/>
+      For example, taking Keplan Quarry Mining brings 2.8M$/day and only costs 1CP (integer) = 2.8 <strong class="notranslate">M$/day/CP</strong>.<br/>
+      But after actually taking the Mining job, it starts sharing the node connection and town infrastructure with other jobs.<br/>
+      1CP for Mining plantzone + 0.35CP shared connection + 0.45CP in lodging and storage = 1.8CP (fractional); 2.8M$/day / 1.8CP = 1.5 <strong class="notranslate">efficiency</strong>.<br/>
+      Taking this job however reduces other Keplan jobs shared CP costs and raises their efficiency; this is hard to represent concisely in Best Untaken.
     </QnaItem>
 
     <QnaItem>
