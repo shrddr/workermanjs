@@ -117,6 +117,10 @@ export default {
     deleteWorkshop(hk) {
       delete this.userStore.userWorkshops[hk]
     },
+
+    deleteAll() {
+      this.userStore.userWorkshops = {}
+    },
   },
 
   
@@ -192,6 +196,10 @@ In this case, use average CP value (sum up all workshop-related CP costs and div
     </tr>
 
   </table>
+  
+  <div style="float: right;">
+    <button @click="deleteAll()" title="except occupied">delete all</button>
+  </div>
 
   new entry:<br/>
   

@@ -51,10 +51,10 @@ export const useUserStore = defineStore({
     userWorkshops: {},
     defaultUserWorkshop: {
       industry: 'unknown',
-      label: '', 
-      manualCycleIncome: 0, 
-      manualWorkload: 300, 
-      manualCp: 0
+      label: '',
+      manualCycleIncome: 0,
+      manualWorkload: 300,
+      manualCp: 1
     },
     
     mapHideInactive: 0,
@@ -159,6 +159,9 @@ export const useUserStore = defineStore({
       if ('regionModifiers2' in parsed) {
         parsed.regionResources2 = parsed.regionModifiers2
         delete parsed.regionModifiers2
+      }
+      if (parsed?.defaultUserWorkshop?.manualCp == 0) {
+        parsed.defaultUserWorkshop.manualCp = 1
       }
 
       if (updated) {
@@ -295,6 +298,14 @@ export const useUserStore = defineStore({
       }
       ret += w.level
       return ret
+    },
+
+    getUserWorkshop(hk) {
+      if (!(hk in this.userWorkshops)) {
+        this.userWorkshops[hk] = { ...this.defaultUserWorkshop }
+        //console.log('created', this.userWorkshops[hk])
+      }
+      return this.userWorkshops[hk]
     },
 
   },
@@ -659,7 +670,7 @@ export const useUserStore = defineStore({
         }
         else if (gameStore.jobIsWorkshop(worker.job)) {
           const hk = worker.job.hk
-          const workshop = this.userWorkshops[hk]
+          const workshop = this.getUserWorkshop(hk)
           const houseTk = gameStore.houseInfo[hk].affTown
           const houseTnk = gameStore.tk2tnk(houseTk)
           const profit = gameStore.profitWorkshopWorker(hk, workshop, worker)
@@ -801,7 +812,7 @@ export const useUserStore = defineStore({
         }
         else if (gameStore.jobIsWorkshop(worker.job)) {
           const hk = worker.job.hk
-          const workshop = this.userWorkshops[hk]
+          const workshop = this.getUserWorkshop(hk)
           const houseTk = gameStore.houseInfo[hk].affTown
           const houseTnk = gameStore.tk2tnk(houseTk)
           const profit = gameStore.profitWorkshopWorker(hk, workshop, worker)
@@ -1208,10 +1219,7 @@ export const useUserStore = defineStore({
         return w.job.profit
       if (gameStore.jobIsWorkshop(w.job)) {
         const hk = w.job.hk
-        if (!(hk in state.userWorkshops)) {
-          state.userWorkshops[hk] = { ...state.defaultUserWorkshop }
-        }
-        const workshop = state.userWorkshops[hk]
+        const workshop = state.getUserWorkshop(hk)
         const profit = gameStore.profitWorkshopWorker(hk, workshop, w).priceDaily
         return profit
       }
@@ -1229,7 +1237,7 @@ export const useUserStore = defineStore({
         ret = w.job.cp
       if (gameStore.jobIsWorkshop(w.job)) {
         const workersAtWorkshop = state.workersWorkshop.filter(ww => ww.job.hk == w.job.hk).length
-        ret = state.userWorkshops[w.job.hk].manualCp / workersAtWorkshop
+        ret = state.getUserWorkshop(w.job.hk).manualCp / workersAtWorkshop
       }
       //console.log(`workerSharedConnectionCP ${w.label} = ${ret}`)
       return ret
@@ -1425,7 +1433,7 @@ export const useUserStore = defineStore({
 
     workshopTotalCP(state) {
       let ret = 0
-      state.occupiedWorkshops.forEach(hk => ret += state.userWorkshops[hk].manualCp)
+      state.occupiedWorkshops.forEach(hk => ret += state.getUserWorkshop(hk).manualCp)
       //console.log('houses', houses, 'cp', ret)
       return ret
     },
@@ -1593,10 +1601,7 @@ export const useUserStore = defineStore({
         }
         if (gameStore.jobIsWorkshop(worker.job)) {
           const hk = worker.job.hk
-          if (!(hk in state.userWorkshops)) {
-            state.userWorkshops[hk] = { ...state.defaultUserWorkshop }
-          }
-          const workshop = state.userWorkshops[hk]
+          const workshop = state.getUserWorkshop(hk)
           ret.workshop += gameStore.measureWorkshopWorker(hk, workshop, worker).cyclesDaily
         }
       })

@@ -83,6 +83,7 @@ export default {
             workers: 0, 
             cyclesPerDay: 0, 
             completionsPerDay: 0,
+            workload: this.gameStore.craftInfo[rcp].wl,
           } 
         }
 
@@ -411,8 +412,8 @@ export default {
             if (rcp == row.rcp && thriftyPercent == row.thriftyPercent) {
               console.log(wsj.worker.label, workshop, row)
               workshop.industry = row.perf.repeatGroup
-              workshop.manualWorkload = null
-              workshop.manualCp = row.tradeInfo.cp
+              workshop.manualWorkload = row.perf.workload
+              workshop.manualCp = row.tradeInfo.cp / row.perf.workers
               workshop.manualCycleIncome = Math.round(row.tradeInfo.delta)
             }
           }

@@ -489,7 +489,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Todo</h2>
-    <li>copy calcs button</li>
+    <li>stacking outputs from everywhere in 1 town makes that town less efficient - incorrect</li>
+    <li>copy workshops button - stop including connection CP</li>
     <li>show qty in town pane - yield tooltip</li>
     <li>empty personal items are treated as 1 personal item</li>
     <li>personal items increase worker CP</li>

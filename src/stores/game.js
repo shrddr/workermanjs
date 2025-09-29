@@ -940,11 +940,16 @@ export const useGameStore = defineStore({
     measureWorkshopWorker(hk, workshop, worker) {
       const userStore = useUserStore()
       const statsOnWs = this.workerStatsOnIndustry(worker, workshop.industry)
+      const ret = {statsOnWs, distance: 999, cyclesDaily: 0}
+      if (!this.ready) return ret
       //console.log('measureWorkshopWorker', hk, stats)
       const distance = this.houseDistance(worker.tnk, hk)
       const moveMinutes = userStore.calcWalkMinutes(distance, statsOnWs.mspd)
 
-      const autoWorkload = worker.job.recipe ? this.craftInfo[worker.job.recipe].wl : NaN
+      let autoWorkload = NaN
+      if (worker.job.recipe && worker.job.recipe in this.craftInfo) {
+        autoWorkload = this.craftInfo[worker.job.recipe].wl
+      }
       const workload = workshop.manualWorkload ? workshop.manualWorkload : autoWorkload
       const workMinutes = Math.ceil(workload / statsOnWs.wspd)
       const cycleMinutes = 5 * workMinutes + moveMinutes
