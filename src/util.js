@@ -10,15 +10,21 @@ export function makeIconImg(ik) {
   return `<img src="${makeIconSrc(ik)}" class="iconitem" />`
 }
 
-export function formatFixed(value, digits, plus) {
+export function formatFixed(value, digits, plus, dropZeros) {
   if (!value && value !== 0) return "?";
-  const n = parseFloat(value)
-  const s = n.toFixed(digits)
-  if (plus)
-    return (n >= 0) ? "+" + s : s
-  if (s == 'Infinity')
-    return '∞'
-  return s
+  const n = parseFloat(value);
+  if (!isFinite(n)) return '∞';
+
+  let s = n.toFixed(digits);
+
+  if (dropZeros) {
+    // Remove trailing zeros and possibly the dot if it's at the end
+    s = s.replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0*$/, '');
+  }
+
+  if (plus && n >= 0) s = "+" + s;
+
+  return s;
 }
 
 export function randBetween(a, b) {

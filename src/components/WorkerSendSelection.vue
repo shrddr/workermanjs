@@ -268,10 +268,10 @@ export default {
             {{ e.mapCp }}
           </abbr>+<abbr class="tooltip" title="cost of operating the workshop
 (see Settings > 🏭Workshops)">
-            {{ e.houseCp }}
+            {{ formatFixed(e.houseCp, 2, false, true) }}
           </abbr>+<abbr :title="e.infraTooltip" class="tooltip">
             {{ e.townCp }}
-          </abbr>={{ e.cp }}
+          </abbr>={{ formatFixed(e.cp, 2, false, true) }}
         </td>
         <td class="tac">
           {{ formatFixed(e.dailyPerCp, 2) }}

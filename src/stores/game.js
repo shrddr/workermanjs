@@ -947,7 +947,7 @@ export const useGameStore = defineStore({
       const moveMinutes = userStore.calcWalkMinutes(distance, statsOnWs.mspd)
 
       let autoWorkload = NaN
-      if (worker.job.recipe && worker.job.recipe in this.craftInfo) {
+      if (worker?.job?.recipe && worker.job.recipe in this.craftInfo) {
         autoWorkload = this.craftInfo[worker.job.recipe].wl
       }
       const workload = workshop.manualWorkload ? workshop.manualWorkload : autoWorkload

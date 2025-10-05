@@ -410,7 +410,7 @@ export default {
         if (origin in this.table.towns) {
           for (const row of this.table.towns[origin]) {
             if (rcp == row.rcp && thriftyPercent == row.thriftyPercent) {
-              console.log(wsj.worker.label, workshop, row)
+              //console.log(wsj.worker.label, workshop, row)
               workshop.industry = row.perf.repeatGroup
               workshop.manualWorkload = row.perf.workload
               workshop.manualCp = row.tradeInfo.cp / row.perf.workers

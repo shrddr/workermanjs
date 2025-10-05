@@ -445,7 +445,7 @@ export default {
           </td>
         </tr>
 
-        <tr v-if="workerEditing.job && gameStore.jobIsPz(workerEditing.job)">
+        <tr v-if="workerEditing.job && gameStore.jobIsPz(workerEditing.job) || gameStore.jobIsWorkshop(workerEditing.job)">
           <td>cycle:</td>
           <td>
             {{ formatFixed(24*60 / initialProfit.cyclesDaily, 1) }} 
@@ -459,7 +459,7 @@ export default {
         <tr v-if="workerEditing.job">
           <td>$/day:</td>
           <td>
-            <template v-if="gameStore.jobIsPz(workerEditing.job) || gameStore.jobIsFarming(workerEditing.job)">
+            <template v-if="gameStore.jobIsPz(workerEditing.job) || gameStore.jobIsWorkshop(workerEditing.job)">
               {{ spaceSep(initialProfit.priceDaily) }} 
               <span v-if="newProfit.priceDaily != initialProfit.priceDaily">
                 → {{ spaceSep(newProfit.priceDaily) }} 

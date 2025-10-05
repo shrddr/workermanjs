@@ -489,6 +489,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Todo</h2>
+    <li>remote workshops require node connections, check if shared correctly</li>
     <li>stacking outputs from everywhere in 1 town makes that town less efficient - incorrect</li>
     <li>copy workshops button - stop including connection CP</li>
     <li>show qty in town pane - yield tooltip</li>
