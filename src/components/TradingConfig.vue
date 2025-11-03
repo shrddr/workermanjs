@@ -1,5 +1,6 @@
 <script>
 import {useUserStore} from '../stores/user.js'
+import {useRoutingStore} from '../stores/routing.js'
 import {useGameStore} from '../stores/game.js'
 import {useMarketStore} from '../stores/market'
 import {formatFixed, hoursToHMS} from '../util.js'
@@ -8,6 +9,7 @@ import ItemIcon from '../components/lo/ItemIcon.vue'
 export default {
   setup() {
     const userStore = useUserStore()
+    const routingStore = useRoutingStore()
     const gameStore = useGameStore()
     const marketStore = useMarketStore()
 
@@ -17,7 +19,7 @@ export default {
       console.log('userStore subscription took', Date.now()-start, 'ms')
     })*/
 
-    return { gameStore, userStore, marketStore }
+    return { gameStore, userStore, routingStore, marketStore }
   },
 
   props: {
@@ -65,7 +67,7 @@ export default {
 
     perTownPerRecipePerThrifty() {
       const ret = {}
-      for (const wsj of this.userStore.wsJobs) {
+      for (const wsj of this.routingStore.wsJobs) {
         const tnk = wsj.worker.tnk
         const rcp = wsj.worker.job.recipe
         const thriftyPercent = wsj.thriftyPercent
@@ -400,7 +402,7 @@ export default {
     },
     
     copyToWorkshops() {
-      for (const wsj of this.userStore.wsJobs) {
+      for (const wsj of this.routingStore.wsJobs) {
         const origin = wsj.worker.tnk
         const rcp = wsj.worker.job.recipe
         const thriftyPercent = wsj.thriftyPercent

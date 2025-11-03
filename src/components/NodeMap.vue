@@ -1,6 +1,7 @@
 <script>
 import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
+import {useRoutingStore} from '../stores/routing'
 import {useMarketStore} from '../stores/market'
 import {useMapStore} from '../stores/map'
 import {Deck, OrthographicView, LinearInterpolator, TransitionInterpolator} from '@deck.gl/core';
@@ -14,7 +15,7 @@ function lerp(from, to, t) {
   return from + (to - from) * t;
 }
 
-class MyInterpolator extends TransitionInterpolator {
+/*class MyInterpolator extends TransitionInterpolator {
   constructor({speed = 100} = {}) {
     super({compare: ['x', 'y']});
 
@@ -41,13 +42,14 @@ class MyInterpolator extends TransitionInterpolator {
     const y = lerp(start.y, end.y, t);
     return {x, y};
   }
-}
+}*/
 
 export default {
   setup() {
     // this is not early enough
     const gameStore = useGameStore()
     const userStore = useUserStore()
+    const routingStore = useRoutingStore()
     const marketStore = useMarketStore()
     const mapStore = useMapStore()
 
@@ -61,7 +63,7 @@ export default {
       localStorage.setItem('map', JSON.stringify(state))
     })
 
-    return { gameStore, userStore, marketStore, mapStore }
+    return { gameStore, userStore, routingStore, marketStore, mapStore }
   },
 
   props: {
@@ -91,10 +93,6 @@ export default {
     lineData: [],
     lineLayer: null,
     clickedObject: null,
-    scores: {
-      needTakes: {},
-      pathCosts: {},
-    },
     pzkSelectedTown: {},
     initialViewState: {
       target: [0, 0],
@@ -139,12 +137,11 @@ export default {
     this.initialViewState.target = [...this.mapStore.target]
     this.initialViewState.zoom = this.mapStore.zoom
     this.deck = this.initializeDeck()
-    this.scores = this.dijkstraScoreAll()
     this.updateDeck()
   },
 
   watch: {
-    'userStore.autotakenNodes'(newValue) {
+    'routingStore.routing.autotakenNodes'(newValue) {
       this.updateLayers()
     },
     'userStore.mapHideInactive'(newValue) {
@@ -165,129 +162,7 @@ export default {
   },
 
   computed: {
-    iconsCalc() {
-      const ret = []
-      this.hiddenNodesCount = 0
-      if (!this.iconData)
-        return ret
-      // Explicitly reference mapHideInactive to ensure reactivity
-      //const { mapHideInactive, autotakenNodes } = this.userStore;
-      const highlighteds = []
-      this.iconData.forEach(([key, kind]) => {
-        if (key in this.scores.pathCosts) {
-          if (this.userStore.mapHideInactive && this.userStore.autotakenNodes.has(key) == false) {
-            this.hiddenNodesCount += 1
-            //return
-          }
-          const isHighlighted = this.highlightNodes && this.highlightNodes.has(key)
-          const newIcon = {
-            key,
-            kind,
-            pos: this.iconPositions[key],
-            taken: this.userStore.autotakenNodes.has(key),
-            isHighlighted,
-            thisCpCost: this.gameStore.ready ? this.gameStore.nodes[key].CP : 0,
-            // not displayed:
-            //fromTown: this.scores.needTakes[key][0],
-            //fromTownCpCost: this.scores.pathCosts[key],
-            //fromTownPath: this.scores.needTakes[key],
-          }
-
-          ret.push({...newIcon, hidden: (this.userStore.mapHideInactive && !newIcon.taken) || isHighlighted})
-          highlighteds.push({...newIcon, hidden: !isHighlighted})
-
-        }
-      })
-
-      console.log('iconsCalc', this.hiddenNodesCount, 'hidden')
-      return { normal: ret, highlighted: highlighteds}
-    },
-    linesCalc() {
-      let ret = []
-      this.lineData.forEach(([a, b]) => {
-        const active = this.userStore.autotakenNodes.has(a) && this.userStore.autotakenNodes.has(b)
-        const grind = this.userStore.routing.autotakenGrindNodes.has(a) && this.userStore.routing.autotakenGrindNodes.has(b)
-        ret.push({
-          start: this.iconPositions[a],
-          end: this.iconPositions[b],
-          color: active ? (grind ? [255,109,0,255] : [255,179,0,255]) : [172,172,172,255]
-        })
-      })
-
-      if (this.clickedObject) {
-        if (this.clickedObject.key in this.userStore.pzJobs) {
-          const job = this.userStore.pzJobs[this.clickedObject.key]
-          let prev = undefined
-          for (const nk of job.usedPath) {
-            if (prev)
-              ret.push({
-                start: this.iconPositions[prev],
-                end: this.iconPositions[nk],
-                color: [64,255,0,255]
-              })
-            prev = nk
-          }
-        }
-        if (this.gameStore.isLodgingTown(this.clickedObject.key)) {
-          const tk = this.gameStore.tnk2tk(this.clickedObject.key)
-          this.userStore.townWorkers(tk).forEach(w => {
-            if (this.gameStore.jobIsPz(w.job)) {
-              const job = this.userStore.pzJobs[w.job.pzk]
-
-              let prev = undefined
-              for (const nk of job.usedPath) {
-                if (prev)
-                  ret.push({
-                    start: this.iconPositions[prev],
-                    end: this.iconPositions[nk],
-                    color: [64,255,0,255]
-                  })
-                prev = nk
-              }
-            }
-            if (this.gameStore.jobIsWorkshop(w.job)) {
-              // multiple workers can meet this criteria but we only need one
-              const job = this.userStore.wsJobs.find(j => 
-                j.worker.tnk == this.clickedObject.key &&
-                j.hk == w.job.hk
-              )
-              
-              let prev = undefined
-              for (const nk of job.usedPath) {
-                if (prev)
-                  ret.push({
-                    start: this.iconPositions[prev],
-                    end: this.iconPositions[nk],
-                    color: [64,255,128,255]
-                  })
-                prev = nk
-              }
-            }
-          })
-        }
-      }
-      //console.log('linesCalc', ret)
-      return ret
-    },
-  },
-
-  methods: {
-    makeIconImg,
-    formatFixed,
-
-    onMoveEvent(e) {
-      const now = Date.now()
-      if (now - this.mapStateSavedTimestamp > 100) {
-        this.mapStore.target = [...e.viewState.target]
-        this.mapStore.zoom = e.viewState.zoom
-        this.mapStateSavedTimestamp = now
-      }
-      // can't modify property in a component
-      //this.panPaPos = null
-      this.$emit('panAnywhere')
-    },
-
-    dijkstraScoreAll() {
+    scores() {
       const ts = Date.now()
 
       const costs = this.gameStore.nodes
@@ -296,7 +171,7 @@ export default {
       const start = 0
       links[start] = this.gameStore.townsWithLodging
 
-      let unvisited = new Heap((a, b) => pathCosts[a] - pathCosts[b]);
+      let unvisited = new Heap((a, b) => pathCosts[a] - pathCosts[b])
       unvisited.push(start)
       let pathCosts = {[start]: 0}
       let needTakes = {[start]: []}
@@ -328,57 +203,153 @@ export default {
       return { needTakes, pathCosts }
     },
 
-    // not working because no reason to go through no-profit connection nodes
-    dijkstraScoreAllProfitPerCp() {
-      const ts = Date.now()
-
-      const costs = this.gameStore.nodes
-      const links = this.gameStore.links
-
-      const start = 0
-      links[start] = [1,301,302,601,61,602,604,608,1002,1101,1141,1301,1314,1319,1343,1380,1623,1649,1691,1750]
-
-      let unvisited = new Set(Object.keys(costs))
-      let needTakes = {0: []}
-      let pathCosts = {0: 0}
-      let metrics = {0: 0}
-      for (const nk of Object.keys(costs)) {
-        pathCosts[nk] = +Infinity
-        metrics[nk] = 0
-        needTakes[nk] = []
-      }
-      let current = start
-      while (1) {
-        links[current].forEach(neighbor => {
-          const newDistance = pathCosts[current] + costs[neighbor].CP
-          const profitData = this.gameStore.profitData(neighbor, needTakes[current][0], 150, 10, 10)
-          const newMetric = newDistance == 0 ? 0 : -profitData.priceDaily / newDistance
-          console.log(current, neighbor, newDistance, profitData.priceDaily, newMetric)
-          if (newMetric < metrics[neighbor]) {
-            pathCosts[neighbor] = newDistance
-            metrics[neighbor] = newMetric
-            needTakes[neighbor] = [...needTakes[current], neighbor]
+    iconsCalc() {
+      const ret = []
+      this.hiddenNodesCount = 0
+      if (!this.iconData) return ret
+      // Explicitly reference mapHideInactive to ensure reactivity
+      //const { mapHideInactive, autotakenNodes } = this.userStore;
+      const highlighteds = []
+      this.iconData.forEach(([key, kind]) => {
+        if (key in this.gameStore.nodes) {
+          const taken = this.routingStore.routing.autotakenNodes.has(key)
+          if (this.userStore.mapHideInactive && !taken) {
+            this.hiddenNodesCount += 1
+            //return
           }
-        })
+          // by search
+          const isHighlighted = this.highlightNodes && this.highlightNodes.has(key)
+          const newIcon = {
+            key,
+            kind,
+            pos: this.iconPositions[key],
+            taken,
+            isHighlighted,
+            thisCpCost: this.gameStore.ready ? this.gameStore.nodes[key].CP : 0,
+            // not displayed:
+            //fromTown: this.scores.needTakes[key][0],
+            //fromTownCpCost: this.scores.pathCosts[key],
+            //fromTownPath: this.scores.needTakes[key],
+          }
 
-        unvisited.delete(current)
+          ret.push({
+            ...newIcon, 
+            hidden: (this.userStore.mapHideInactive && !newIcon.taken) || isHighlighted
+          })
+          highlighteds.push({
+            ...newIcon, 
+            hidden: !isHighlighted
+          })
+        }
+      })
 
-        if (unvisited.length == 0)
-          break
-        let uTd = []
-        unvisited.forEach(u => {
-          uTd.push([u, pathCosts[u]])
+      console.log('iconsCalc', this.hiddenNodesCount, 'hidden')
+      return { normal: ret, highlighted: highlighteds}
+    },
+
+    linesCalc() {
+      const colorInactive = [172,172,172,255]
+      const colorWorker =   [255,179,  0,255]
+      const colorGrind =    [255,109,  0,255]
+      const colorWagon =    [255, 49,  0,255]
+      
+      let ret = []
+      this.lineData.forEach(([a, b]) => {
+        let color = colorInactive
+        const key = `${a}-${b}`
+        if (key in this.routingStore.routing.linkColors) {
+          if (this.routingStore.routing.linkColors[key] == 'grind') {
+            color = colorGrind
+          }
+          else if (this.routingStore.routing.linkColors[key] == 'worker') {
+            color = colorWorker
+          }
+          else if (this.routingStore.routing.linkColors[key] == 'wagon') {
+            color = colorWagon
+          }
+        }
+
+        ret.push({
+          start: this.iconPositions[a],
+          end: this.iconPositions[b],
+          color
         })
-        uTd.sort((a,b)=>a[1]-b[1]) // asc
-        let lowestTd = -1;
-        //console.log('lowest', uTd[0]);
-        ([current, lowestTd] = uTd[0])
-        if (lowestTd == +Infinity)
-          break
+      })
+
+      const colorSpreadPlantzone = [64,255,0,255]
+      const colorSpreadWorkshop = [34,222,168,255]
+
+      if (this.clickedObject) {
+        if (this.clickedObject.key in this.routingStore.pzJobs) {
+          const job = this.routingStore.pzJobs[this.clickedObject.key]
+          let prev = undefined
+          for (const nk of job.usedPath) {
+            if (prev)
+              ret.push({
+                start: this.iconPositions[prev],
+                end: this.iconPositions[nk],
+                color: colorSpreadPlantzone,
+              })
+            prev = nk
+          }
+        }
+        if (this.gameStore.isLodgingTown(this.clickedObject.key)) {
+          const tk = this.gameStore.tnk2tk(this.clickedObject.key)
+          this.userStore.townWorkers(tk).forEach(w => {
+            if (this.gameStore.jobIsPz(w.job)) {
+              const job = this.routingStore.pzJobs[w.job.pzk]
+
+              let prev = undefined
+              for (const nk of job.usedPath) {
+                if (prev)
+                  ret.push({
+                    start: this.iconPositions[prev],
+                    end: this.iconPositions[nk],
+                    color: colorSpreadPlantzone,
+                  })
+                prev = nk
+              }
+            }
+            if (this.gameStore.jobIsWorkshop(w.job)) {
+              // multiple workers can meet this criteria but we only need one
+              const job = this.routingStore.wsJobs.find(j => 
+                j.worker.tnk == this.clickedObject.key &&
+                j.hk == w.job.hk
+              )
+              
+              let prev = undefined
+              for (const nk of job.usedPath) {
+                if (prev)
+                  ret.push({
+                    start: this.iconPositions[prev],
+                    end: this.iconPositions[nk],
+                    color: colorSpreadWorkshop,
+                  })
+                prev = nk
+              }
+            }
+          })
+        }
       }
+      //console.log('linesCalc', ret)
+      return ret
+    },
+  },
 
-      console.log('scoreAll took', Date.now()-ts, 'ms')
-      return { needTakes, pathCosts }
+  methods: {
+    makeIconImg,
+    formatFixed,
+
+    onMoveEvent(e) {
+      const now = Date.now()
+      if (now - this.mapStateSavedTimestamp > 100) {
+        this.mapStore.target = [...e.viewState.target]
+        this.mapStore.zoom = e.viewState.zoom
+        this.mapStateSavedTimestamp = now
+      }
+      // can't modify property in a component
+      //this.panPaPos = null
+      this.$emit('panAnywhere')
     },
 
     makeIconsLayer() {

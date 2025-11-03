@@ -1,6 +1,8 @@
 <script>
+import draggable from "vuedraggable";
 import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
+import {useRoutingStore} from '../stores/routing'
 import {useMarketStore} from '../stores/market'
 import {useMapStore} from '../stores/map'
 import Worker from '../components/Worker.vue'
@@ -26,6 +28,7 @@ export default {
   setup() {
     const gameStore = useGameStore()
     const userStore = useUserStore()
+    const routingStore = useRoutingStore()
     const marketStore = useMarketStore()
     const mapStore = useMapStore()
 
@@ -35,10 +38,11 @@ export default {
       console.log('userStore subscription took', Date.now()-start, 'ms')
     })*/
 
-    return { gameStore, userStore, marketStore, mapStore }
+    return { gameStore, userStore, routingStore, marketStore, mapStore }
   },
   
   components: {
+    draggable,
     ItemIcon,
     Worker,
     TownWorkers,
@@ -196,7 +200,7 @@ export default {
     editWorker(w) {
       this.workerEditing = w
       this.workerEditingInitial = JSON.parse(JSON.stringify(w))
-      this.workerEditingInitialProfit = w && w.job && typeof(w.job) == 'number' ? this.userStore.pzJobs[this.workerEditing.job].profit.priceDaily : 0
+      this.workerEditingInitialProfit = w && w.job && typeof(w.job) == 'number' ? this.routingStore.pzJobs[this.workerEditing.job].profit.priceDaily : 0
       this.workerDialogVisible = true
     },
 
@@ -353,7 +357,7 @@ export default {
       this.resourceDialogVisible = true
       this.resourceDialogRgroup = this.gameStore.plantzoneStatic[pzk].regiongroup
       this.resourceDialogWkld = this.gameStore.plantzones[pzk].peg.time
-      this.resourceDialogWspd = this.userStore.workedPlantzones.has(String(pzk)) ? this.userStore.pzJobs[pzk].worker.wspdSheet + this.gameStore.wspdBonus(this.userStore.pzJobs[pzk].worker, 'farm') : 150
+      this.resourceDialogWspd = this.userStore.workedPlantzones.has(String(pzk)) ? this.routingStore.pzJobs[pzk].worker.wspdSheet + this.gameStore.wspdBonus(this.routingStore.pzJobs[pzk].worker, 'farm') : 150
     },
 
     panToHash() {
@@ -501,10 +505,10 @@ export default {
 
               <template v-if="userStore.workersFarmingCount">
                 <template v-if="!userStore.farmingEnable">
-                  <abbr title="CP not allocated for fences, enable Farming on Settings page">⚠️</abbr>
+                  <abbr title="CP not allocated for fences, enable Farming on Settings page" class="tooltip">⚠️</abbr>
                 </template>
                 <template v-else-if="userStore.workersFarmingCount && userStore.workersFarmingCount < 10">
-                  <abbr title="not all fences being worked, for best results either send 10 workers or none at all">⚠️</abbr>
+                  <abbr title="not all fences being worked, for best results either send 10 workers or none at all" class="tooltip">⚠️</abbr>
                 </template>
                 farming:
                 {{ userStore.workersFarmingCount }} <br/> 
@@ -525,15 +529,32 @@ export default {
           </details>
 
           <details>
-            <summary>Total CP: {{ formatFixed(userStore.totalCP + userStore.autotakenGrindNodesCP) }}</summary>
+            <summary>Total CP: {{ formatFixed(userStore.totalCP) }}</summary>
             <p class="fsxs">
-              <template v-if="userStore.routing.autotakenGrindNodesCP">
-                invested for droprate: <abbr class="tooltip" :title="userStore.grindTakenDesc">
-                  {{ userStore.routing.autotakenGrindNodesCP }}
-                </abbr><br/>
-              </template>
+              
+              <draggable v-model="userStore.linkOrder" itemKey="id">
+                <template #item="{ element, index }">
+                  <div class="draggable">
+                    {{ index+1 }}.
+                    <template v-if="element.name == 'grind'">
+                      invested for droprate: 
+                      <abbr class="tooltip" :title="userStore.grindTakenDesc">
+                        {{ routingStore.routing.autotakenGrindNodesCP }}
+                      </abbr><br/>
+                    </template>
+                    <template v-else-if="element.name == 'worker'">
+                      nodes: {{ routingStore.routing.autotakenWorkerNodesCP }} <br/>
+                    </template>
+                    <template v-else-if="element.name == 'wagon'">
+                      wagon routes: 
+                      <abbr class="tooltip" :title="[...userStore.wagonRoutes].reduce((acc, rt) => acc + `${gameStore.uloc.node[rt.origin]} - ${gameStore.uloc.node[rt.destination]}\n`, '')">
+                        {{ routingStore.routing.autotakenWagonNodesCP }}
+                      </abbr><br/>
+                    </template>
+                  </div>
+                </template>
+              </draggable>
 
-              nodes: {{ userStore.autotakenNodesCP }} <br/>
               lodging/storage: {{ userStore.lodgage }} <br/>
                 
               <template v-if="userStore.farmingEnable">
@@ -588,7 +609,30 @@ export default {
           </details>
 
           <input type="checkbox" id="wr_cb" v-model="userStore.wasmRouting">
-            <label for="wr_cb"> wasm routing</label>
+            <label for="wr_cb"> wasm routing</label><br/>
+          <!--<input type="checkbox" v-model="userStore.wasm.tryMoreFrontierRings">
+          tryMoreFrontierRings<br/>
+          <input 
+            type="range"
+            style="width:4em"
+            v-model.number="userStore.wasm.maxRemovalAttempts" 
+            min="0"
+            max="1000"
+          >maxRemovalAttempts={{ userStore.wasm.maxRemovalAttempts }}<br/>
+          <input 
+            type="range"
+            style="width:4em"
+            v-model.number="userStore.wasm.maxFrontierRings" 
+            min="0"
+            max="10"
+          >maxFrontierRings={{ userStore.wasm.maxFrontierRings }}<br/>
+          <input 
+            type="range"
+            style="width:4em"
+            v-model.number="userStore.wasm.ringComboCutoff" 
+            min="0"
+            max="10"
+          >ringComboCutoff={{ userStore.wasm.ringComboCutoff }}-->
         </div>
 
         <div style="clear:both;"></div>
@@ -695,6 +739,7 @@ summary {
   overflow: auto;
   background-color: var(--color-background);
   padding: 5px 5px 0 0;
+  z-index: 4;
 }
 #rightside {
   display: flex;
@@ -739,6 +784,11 @@ summary {
 .tooltip {
   cursor: help;
 }
-
+.draggable {
+  cursor: grab;
+}
+.draggable:hover {
+  background: var(--color-background-soft);
+}
 
 </style>

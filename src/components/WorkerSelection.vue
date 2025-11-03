@@ -1,5 +1,6 @@
 <script>
 import {useUserStore} from '../stores/user'
+import {useRoutingStore} from '../stores/routing'
 import {useGameStore} from '../stores/game'
 import {formatFixed} from '../util.js'
 import { ref } from 'vue';
@@ -7,6 +8,7 @@ import { ref } from 'vue';
 export default {
   setup() {
     const userStore = useUserStore()
+    const routingStore = useRoutingStore()
     const gameStore = useGameStore()
 
     /*userStore.$subscribe((mutation, state) => {
@@ -15,7 +17,7 @@ export default {
       console.log('userStore subscription took', Date.now()-start, 'ms')
     })*/
 
-    return { gameStore, userStore }
+    return { gameStore, userStore, routingStore }
   },
 
   props: {
@@ -43,7 +45,7 @@ export default {
       const houseTnk = this.gameStore.tk2tnk(houseTk)
       const houseCp = this.userStore.userWorkshops[this.hk].manualCp
       const townsData = []
-      const tkCpList = this.gameStore.dijkstraNearestTowns(houseTnk, townsLimit, this.userStore.autotakenNodes, true)
+      const tkCpList = this.gameStore.dijkstraNearestTowns(houseTnk, townsLimit, this.routingStore.routing.autotakenNodes, true)
       tkCpList.forEach(([tnk, mapCp, path]) => {
         const tk = this.gameStore._tnk2tk[tnk]
         const freeWorkers = this.userStore.getFreeWorkers(tk)
@@ -117,7 +119,7 @@ export default {
             {{ formatFixed(e.profit.priceDaily, 2) }}
           </td>
           <td>
-            <abbr class="tooltip" :title="'connection cost:\n'+Array.from(e.path, nk => `${userStore.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')">
+            <abbr class="tooltip" :title="'connection cost:\n'+Array.from(e.path, nk => `${routingStore.routing.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')">
               {{ e.mapCp }}
             </abbr>+<abbr class="tooltip" title="see Settings > 🏭Workshops">
               {{ e.houseCp }}

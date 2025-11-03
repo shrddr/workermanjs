@@ -1,5 +1,6 @@
 <script>
 import {useUserStore} from '../stores/user'
+import {useRoutingStore} from '../stores/routing'
 import {useGameStore} from '../stores/game'
 import {formatFixed} from '../util.js'
 import ItemIcon from '../components/lo/ItemIcon.vue'
@@ -7,8 +8,9 @@ import ItemIcon from '../components/lo/ItemIcon.vue'
 export default {
   setup() {
     const userStore = useUserStore()
+    const routingStore = useRoutingStore()
     const gameStore = useGameStore()
-    return { gameStore, userStore }
+    return { gameStore, userStore, routingStore }
   },
 
   props: {
@@ -31,7 +33,7 @@ export default {
 
   computed: {
     actualWorker() {
-      return this.userStore.pzJobs[this.e.key].worker
+      return this.routingStore.pzJobs[this.e.key].worker
     },
 
     takenInfo() {

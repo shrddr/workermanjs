@@ -1,6 +1,7 @@
 <script>
 import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
+import {useRoutingStore} from '../stores/routing'
 import {useMarketStore} from '../stores/market'
 import MakeAWorker from '../components/MakeAWorker.vue'
 import {formatFixed} from '../util.js'
@@ -10,6 +11,7 @@ export default {
   setup() {
     const gameStore = useGameStore()
     const userStore = useUserStore()
+    const routingStore = useRoutingStore()
     const marketStore = useMarketStore()
 
     /*userStore.$subscribe((mutation, state) => {
@@ -18,7 +20,7 @@ export default {
       console.log('userStore subscription took', Date.now()-start, 'ms')
     })*/
 
-    return { gameStore, userStore, marketStore }
+    return { gameStore, userStore, routingStore, marketStore }
   },
 
   props: {
@@ -44,7 +46,7 @@ export default {
 
     plantzoneNearestTownsFreeWorkersProfits(pzk, townsLimit) {
       const townsData = []
-      const homeTnkList = this.gameStore.dijkstraNearestTowns(pzk, townsLimit, this.userStore.autotakenNodes, true)
+      const homeTnkList = this.gameStore.dijkstraNearestTowns(pzk, townsLimit, this.routingStore.routing.autotakenNodes, true)
       homeTnkList.forEach(([homeTnk, mapCp, path]) => {
         const homeTk = this.gameStore._tnk2tk[homeTnk]
         const freeWorkers = this.userStore.getFreeWorkers(homeTk)
@@ -117,28 +119,28 @@ export default {
   <div id="plantzoneWorkerInfo">
     <template v-if="userStore.workedPlantzones.has(pzk.toString())">
       worker: 
-      {{ userStore.pzJobs[pzk].worker.label }}
+      {{ this.routingStore.pzJobs[pzk].worker.label }}
       @
-      {{ formatFixed(userStore.pzJobs[pzk].profit.priceDaily, 3) }} M$/day
+      {{ formatFixed(this.routingStore.pzJobs[pzk].profit.priceDaily, 3) }} M$/day
       <template v-if="userStore.workedPlantzones.has(pzk.toString())">
-        <button @click="$emit('editWorker', userStore.pzJobs[pzk].worker)">
+        <button @click="$emit('editWorker', this.routingStore.pzJobs[pzk].worker)">
           edit
         </button>
-        <button @click="userStore.pzJobs[pzk].worker.job = null">
+        <button @click="this.routingStore.pzJobs[pzk].worker.job = null">
           stop
         </button>
       </template>
 
       <br/>
       connection cost: 
-      {{ formatFixed(userStore.pzjobsSharedConnectionCP[pzk].value, 3) }} CP 
-      <abbr class="tooltip" :title="'full cost of this node + Σ of connection nodes costs shared proportionally between all active jobs using them\n'+userStore.pzjobsSharedConnectionCP[pzk].tooltip">ℹ</abbr>
+      {{ formatFixed(this.routingStore.pzjobsSharedConnectionCP[pzk].value, 3) }} CP 
+      <abbr class="tooltip" :title="'full cost of this node + Σ of connection nodes costs shared proportionally between all active jobs using them\n'+this.routingStore.pzjobsSharedConnectionCP[pzk].tooltip">ℹ</abbr>
       <br/>
       lodgage cost: 
-      {{ formatFixed(userStore.workerSharedLodgageCP(userStore.pzJobs[pzk].worker).value, 3) }} CP 
-      <abbr class="tooltip" :title="userStore.workerSharedLodgageCP(userStore.pzJobs[pzk].worker).tooltip">ℹ</abbr>
+      {{ formatFixed(userStore.workerSharedLodgageCP(this.routingStore.pzJobs[pzk].worker).value, 3) }} CP 
+      <abbr class="tooltip" :title="userStore.workerSharedLodgageCP(this.routingStore.pzJobs[pzk].worker).tooltip">ℹ</abbr>
       <br/>
-      efficiency: {{ formatFixed(userStore.workerIncomePerCp(userStore.pzJobs[pzk].worker), 3) }} M$/day/CP
+      efficiency: {{ formatFixed(userStore.workerIncomePerCp(this.routingStore.pzJobs[pzk].worker), 3) }} M$/day/CP
       <abbr class="tooltip" title="income / (connectionCost + lodgageCost)">ℹ</abbr>
 
     </template>
@@ -195,7 +197,7 @@ export default {
               {{ formatFixed(e.profit.priceDaily, 2) }}
             </td>
             <td>
-              <abbr class="tooltip" :title="Array.from(e.path, nk => `${userStore.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')">
+              <abbr class="tooltip" :title="Array.from(e.path, nk => `${routingStore.routing.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')">
               {{ e.mapCp }}
               </abbr>+<abbr class="tooltip" :title="e.infraTooltip">{{ formatFixed(e.townCp) }}</abbr>={{ formatFixed(e.cp) }}
             </td>

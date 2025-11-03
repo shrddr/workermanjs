@@ -1,13 +1,15 @@
 <script>
 import {useGameStore} from '../stores/game'
 import {useUserStore} from '../stores/user'
+import {useRoutingStore} from '../stores/routing'
 import {formatFixed} from '../util.js'
 
 export default {
   setup() {
     const gameStore = useGameStore()
     const userStore = useUserStore()
-    return { gameStore, userStore }
+    const routingStore = useRoutingStore()
+    return { gameStore, userStore, routingStore }
   },
 
   props: {
@@ -71,7 +73,7 @@ export default {
     nearestTowns() {
       const townsLimit = 5
       const townsData = []
-      const lodgingTnkList = this.gameStore.dijkstraNearestTowns(this.pzk, townsLimit, this.userStore.autotakenNodes, true)
+      const lodgingTnkList = this.gameStore.dijkstraNearestTowns(this.pzk, townsLimit, this.routingStore.routing.autotakenNodes, true)
       lodgingTnkList.forEach(([lodgingTnk, mapCp, path]) => {
         const workerKinds = []
 
@@ -173,7 +175,7 @@ export default {
           </select>
         </td>
         <td class="center">
-          <abbr class="tooltip" :title="Array.from(nt.workerKinds[selectedWorkerIndices[nt.tnk]].PZSE.path, nk => `${userStore.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')">
+          <abbr class="tooltip" :title="Array.from(nt.workerKinds[selectedWorkerIndices[nt.tnk]].PZSE.path, nk => `${routingStore.routing.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')">
           {{ nt.workerKinds[selectedWorkerIndices[nt.tnk]].PZSE.mapCp }}
           </abbr>+<abbr class="tooltip" :title="nt.workerKinds[selectedWorkerIndices[nt.tnk]].PZSE.infraTooltip">{{ formatFixed(nt.workerKinds[selectedWorkerIndices[nt.tnk]].PZSE.townCp) }}</abbr>={{ formatFixed(nt.workerKinds[selectedWorkerIndices[nt.tnk]].PZSE.cp) }}
         </td>

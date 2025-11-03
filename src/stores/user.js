@@ -1,8 +1,7 @@
 import {defineStore} from "pinia";
 import {useGameStore} from './game'
-import {searchSorted} from '../util.js'
-import {formatFixed} from '../util.js';
-
+import {useRoutingStore} from './routing'
+import {searchSorted, formatFixed} from '../util.js'
 
 export const useUserStore = defineStore({
   id: "user",
@@ -69,9 +68,22 @@ export const useUserStore = defineStore({
     tradeInfraCp: {},
     tradeRouteCp: {},
     tradingLevel: 91,
+
+    linkOrder: [
+      { name: 'grind', id: 1 },
+      { name: 'worker', id: 2 },
+      { name: 'wagon', id: 3 },
+    ],
+
+    wasm: {
+      tryMoreFrontierRings: true,
+      //maxRemovalAttempts: 350,
+      //maxFrontierRings: 3,
+      //ringComboCutoff: 2,
+    },
   }),
   actions: {
-
+  
     migrate(localStored) {
       if (!localStored) return
 
@@ -306,6 +318,95 @@ export const useUserStore = defineStore({
         //console.log('created', this.userWorkshops[hk])
       }
       return this.userWorkshops[hk]
+    },
+
+    workerIncomePerCp(w) {
+      const income = this.workerIncome(w)
+      const sharedConn = this.workerSharedConnectionCP(w)
+      const sharedLodgage = this.workerSharedLodgageCP(w).value
+      const ret = income / (sharedConn + sharedLodgage)
+      if (isNaN(ret)) 
+        console.log(`workerIncomePerCp: ${formatFixed(income, 2)} / (${formatFixed(sharedConn, 2)} + ${formatFixed(sharedLodgage, 2)}) = ${formatFixed(ret, 2)} for worker ${w.label}`)
+      return ret
+    },
+
+    workerIncome(w) {
+      const gameStore = useGameStore()
+      const routingStore = useRoutingStore()
+      if (gameStore.jobIsIdle(w.job))
+        return 0
+      if (!routingStore.pzJobs)
+        return 0
+      if (gameStore.jobIsPz(w.job)) {
+        if (routingStore.pzJobs[w.job.pzk] == undefined) {
+          throw Error(`pzjob ${w.job.pzk} is undefined`)
+        }
+        return routingStore.pzJobs[w.job.pzk].profit.priceDaily
+      }
+      if (gameStore.jobIsFarming(w.job))
+        return this.farmingProfitPerWorker
+      if (gameStore.jobIsCustom(w.job))
+        return w.job.profit
+      if (gameStore.jobIsWorkshop(w.job)) {
+        const hk = w.job.hk
+        const workshop = this.getUserWorkshop(hk)
+        const profit = gameStore.profitWorkshopWorker(hk, workshop, w).priceDaily
+        return profit
+      }
+      return undefined
+    },
+
+    workerSharedConnectionCP(w) {
+      let ret = undefined
+      const gameStore = useGameStore()
+      if (gameStore.jobIsPz(w.job)) {
+        const routingStore = useRoutingStore()
+        ret = routingStore.pzjobsSharedConnectionCP[w.job.pzk].value
+      }
+      if (gameStore.jobIsFarming(w.job))
+        ret = 0
+      if (gameStore.jobIsCustom(w.job))
+        ret = w.job.cp
+      if (gameStore.jobIsWorkshop(w.job)) {
+        const workersAtWorkshop = this.workersWorkshop.filter(ww => ww.job.hk == w.job.hk).length
+        ret = this.getUserWorkshop(w.job.hk).manualCp / workersAtWorkshop
+      }
+      //console.log(`workerSharedConnectionCP ${w.label} = ${ret}`)
+      return ret
+    },
+
+    workerSharedLodgageCP(w) {
+      const ret = {
+        value: undefined,
+        tooltip: '?'
+      }
+      const gameStore = useGameStore()
+      if (!gameStore.ready)
+        return ret
+      const income = this.workerIncome(w)
+      const tk = gameStore.tnk2tk(w.tnk)
+      const townInfraCp = this.townsInfra[tk].cost  // lodging for pz+ws + storage for pz+personal
+      
+      const townTotalWorkers = this.userWorkers.filter(w => gameStore.tnk2tk(w.tnk) == tk).length
+      const townTotalIncome = this.townsTotalIncome[tk].income
+
+      if (this.townsTotalIncome[tk].hasNegativeJob || townTotalIncome == 0)  {
+        ret.value = townInfraCp / townTotalWorkers
+        ret.tooltip = `= total lodgage costs of hometown shared equally between all active jobs from that town:\n` +
+        `${townInfraCp}CP / ${townTotalWorkers}`
+      }
+      else {
+        if (townTotalWorkers == 1) {
+          ret.value = townInfraCp
+          ret.tooltip = `= all costs of ${gameStore.nodeName(w.tnk)} lodgage`
+        }
+        else {
+          ret.value = townInfraCp * (income / townTotalIncome)
+          ret.tooltip = `= total lodgage costs of hometown shared proportionally between all active jobs from that town:\n` +
+          `${townInfraCp}CP * (${formatFixed(income, 3)} / ${formatFixed(townTotalIncome, 3)})`
+        }
+      }
+      return ret
     },
 
   },
@@ -576,116 +677,25 @@ export const useUserStore = defineStore({
       return ret
     },
 
-    routing(state) {
-      if (state.wasmRouting) {
-        return this.routingWasm
-      }
-      
-      return this.routingOld
-    },
-
-    routingOld(state) {
-      // old method - grind nodes first, then worker jobs
-      return {
-        autotakenGrindNodes: this.autotakenGrindNodes,
-        pzWsJobs: this.pzWsJobs,
-      }
-    },
-
-    routingWasm(state) {
-      // wasm routing - simultaneous
-      const ret = {
-        autotakenGrindNodes: new Set(),
-        pzWsJobs: {
-          pz: {},
-          ws: [],
-          map: [],
-          nodeUsedbyJob: {},
-        }
-      }
-
+    wagonRoutes(state) {
+      const uniq = new Set()
+      const ret = []
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-
-      const terminalPairs = []
-      const workerIndices = []
-      for (const n of state.grindTakenList) terminalPairs.push([n, 99999])
-      this.workingWorkers.forEach(worker => {
-        const source = worker.tnk
-        var target
-        if (gameStore.jobIsPz(worker.job)) {
-          target = worker.job.pzk
-        }
-        else if (gameStore.jobIsWorkshop(worker.job)) {
-          const hk = worker.job.hk
-          const houseTk = gameStore.houseInfo[hk].affTown
-          const houseTnk = gameStore.tk2tnk(houseTk)
-          target = houseTnk
-        }
-        else return
-        workerIndices.push(terminalPairs.length)
-        terminalPairs.push([target, source])
-      })
-
-      let activatedNodes = []
-        if (terminalPairs.length > 0) {
-        const startTime = performance.now()
-        activatedNodes = gameStore.wasmRouter.solveForTerminalPairs(terminalPairs)
-        const took = performance.now() - startTime
-        //console.log('wasm', terminalPairs, 'took', took.toFixed(2), 'ms', activatedNodes)
-        console.log('wasm took', took.toFixed(2), 'ms')
-      }
-
-      activatedNodes = this.applyWorkarounds(activatedNodes, terminalPairs)
-
-      const routeInfos = {}
-      for (const n of state.grindTakenList) {
-        const [usedPath, usedPathCost] = gameStore.miniDijkstra(activatedNodes, n, 99999)
-        usedPath.forEach(nk => ret.autotakenGrindNodes.add(nk))
-      }
-      console.log('autotakenGrindNodes', ret.autotakenGrindNodes)
-      workerIndices.forEach(i => {
-        const [target, source] = terminalPairs[i]
-        const [usedPath, usedPathCost] = gameStore.miniDijkstra(activatedNodes, target, source)
-        const routeInfo = { usedPath, usedPathCost }
-        if (!(source in routeInfos)) routeInfos[source] = {}
-        routeInfos[source][target] = routeInfo
-      })
-
-      this.workingWorkers.forEach(worker => {
-        if (gameStore.jobIsPz(worker.job)) {
-          const pzk = worker.job.pzk
-          if (!pzk) return
-          const stats = gameStore.workerStatsOnPlantzone(worker)
-          const profit = gameStore.profitPzTownStats(pzk, worker.tnk, stats.wspd, stats.mspd, stats.luck, gameStore.isGiant(worker.charkey))
-          const route = routeInfos[worker.tnk][pzk]
-          const job = {
-            pzk,
-            worker,
-            profit,
-            ...route
+      for (const worker of this.workingWorkers) {
+        if (gameStore.jobIsWorkshop(worker.job)) {
+          const origin = worker.tnk
+          if (state.tradeRouteAlwaysOn[origin]) {
+            const destination = Number(state.tradeDestinations[origin])
+            //const a = origin < destination ? origin : destination
+            //const b = origin < destination ? destination : origin
+            const key = `${origin}-${destination}`
+            if (uniq.has(key)) continue
+            ret.push({origin, destination})
+            uniq.add(key)
           }
-          ret.pzWsJobs.pz[pzk] = job
-          ret.pzWsJobs.map.push(job)
         }
-        else if (gameStore.jobIsWorkshop(worker.job)) {
-          const hk = worker.job.hk
-          const workshop = this.getUserWorkshop(hk)
-          const houseTk = gameStore.houseInfo[hk].affTown
-          const houseTnk = gameStore.tk2tnk(houseTk)
-          const profit = gameStore.profitWorkshopWorker(hk, workshop, worker)
-          const route = routeInfos[worker.tnk][houseTnk]
-          const job = {
-            hk,
-            worker,
-            profit,
-            ...route
-          }
-          ret.pzWsJobs.ws.push(job)
-          ret.pzWsJobs.map.push(job)
-        }
-      })
-
+      }
       return ret
     },
 
@@ -699,178 +709,13 @@ export const useUserStore = defineStore({
       } 
       return ret
     },
-
-    autotakenGrindNodes(state) {
-      const ret = new Set()
-      const gameStore = useGameStore()
-      if (gameStore.ready) {
-        state.grindTakenList.forEach(pzk => {
-          const paths = gameStore.dijkstraNearestTowns(Number(pzk), 4, ret, false, true)
-          const list = paths.sort((a,b)=>a[1]-b[1])  // from lowest to highest CP
-          //console.log('list', list)
-          const [tnk, addCp, usedPath] = list[0]
-          usedPath.forEach(nk => ret.add(nk))
-        })
-      } 
-
-      console.log('autotakenGrindNodes', ret)
-      return ret
-    },
-
-    autotakenGrindNodesCP(state) {
-      const gameStore = useGameStore()
-      const ret = [...state.routing.autotakenGrindNodes].reduce((acc, v) => acc + gameStore.nodes[v].CP, 0)
-      //console.log('autotakenGrindNodesCP', ret)
-      return ret
-    },
-
-    autotakenNodes(state) {
-      // grind
-      const start = Date.now()
-      const ret = new Set([...state.routing.autotakenGrindNodes])
-      // platzones and workshops
-      for (const job of state.mapJobs) {
-        if (job.usedPath)
-          job.usedPath.forEach(nk => ret.add(nk))
-      }
-      // connect ancado
-      const gameStore = useGameStore()
-      if (gameStore.ready) {
-        if (state.activateAncado) {
-          const toTowns = gameStore.dijkstraNearestTowns(1343, 4, ret, false, true)
-          const list = toTowns.sort((a,b)=>a[1]-b[1])
-          //console.log('list', list)
-          const [tnk, addCp, usedPath] = list[0]
-          usedPath.forEach(nk => ret.add(nk))
-        }
-      }
-
-      //console.log('autotakenNodes', Date.now()-start, 'ms', ret)
-      return ret
-    },
-
-    autotakenNodesCP(state) {
-      const gameStore = useGameStore()
-      const sum = [...state.autotakenNodes].reduce((acc, v) => acc + gameStore.nodes[v].CP, 0)
-      //console.log('autotakenNodesCP', sum, state.autotakenGrindNodesCP)
-      return sum - state.autotakenGrindNodesCP
-    },
-
-    pzWsJobs(state) {
-      const ret = {
-        pz: {},
-        ws: [],
-        map: [],
-        nodeUsedbyJob: {},
-      }
-      const gameStore = useGameStore()
-      if (!gameStore.ready) return ret
-      //const localTaken = new Set([...state.autotakenGrindNodes])
-      //if (!gameStore.ready) return ret
-      const routees = []
-
-      this.workingWorkers.forEach(worker => {
-        const routee = {source: worker.tnk}
-        if (gameStore.jobIsPz(worker.job)) {
-          const pzk = worker.job.pzk
-          routee.target = pzk
-        }
-        else if (gameStore.jobIsWorkshop(worker.job)) {
-          const hk = worker.job.hk
-          const houseTk = gameStore.houseInfo[hk].affTown
-          const houseTnk = gameStore.tk2tnk(houseTk)
-          routee.target = houseTnk
-        }
-        else return
-
-        routees.push(routee)
-      })
-
-      var routeInfos
-      if (state.wasmRouting) {
-        routeInfos = gameStore.routeWasm(state.grindTakenList, routees).routeInfos
-
-      } else {
-        routeInfos = gameStore.routeOld(state.autotakenGrindNodes, routees).routeInfos
-      }
-
-      this.workingWorkers.forEach(worker => {
-        if (gameStore.jobIsPz(worker.job)) {
-          const pzk = worker.job.pzk
-          if (!pzk) return
-          const stats = gameStore.workerStatsOnPlantzone(worker)
-          const profit = gameStore.profitPzTownStats(pzk, worker.tnk, stats.wspd, stats.mspd, stats.luck, gameStore.isGiant(worker.charkey))
-          const route = routeInfos[worker.tnk][pzk]
-          const job = {
-            pzk,
-            worker,
-            profit,
-            ...route
-          }
-          ret.pz[pzk] = job
-          ret.map.push(job)
-        }
-        else if (gameStore.jobIsWorkshop(worker.job)) {
-          const hk = worker.job.hk
-          const workshop = this.getUserWorkshop(hk)
-          const houseTk = gameStore.houseInfo[hk].affTown
-          const houseTnk = gameStore.tk2tnk(houseTk)
-          const profit = gameStore.profitWorkshopWorker(hk, workshop, worker)
-          let thriftyPercent = 0
-          let thriftyWorks = false
-          const rcp = worker.job.recipe
-          if (gameStore.craftInputs && rcp in gameStore.craftInputs) {
-            const inputs = gameStore.craftInputs[rcp]
-            for (const ik of Object.keys(inputs)) {
-              if (inputs[ik] >= 10) {
-                thriftyWorks = true
-              }
-            }
-            if (thriftyWorks) {
-              for (const sk of worker.skills) {
-                if (sk > 0) {
-                  if ('thrifty5' in gameStore.skillData[sk]) thriftyPercent += 5
-                  if ('thrifty7' in gameStore.skillData[sk]) thriftyPercent += 7
-                  if ('thrifty10' in gameStore.skillData[sk]) thriftyPercent += 10
-                }
-              }
-            }
-          }
-          const route = routeInfos[worker.tnk][houseTnk]
-          const job = {
-            hk,
-            worker,
-            profit,
-            thriftyPercent,
-            ...route
-          }
-          ret.ws.push(job)
-          ret.map.push(job)
-        }
-      })
-
-      //console.log('pzWsJobs getter', ret)
-      return ret
-    },
-
-    // used EVERYWHERE
-    pzJobs(state) {
-      return state.pzWsJobs.pz
-    },
     
-    // used to display town-remote workshop line
-    wsJobs(state) {
-      return state.pzWsJobs.ws
-    },
-
-    // used to display sharing info in selected node pane and for shared CP calculation
-    mapJobs(state) {
-      return state.pzWsJobs.map
-    },
+    
 
     currentNodesJobs(state) {
       const nodesJobs = {}
-      for (const job of state.mapJobs) {
+      const routingStore = useRoutingStore()
+      for (const job of routingStore.mapJobs) {
         if (job.usedPath) {
           job.usedPath.forEach(nk => 
             nk in nodesJobs ? nodesJobs[nk].push(job) : nodesJobs[nk] = [job]
@@ -880,44 +725,10 @@ export const useUserStore = defineStore({
       return nodesJobs
     },
 
-    currentNodesCashflow(state) {
-      const cashFlows = {}
-      for (const job of state.mapJobs) {
-        if (job.usedPath) {
-          job.usedPath.forEach(nk => nk in cashFlows ? cashFlows[nk] += job.profit.priceDaily : cashFlows[nk] = job.profit.priceDaily)
-        }
-      }
-      //console.log('currentNodesCashflow', cashFlows)
-      return cashFlows
-    },
-
-    pzjobsSharedConnectionCP(state) {
-      const ret = {}
-      const gameStore = useGameStore()
-      for (const [pzk, job] of Object.entries(state.pzJobs)) {
-        ret[pzk] = {
-          value: 0,
-          tooltip: ""
-        }
-        if (job.usedPath) {
-          job.usedPath.forEach(function(nk) {
-            if (state.routing.autotakenGrindNodes.has(nk)) {
-              return ret // zero-cost
-            }
-            const nodeCostShare = job.profit.priceDaily / state.currentNodesCashflow[nk]
-            const nodeCostShared = gameStore.nodes[nk].CP * nodeCostShare
-            ret[pzk].value += nodeCostShared
-            ret[pzk].tooltip += `${formatFixed(nodeCostShared, 3)} ${gameStore.nodeName(nk)}\n`
-          })
-        }
-      }
-      //console.log('pzjobsSharedConnectionCP', ret)
-      return ret
-    },
-
     pzjobsSharedEfficiency(state) {
       const ret = {}
-      for (const [pzk, job] of Object.entries(state.pzJobs)) {
+      const routingStore = useRoutingStore()
+      for (const [pzk, job] of Object.entries(routingStore.pzJobs)) {
         if (job.usedPath) {
           ret[pzk] = job.profit.priceDaily / state.pzjobsSharedConnectionCP[pzk]
         }
@@ -1089,7 +900,9 @@ export const useUserStore = defineStore({
         const tk = gameStore.tnk2tk(tnk)
         ret[tk] = this.townInfra(tk, 
           state.townWorkingWorkers(tk).length, 
-          state.townsStoreItemkeys[tk] ? state.townsStoreItemkeys[tk].size : 0)
+          state.townsStoreItemkeys[tk] ? state.townsStoreItemkeys[tk].size : 0
+        )
+        if (isNaN(ret[tk].cost)) throw Error(`no infra for tk=${tk}`)
       })
 
       //console.log('townsInfra', ret)
@@ -1203,90 +1016,6 @@ export const useUserStore = defineStore({
       return ret
     },
 
-    workerIncome: (state) => (w) => {
-      const gameStore = useGameStore()
-      if (gameStore.jobIsIdle(w.job))
-        return 0
-      if (gameStore.jobIsPz(w.job)) {
-        if (state.pzJobs[w.job.pzk] == undefined) {
-          throw Error(`pzjob ${w.job.pzk} is undefined`)
-        }
-        return state.pzJobs[w.job.pzk].profit.priceDaily
-      }
-      if (gameStore.jobIsFarming(w.job))
-        return state.farmingProfitPerWorker
-      if (gameStore.jobIsCustom(w.job))
-        return w.job.profit
-      if (gameStore.jobIsWorkshop(w.job)) {
-        const hk = w.job.hk
-        const workshop = state.getUserWorkshop(hk)
-        const profit = gameStore.profitWorkshopWorker(hk, workshop, w).priceDaily
-        return profit
-      }
-      return undefined
-    },
-
-    workerSharedConnectionCP: (state) => (w) => {
-      let ret = undefined
-      const gameStore = useGameStore()
-      if (gameStore.jobIsPz(w.job))
-        ret = state.pzjobsSharedConnectionCP[w.job.pzk].value
-      if (gameStore.jobIsFarming(w.job))
-        ret = 0
-      if (gameStore.jobIsCustom(w.job))
-        ret = w.job.cp
-      if (gameStore.jobIsWorkshop(w.job)) {
-        const workersAtWorkshop = state.workersWorkshop.filter(ww => ww.job.hk == w.job.hk).length
-        ret = state.getUserWorkshop(w.job.hk).manualCp / workersAtWorkshop
-      }
-      //console.log(`workerSharedConnectionCP ${w.label} = ${ret}`)
-      return ret
-    },
-
-    workerSharedLodgageCP: (state) => (w) => {
-      const ret = {
-        value: undefined,
-        tooltip: '?'
-      }
-      const gameStore = useGameStore()
-      if (!gameStore.ready)
-        return ret
-      const income = state.workerIncome(w)
-      const tk = gameStore.tnk2tk(w.tnk)
-      const townInfraCp = state.townsInfra[tk].cost  // lodging for pz+ws + storage for pz+personal
-      
-      const townTotalWorkers = state.userWorkers.filter(w => gameStore.tnk2tk(w.tnk) == tk).length
-      const townTotalIncome = state.townsTotalIncome[tk].income
-
-      if (state.townsTotalIncome[tk].hasNegativeJob || townTotalIncome == 0)  {
-        ret.value = townInfraCp / townTotalWorkers
-        ret.tooltip = `= total lodgage costs of hometown shared equally between all active jobs from that town:\n` +
-        `${townInfraCp}CP / ${townTotalWorkers}`
-      }
-      else {
-        if (townTotalWorkers == 1) {
-          ret.value = townInfraCp
-          ret.tooltip = `= all costs of ${gameStore.nodeName(w.tnk)} lodgage`
-        }
-        else {
-          ret.value = townInfraCp * (income / townTotalIncome)
-          ret.tooltip = `= total lodgage costs of hometown shared proportionally between all active jobs from that town:\n` +
-          `${townInfraCp}CP * (${formatFixed(income, 3)} / ${formatFixed(townTotalIncome, 3)})`
-        }
-      }
-      return ret
-    },
-
-    workerIncomePerCp: (state) => (w) => {
-      const income = state.workerIncome(w)
-      const sharedCp = state.workerSharedConnectionCP(w)
-      const sharedLodgage = state.workerSharedLodgageCP(w).value
-      const ret = income / (sharedCp + sharedLodgage)
-      if (isNaN(ret)) 
-        console.log(`workerIncomePerCp: ${formatFixed(income, 2)} / (${formatFixed(sharedCp, 2)} + ${formatFixed(sharedLodgage, 2)}) = ${formatFixed(ret, 2)} for worker ${w.label}`)
-      return ret
-    },
-
     workersSortedByIncomePerCp(state) {
       const start = Date.now()
       const ret = []
@@ -1350,13 +1079,17 @@ export const useUserStore = defineStore({
     
     workedPlantzones(state) {
       //const jobList = this.workingWorkers.map(({job}) => job)
-      const jobList = Object.keys(state.pzJobs)
+      const routingStore = useRoutingStore()
+      if (!routingStore.pzJobs) return new Set()
+      const jobList = Object.keys(routingStore.pzJobs)
       return new Set(jobList)
     },
 
     pzJobsTotalDailyProfit(state) {
       let sum = 0
-      for (const [pzk, job] of Object.entries(state.pzJobs)) {
+      const routingStore = useRoutingStore()
+      if (!routingStore.pzJobs) return sum
+      for (const [pzk, job] of Object.entries(routingStore.pzJobs)) {
         sum += job.profit.priceDaily
       }
       return sum
@@ -1364,7 +1097,9 @@ export const useUserStore = defineStore({
 
     pzJobsTotalLodgingCost(state) {
       let sum = 0
-      for (const [pzk, job] of Object.entries(state.pzJobs)) {
+      const routingStore = useRoutingStore()
+      if (!routingStore.pzJobs) return sum
+      for (const [pzk, job] of Object.entries(routingStore.pzJobs)) {
         sum += state.workerSharedLodgageCP(job.worker).value
       }
       return sum
@@ -1372,7 +1107,8 @@ export const useUserStore = defineStore({
 
     pzJobsDailyProfitPerCp(state) {
       // can return NaN
-      return this.pzJobsTotalDailyProfit / (state.autotakenNodesCP + state.pzJobsTotalLodgingCost)     
+      const routingStore = useRoutingStore()
+      return this.pzJobsTotalDailyProfit / (routingStore.routing.autotakenNodesCP + state.pzJobsTotalLodgingCost)     
     },
 
 
@@ -1500,8 +1236,8 @@ export const useUserStore = defineStore({
 
 
     totalCP(state) {
-      // grind nodes cost exluded
-      return state.autotakenNodesCP 
+      const routingStore = useRoutingStore()
+      return routingStore.routing.autotakenNodesCP 
       + state.farmingCP 
       + state.lodgage
       + state.workshopTotalCP
@@ -1558,7 +1294,10 @@ export const useUserStore = defineStore({
       const ret = {}
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
-      for (const [pzk, job] of Object.entries(state.pzJobs)) {
+      const routingStore = useRoutingStore()
+      if (!routingStore.pzJobs) return ret
+      
+      for (const [pzk, job] of Object.entries(routingStore.pzJobs)) {
         const pzd = gameStore.plantzones[pzk]
         const luck = gameStore.workerStatsOnPlantzone(job.worker).luck
         const hasLucky = pzd.lucky
@@ -1592,11 +1331,13 @@ export const useUserStore = defineStore({
     cyclesTally(state) {
       let ret = {pz: 0, workshop: 0, chicken: 0}
       const gameStore = useGameStore()
+      const routingStore = useRoutingStore()
       if (!gameStore.ready) return ret
-      this.workingWorkers.forEach(worker => {
+      for (const worker of state.workingWorkers) {
         if (!worker) return
         if (gameStore.jobIsPz(worker.job)) {
-          const pzJob = state.pzJobs[worker.job.pzk]
+          if (!routingStore.pzJobs) continue
+          const pzJob = routingStore.pzJobs[worker.job.pzk]
           ret.pz += pzJob.profit.cyclesDaily
         }
         if (gameStore.jobIsWorkshop(worker.job)) {
@@ -1604,7 +1345,7 @@ export const useUserStore = defineStore({
           const workshop = state.getUserWorkshop(hk)
           ret.workshop += gameStore.measureWorkshopWorker(hk, workshop, worker).cyclesDaily
         }
-      })
+      }
       
       //console.log('cyclesTally getter', ret)
       ret.chicken = (ret.pz + ret.workshop) / 3
@@ -1629,35 +1370,7 @@ export const useUserStore = defineStore({
       return this.tradingLevel * 0.005;
     },
 
-    applyWorkarounds: (state) => (currentSolution, currentInput) => {
-      const gameStore = useGameStore()
-      const grindNodeTryTown = {
-        1152: 1002,
-      }
-
-      for (const nd of state.grindTakenList) {
-        if (nd in grindNodeTryTown) {
-          const grindNode = nd
-          const tryTown = grindNodeTryTown[nd]
-          const altInput = []  
-          for (const pair of currentInput) {
-            // replace a "wildcard town" 99999 with specific town
-            altInput.push(pair[0] == grindNode && pair[1] == 99999 ? [grindNode, tryTown]: pair)
-          }
-          const altSolution = gameStore.wasmRouter.solveForTerminalPairs(altInput)
-          const altCost = altSolution.reduce((sum, item) => sum + gameStore.nodes[item].CP, 0)
-          const currentCost = currentSolution.reduce((sum, item) => sum + gameStore.nodes[item].CP, 0)
-          if (altCost < currentCost) {
-            console.log(`workaround applied (${altCost} < ${currentCost})`)
-            return altSolution
-          }
-          else {
-            // console.log(`workaround not applied (${altCost} >= ${currentCost})`)
-          }
-        }
-      }
-      return currentSolution
-    },
+    
   },
 
 });

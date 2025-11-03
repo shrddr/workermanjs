@@ -1,6 +1,7 @@
 import {defineStore} from "pinia";
 import {useMarketStore} from './market'
 import {useUserStore} from './user'
+import {useRoutingStore} from './routing'
 import Heap from 'heap';
 import {extractNumbers, binarySearch} from '../util.js';
 import init, { WasmNodeRouter } from '../pkg/noderouter.js';
@@ -38,6 +39,7 @@ export const useGameStore = defineStore({
     wasmNodesLinks: {},
     wasmBaseTowns: new Set(),
     wasmRouter: null,
+    wasmRouterWithOption: null,
   }),
   
   actions: {
@@ -422,6 +424,11 @@ export const useGameStore = defineStore({
       //console.log('wasm init data', nodesLinks)
       await init()
       this.wasmRouter = new WasmNodeRouter(nodesLinks)
+      //await init()
+      this.wasmRouterWithOption = new WasmNodeRouter(nodesLinks)
+      this.wasmRouterWithOption.setOption("max_removal_attempts", "350")
+      this.wasmRouterWithOption.setOption("max_frontier_rings", "4")
+      this.wasmRouterWithOption.setOption("ring_combo_cutoff", "2")
     },
 
     isGiant(charkey) {
@@ -457,7 +464,7 @@ export const useGameStore = defineStore({
     /*dijTownsInCpRadius(start, cpLimit) {
       //const ts = Date.now()
 
-      const pathCosts = {[start]: userStore.autotakenNodes.has(start) ? 0 : this.nodes[start].CP}
+      const pathCosts = {[start]: routingStore.routing.autotakenNodes.has(start) ? 0 : this.nodes[start].CP}
       const prev = {[start]: null}
       const unvisited = new Heap((a, b) => pathCosts[a] - pathCosts[b])  // note order, must have access
       unvisited.push(start)
@@ -498,10 +505,10 @@ export const useGameStore = defineStore({
       if (!this.ready)
         return
       //const ts = Date.now()
-      const userStore = useUserStore()
+      const routingStore = useRoutingStore()
       let found = new Set()
 
-      const pathCosts = {[start]: userStore.autotakenNodes.has(start) ? 0 : this.nodes[start].CP}
+      const pathCosts = {[start]: routingStore.routing.autotakenNodes.has(start) ? 0 : this.nodes[start].CP}
       const prev = {[start]: null}
       const unvisited = new Heap((a, b) => pathCosts[a] - pathCosts[b])  // note order, must have access
       unvisited.push(start)
@@ -510,7 +517,7 @@ export const useGameStore = defineStore({
       while (unvisited.size()) {
         current = unvisited.pop()
         
-        if (this.pzdSet.has(current) && !userStore.autotakenNodes.has(current)) {
+        if (this.pzdSet.has(current) && !routingStore.routing.autotakenNodes.has(current)) {
           found.add(current)
           if (found.size == pzLimit) {
             break
@@ -518,7 +525,7 @@ export const useGameStore = defineStore({
         }
           
         this.links[current].forEach(neighbor => {
-          const nbrCost = userStore.autotakenNodes.has(neighbor) ? 0 : this.nodes[neighbor].CP
+          const nbrCost = routingStore.routing.autotakenNodes.has(neighbor) ? 0 : this.nodes[neighbor].CP
           const newDistance = pathCosts[current] + nbrCost
           if (neighbor in pathCosts) {
             // already met before, already in heap
@@ -1121,42 +1128,104 @@ export const useGameStore = defineStore({
       return result
     },
 
-    routeOld(autotakenGrindNodes, routees) {
+    routeOld(unused, routees) {
       const ret = {
+        autotakenNodes: new Set(),
+        autotakenNodesCP: 0,
+        autotakenWorkerNodes: new Set(),
+        autotakenWorkerNodesCP: 0,
+        autotakenGrindNodes: new Set(),
+        autotakenGrindNodesCP: 0,
+        autotakenWagonNodes: new Set(),
+        autotakenWagonNodesCP: 0,
+        linkColors: {},
         routeInfos: {},
-        totalCost: 0,
-        //nodeContainsRoute: {},
       }
       const startTime = performance.now()
 
-      const localTaken = new Set([...autotakenGrindNodes])
-      routees.forEach(routee => {
-        const [usedPath, usedPathCost] = this.dijkstraPath(routee.target, routee.source, localTaken)
+      for (const routee of routees) {
+        if (routee.type == 'grind') {
+          const paths = this.dijkstraNearestTowns(Number(routee.nk), 4, ret.autotakenNodes, false, true)
+          const list = paths.sort((a,b)=>a[1]-b[1])  // from lowest to highest CP
+          //console.log('list', list)
+          const [tnk, addCp, usedPath] = list[0]
+          let prev_nk = null
+          for (const nk of usedPath) {
+            if (!ret.autotakenNodes.has(nk)) {
+              ret.autotakenNodes.add(nk)
+              ret.autotakenNodesCP += this.nodes[nk].CP
+              ret.autotakenGrindNodes.add(nk)
+              ret.autotakenGrindNodesCP += this.nodes[nk].CP
+            }
+            if (prev_nk) ret.linkColors[(prev_nk < nk) ? `${prev_nk}-${nk}` : `${nk}-${prev_nk}`] ??= 'grind'
+            prev_nk = nk
+          }
+        } 
+        if (routee.type == 'worker') {
+          const [usedPath, usedPathCost] = this.dijkstraPath(routee.target, routee.source, ret.autotakenNodes)
+          if (!usedPath) continue
 
-        if (!usedPath) return
-
-        usedPath.forEach(nk => localTaken.add(nk))
-        const routeInfo = { usedPath, usedPathCost }
-
-        if (!(routee.source in ret.routeInfos)) ret.routeInfos[routee.source] = {}
-        ret.routeInfos[routee.source][routee.target] = routeInfo
-
-      })
-
-      //console.log('localTaken', localTaken)
-      for (const nk of localTaken) {
-        ret.totalCost += this.nodes[nk].CP
+          let prev_nk = null
+            for (const nk of usedPath) {
+              if (!ret.autotakenNodes.has(nk)) {
+                ret.autotakenNodes.add(nk)
+                ret.autotakenNodesCP += this.nodes[nk].CP
+                ret.autotakenWorkerNodes.add(nk)
+                ret.autotakenWorkerNodesCP += this.nodes[nk].CP
+              }
+              if (prev_nk) ret.linkColors[(prev_nk < nk) ? `${prev_nk}-${nk}` : `${nk}-${prev_nk}`] ??= 'worker'
+              prev_nk = nk
+            }
+          const routeInfo = { usedPath, usedPathCost }
+          ret.routeInfos[routee.source] ??= {}
+          ret.routeInfos[routee.source][routee.target] = routeInfo
+        }
+        if (routee.type == 'ancado') {
+          const toTowns = this.dijkstraNearestTowns(1343, 4, ret.autotakenNodes, false, true)
+          const list = toTowns.sort((a,b)=>a[1]-b[1])
+          //console.log('list', list)
+          const [tnk, addCp, usedPath] = list[0]
+          let prev_nk = null
+          for (const nk of usedPath) {
+            if (!ret.autotakenNodes.has(nk)) {
+              ret.autotakenNodes.add(nk)
+              ret.autotakenNodesCP += this.nodes[nk].CP
+              ret.autotakenWorkerNodes.add(nk)
+              ret.autotakenWorkerNodesCP += this.nodes[nk].CP
+            }
+            if (prev_nk) ret.linkColors[(prev_nk < nk) ? `${prev_nk}-${nk}` : `${nk}-${prev_nk}`] ??= 'worker'
+            prev_nk = nk
+          }
+        }
+        if (routee.type == 'wagon') {
+          const [usedPath, usedPathCost] = this.dijkstraPath(routee.target, routee.source, ret.autotakenNodes)
+          if (!usedPath) continue
+          
+          let prev_nk = null
+          for (const nk of usedPath) {
+            if (!ret.autotakenNodes.has(nk)) {
+              ret.autotakenNodes.add(nk)
+              ret.autotakenNodesCP += this.nodes[nk].CP
+              ret.autotakenWagonNodes.add(nk)
+              ret.autotakenWagonNodesCP += this.nodes[nk].CP
+            }
+            if (prev_nk) ret.linkColors[(prev_nk < nk) ? `${prev_nk}-${nk}` : `${nk}-${prev_nk}`] ??= 'wagon'
+            prev_nk = nk
+          }
+        }
       }
+
       const took = performance.now() - startTime
       console.log('routeOld took', took.toFixed(2), 'ms')
 
       return ret
     },
 
+    // used for routertest only
     routeWasm(grindTakenList, routees) {
       const ret = {
         routeInfos: {},
-        totalCost: 0,
+        autotakenNodesCP: 0,
       }
       
       const terminalPairs = []
@@ -1179,13 +1248,16 @@ export const useGameStore = defineStore({
       })
 
       for (const nk of activatedNodes) {
-        ret.totalCost += this.nodes[nk].CP
+        ret.autotakenNodesCP += this.nodes[nk].CP
       }
 
       return ret
     },
 
     miniDijkstra(filteredNodes, start, finish) {
+      // Finds which nodes need to be activated to provide a path from `start` to `finish`, 
+      // using only a reduced subset of nodes `filteredNodes` (not the full game map).
+      // Returns an array of [start, ... , finish] and the full cost (not reduced by previous calls)
       const ts = Date.now()
       //console.log('miniDijkstra', filteredNodes, start, finish)
       const filteredSet = new Set(filteredNodes)

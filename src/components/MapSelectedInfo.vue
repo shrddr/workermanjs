@@ -1,5 +1,6 @@
 <script>
 import {useUserStore} from '../stores/user'
+import {useRoutingStore} from '../stores/routing'
 import {useGameStore} from '../stores/game'
 import {useMarketStore} from '../stores/market'
 import {useMapStore} from '../stores/map'
@@ -12,6 +13,7 @@ import Plantzone from '../components/Plantzone.vue'
 export default {
   setup() {
     const userStore = useUserStore()
+    const routingStore = useRoutingStore()
     const gameStore = useGameStore()
     const marketStore = useMarketStore()
     const mapStore = useMapStore()
@@ -26,7 +28,7 @@ export default {
       console.log('userStore subscription took', Date.now()-start, 'ms')
     })
 
-    return { marketStore, userStore, gameStore, mapStore }
+    return { marketStore, userStore, routingStore, gameStore, mapStore }
   },
   components: {
     Worker,
@@ -54,7 +56,7 @@ export default {
   methods: {
     formatFixed,
     jobCashFlowPercent(job) {
-      return job.profit.priceDaily / this.userStore.currentNodesCashflow[this.clickedNode.key]
+      return job.profit.priceDaily / this.routingStore.currentNodesCashflow[this.clickedNode.key]
     },
 
     selectLodging(tk) {
@@ -141,8 +143,8 @@ export default {
     <div id="clickedNodeName" v-if="gameStore.isConnectionNode(clickedNode.key)">
       <p>
         {{ gameStore.uloc.node[clickedNode.key] }}
-        <template v-if="userStore.routing.autotakenGrindNodes.has(clickedNode.key)">
-          <s>{{ clickedNode.thisCpCost }}CP</s> <abbr class="tooltip" title="is involved in a zero-cost path">ℹ</abbr>
+        <template v-if="routingStore.routing.autotakenGrindNodes.has(clickedNode.key)">
+          <s>{{ clickedNode.thisCpCost }}CP</s> <abbr class="tooltip" title="used for grind node">ℹ</abbr>
         </template>
         <template v-else>
           {{ clickedNode.thisCpCost }}CP
@@ -170,13 +172,13 @@ export default {
       </p>
 
       <input type="checkbox" @change="userStore.modifyGrindTakens($event, clickedNode.key)" :checked="userStore.grindTakenSet.has(clickedNode.key)">
-      zero-cost connection to nearest town (invested for droprate)
+      grind node (invested for droprate)
     </div>
 
     <div id="clickedPlantzoneInfo" v-if="gameStore.isPlantzone(clickedNode.key)">
       <template v-if="userStore.grindTakenSet.has(clickedNode.key)">
         <input type="checkbox" @change="userStore.modifyGrindTakens($event, clickedNode.key)" :checked="userStore.grindTakenSet.has(clickedNode.key)">
-        zero-cost connection to nearest town (invested for droprate)
+        grind node (invested for droprate)
       </template>
       
       <Plantzone

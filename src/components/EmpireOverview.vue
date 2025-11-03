@@ -1,5 +1,6 @@
 <script>
 import {useUserStore} from '../stores/user'
+import {useRoutingStore} from '../stores/routing'
 import {useGameStore} from '../stores/game'
 import {useMarketStore} from '../stores/market'
 import {formatFixed, strShortenLeft} from '../util.js'
@@ -9,6 +10,7 @@ import ItemIcon from '../components/lo/ItemIcon.vue'
 export default {
   setup() {
     const userStore = useUserStore()
+    const routingStore = useRoutingStore()
     const gameStore = useGameStore()
     const marketStore = useMarketStore()
 
@@ -18,7 +20,7 @@ export default {
       console.log('userStore subscription took', Date.now()-start, 'ms')
     })*/
 
-    return { gameStore, userStore, marketStore }
+    return { gameStore, userStore, routingStore, marketStore }
   },
 
   emits: [
@@ -248,7 +250,7 @@ export default {
             {{ formatFixed(j.priceDaily, 2) }}
           </td>
           <td class="tac">
-            <abbr :title="Array.from(j.path, nk => `${userStore.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')" class="tooltip">
+            <abbr :title="Array.from(j.path, nk => `${routingStore.routing.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')" class="tooltip">
               {{ formatFixed(j.cp) }}
             </abbr>+<abbr :title="j.townCpTooltip" class="tooltip">{{ formatFixed(j.townCp) }}</abbr>={{ formatFixed(j.cp + j.townCp) }}
           </td>

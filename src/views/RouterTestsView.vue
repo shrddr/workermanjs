@@ -90,7 +90,7 @@ export default {
         testcase,
         resultOld,
         resultWasm,
-        red: resultWasm.totalCost > resultOld.totalCost
+        red: resultWasm.autotakenNodesCP > resultOld.autotakenNodesCP
       }
       return ret
     },

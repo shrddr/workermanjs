@@ -1,5 +1,6 @@
 <script>
 import {useUserStore} from '../stores/user'
+import {useRoutingStore} from '../stores/routing'
 import {useGameStore} from '../stores/game'
 import {formatFixed} from '../util.js'
 import ItemIcon from '../components/lo/ItemIcon.vue'
@@ -8,6 +9,7 @@ import { ref } from 'vue';
 export default {
   setup() {
     const userStore = useUserStore()
+    const routingStore = useRoutingStore()
     const gameStore = useGameStore()
 
     /*userStore.$subscribe((mutation, state) => {
@@ -16,7 +18,7 @@ export default {
       console.log('userStore subscription took', Date.now()-start, 'ms')
     })*/
 
-    return { gameStore, userStore }
+    return { gameStore, userStore, routingStore }
   },
 
   props: {
@@ -111,7 +113,7 @@ export default {
       const wtk = this.gameStore.tnk2tk(this.w.tnk)
       const start = Date.now()
       const maxEntries = 16
-      const localTaken = new Set([...this.userStore.autotakenNodes])
+      const localTaken = new Set([...this.routingStore.routing.autotakenNodes])
 
       for (const [hks, workshop] of Object.entries(this.userStore.userWorkshops)) {
         const hk = Number(hks)
@@ -204,7 +206,7 @@ export default {
           {{ formatFixed(job.profit.priceDaily, 2) }}
         </td>
         <td class="tac">
-          <abbr :title="Array.from(job.path, nk => `${userStore.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')" class="tooltip">
+          <abbr :title="Array.from(job.path, nk => `${routingStore.routing.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')" class="tooltip">
             {{ job.mapCp }}
           </abbr>+<abbr :title="job.infraTooltip" class="tooltip">
             {{ formatFixed(job.townCp) }}
@@ -264,7 +266,7 @@ export default {
           {{ formatFixed(e.profit.priceDaily, 2) }}
         </td>
         <td class="tac">
-          <abbr class="tooltip" :title="'connection cost:\n'+Array.from(e.path, nk => `${userStore.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')">
+          <abbr class="tooltip" :title="'connection cost:\n'+Array.from(e.path, nk => `${routingStore.routing.autotakenNodes.has(nk) ? 0 : gameStore.nodes[nk].CP} ${gameStore.uloc.node[nk]}`).join('\n')">
             {{ e.mapCp }}
           </abbr>+<abbr class="tooltip" title="cost of operating the workshop
 (see Settings > 🏭Workshops)">

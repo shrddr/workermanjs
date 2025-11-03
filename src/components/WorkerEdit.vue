@@ -1,5 +1,6 @@
 <script>
 import {useUserStore} from '../stores/user'
+import {useRoutingStore} from '../stores/routing'
 import {useGameStore} from '../stores/game'
 import {formatFixed, randBetween, levelup} from '../util.js'
 import FloatingResourceEdit from './FloatingResourceEdit.vue'
@@ -8,9 +9,10 @@ import WorkerJobDescription from '../components/WorkerJobDescription.vue'
 export default {
   setup() {
     const userStore = useUserStore()
+    const routingStore = useRoutingStore()
     const gameStore = useGameStore()
 
-    return { gameStore, userStore }
+    return { gameStore, userStore, routingStore }
   },
 
   components: {
@@ -529,7 +531,7 @@ export default {
           <td>skills:</td>
           <td>
             <div style="float:right;">
-              <button :disabled="!(workerEditing.job && workerEditing.job.pzk in userStore.pzJobs)" @click="suggestBestSkills(workerEditing.level, true)">
+              <button :disabled="!(workerEditing.job && workerEditing.job.pzk in this.routingStore.pzJobs)" @click="suggestBestSkills(workerEditing.level, true)">
                 optimize
               </button>
             </div>
