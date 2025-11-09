@@ -134,7 +134,7 @@ export const useRoutingStore = defineStore({
 
         const [list1, cost1] = gameStore.wasmRouter.solveForTerminalPairs(terminalPairs)
         if (userStore.wasm.tryMoreFrontierRings) {
-          gameStore.wasmRouter.setOption("max_frontier_rings", "4")
+          gameStore.wasmRouter.setOption("max_frontier_rings", "5")
           const [list2, cost2] = gameStore.wasmRouter.solveForTerminalPairs(terminalPairs)
           gameStore.wasmRouter.setOption("max_frontier_rings", "3")
           activatedNodes = cost1 <= cost2 ? list1 : list2
