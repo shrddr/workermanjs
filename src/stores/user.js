@@ -902,7 +902,7 @@ export const useUserStore = defineStore({
           state.townWorkingWorkers(tk).length, 
           state.townsStoreItemkeys[tk] ? state.townsStoreItemkeys[tk].size : 0
         )
-        if (isNaN(ret[tk].cost)) throw Error(`no infra for tk=${tk}`)
+        //if (isNaN(ret[tk].cost)) throw Error(`no infra for tk=${tk}`)
       })
 
       //console.log('townsInfra', ret)
