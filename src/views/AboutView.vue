@@ -232,6 +232,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
+    <li>[2025-08-28 patch] trade wagons carry 2x weight, price per LT reduced 10x</li>
     <li>[2025-08-28 patch] updated Edania housing</li>
     <li>[2025-07-21 patch] added new Edania area with 15 plantzones</li>
       <ul>

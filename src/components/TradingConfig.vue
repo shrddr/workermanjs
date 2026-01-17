@@ -180,7 +180,7 @@ export default {
         const hours = this.transportHours(origin, destination)
         const wagonRuns = Math.ceil(this.pcHours / hours)
         const transportCycles = Math.ceil(this.pcHours / hours)
-        const transportLtPerDay = 5 * transportCycles * 30000
+        const transportLtPerDay = 5 * transportCycles * 60000
         if (!(origin in this.userStore.tradeRouteCp)) this.userStore.tradeRouteCp[origin] = 0
         
         const routeCp = this.userStore.tradeRouteCp[routeBase] // TODO: f(origin, destination)
@@ -245,7 +245,7 @@ export default {
               tradeInfo,
             })
 
-            ret.transport[origDest].needWagons += perf.completionsPerDay * tradeInfo.crateWeight / 30000
+            ret.transport[origDest].needWagons += perf.completionsPerDay * tradeInfo.crateWeight / 60000
 
             ret.total.silver += perf.completionsPerDay * tradeInfo.delta
             ret.total.CP += tradeInfo.cp
@@ -345,7 +345,7 @@ export default {
 
     transportCostPerLt(tnka, tnkb, unconnected) {
       const dist = this.distance(tnka, tnkb)
-      const cost = dist * 1.8 / 30000
+      const cost = dist * 0.18 / 60000
       return unconnected ? cost * 4 : cost
     },
     
