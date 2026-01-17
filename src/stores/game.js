@@ -1224,7 +1224,7 @@ export const useGameStore = defineStore({
     // used for routertest only
     routeWasm(grindTakenList, routees) {
       const ret = {
-        routeInfos: {},
+        autotakenNodes: [],
         autotakenNodesCP: 0,
       }
       
@@ -1241,6 +1241,7 @@ export const useGameStore = defineStore({
       console.log('routeWasm took', took.toFixed(2), 'ms')
 
       ret.autotakenNodesCP = cost
+      ret.autotakenNodes = activatedNodes
 
       return ret
     },
