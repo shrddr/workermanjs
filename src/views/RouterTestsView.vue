@@ -74,7 +74,7 @@ export default {
       const gameStore = useGameStore()
       const routees = []
       for (const pair of testcase.pairs) {
-        routees.push({source: pair[0], target: pair[1]})
+        routees.push({type: 'worker', source: pair[0], target: pair[1]})
       }
 
       //console.log('running', testcase)
@@ -141,20 +141,37 @@ export default {
         for (let i = 0; i < this.real_pair_count; i++) {
           // random town
           const goodTowns = this.all_origins.filter(n => !badNodes.has(n))
-          if (goodTowns.length == 0) break;
+          if (goodTowns.length == 0) {
+            // no more towns, try again from scratch (i=0)
+            badNodes = new Set()
+            testcase.pairs = []
+            i = -1
+          }
           const source = goodTowns[Math.floor(Math.random() * goodTowns.length)]
           // random walk around town
           let target = source
           for (let dist = 0; dist < this.real_steps; dist++) {
+            if (!(target in gameStore.links)) throw Error(`${target} has no links?!`)
             const links = gameStore.links[target]
             const goodLinks = links.filter(n => !badNodes.has(n))
-            target = goodLinks[Math.floor(Math.random() * goodLinks.length)]
-            // one more step if didn't move at all
-            if (target == source) dist--
+            if (goodLinks.length == 0) {
+              // started in a town that is surrounded by badNodes, try again at same i
+              break
+            } else {
+              const pos = Math.floor(Math.random() * goodLinks.length)
+              target = goodLinks[pos]
+              // one more step if walked back to source
+              if (target == source) dist--
+            }
           }
           badNodes.add(target)
-          testcase.pairs.push([source, target])
+          if (target == source) {
+            i-- // try again at same i
+          } else {
+            testcase.pairs.push([source, target])
+          }
         }
+
         const result = this.run_case(testcase)
         if (this.retry_until_red && !result.red) {
           this.green_retries++
@@ -239,10 +256,10 @@ export default {
           <tbody>
             <tr v-for="r in rtp_results">
               <td>
-                {{ r.resultOld.totalCost }}
+                {{ r.resultOld.autotakenNodesCP }}
               </td>
               <td>
-                {{ r.resultWasm.totalCost }}
+                {{ r.resultWasm.autotakenNodesCP }}
               </td>
               <td>
                 {{ r.red ? '❌' : '✔️' }} 
@@ -289,10 +306,10 @@ export default {
           <tbody>
             <tr v-for="r in real_results">
               <td>
-                {{ r.resultOld.totalCost }}
+                {{ r.resultOld.autotakenNodesCP }}
               </td>
               <td>
-                {{ r.resultWasm.totalCost }}
+                {{ r.resultWasm.autotakenNodesCP }}
               </td>
               <td>
                 {{ r.red ? '❌' : '✔️' }} 
