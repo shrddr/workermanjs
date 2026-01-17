@@ -1,5 +1,5 @@
 <script>
-import {useGameStore} from '../stores/game'
+import {useGameStore} from '../stores/game.js'
 import {useUserStore} from '../stores/user'
 import {formatFixed, percentageToColor} from '../util.js'
 import WorkerJobDescription from '../components/WorkerJobDescription.vue'

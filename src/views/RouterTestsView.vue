@@ -78,7 +78,7 @@ export default {
       }
 
       //console.log('running', testcase)
-      const resultOld = gameStore.routeOld([], routees)
+      const resultOld = gameStore.routeOld(routees)
       const resultWasm = gameStore.routeWasm([], routees)
 
       testcase.str = ""

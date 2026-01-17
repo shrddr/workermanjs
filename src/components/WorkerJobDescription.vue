@@ -1,6 +1,6 @@
 <script>
 import {useUserStore} from '../stores/user'
-import {useGameStore} from '../stores/game'
+import {useGameStore} from '../stores/game.js'
 import {formatFixed, extractNumbers} from '../util.js'
 import ItemIcon from '../components/lo/ItemIcon.vue'
 
@@ -25,22 +25,19 @@ export default {
     extractNumbers,
 
     workshop_text(w) {
-      const contextTnk = w.tnk
+      const homeTnk = w.tnk
 
       const houseName = this.gameStore.uloc.char[w.job.hk]
-      let houseShort = extractNumbers(houseName)
+      let houseShort = houseName
 
-      if (contextTnk) {
-        const houseTk = this.gameStore.houseInfo[w.job.hk].affTown
-        const houseTnk = this.gameStore.tk2tnk(houseTk)
-        if (contextTnk != houseTnk) {
-          houseShort = this.gameStore.nodeName(houseTnk) + ' ' + houseShort
+      if (homeTnk) {
+        const jobNk = this.gameStore.houseInfo[w.job.hk].parentNode
+        if (homeTnk == jobNk) {
+          houseShort = extractNumbers(houseName)
         }
       }
       return `${houseShort} ${this.userStore.userWorkshops[w.job.hk].label}`  // + w.job.recipe
     },
-
-
   },
   
 }
@@ -60,10 +57,11 @@ export default {
     [{{ gameStore.jobIcon(w.job) }}] {{ w.job.label }}
   </template>
   <template v-else-if="gameStore.jobIsWorkshop(w.job)">
-
-     <template v-if="w.job.recipe && gameStore.craftOutputs[w.job.recipe]">
+    <template v-if="w.job.recipe && gameStore.craftOutputs[w.job.recipe]">
       <template v-for="ik in gameStore.craftOutputs[w.job.recipe]">
-        <ItemIcon :ik="ik"/>
+        <abbr :title="gameStore.itemName(ik)">
+          <ItemIcon :ik="ik"/>
+        </abbr>
       </template>
     </template>
     <template v-else>

@@ -489,6 +489,13 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Todo</h2>
+    <li>housecraft viewer > something about workshops</li>
+    <ul>
+      <li>either automatic lateral movement</li>
+      <li>or at least "highlight workshops on tree" visual option</li>
+    </ul>
+    <li>worker editor > thrifty should improve crate profit + make optimize button work</li>
+    <li>add navigation to housecraft viewer from town config > found cost</li>
     <li>workshop name should include node name instead of affiliated town</li>
     <li>remote workshops require node connections, check if shared correctly</li>
     <li>stacking outputs from everywhere in 1 town makes that town less efficient - incorrect</li>

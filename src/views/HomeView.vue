@@ -1,6 +1,6 @@
 <script>
 import draggable from "vuedraggable";
-import {useGameStore} from '../stores/game'
+import {useGameStore} from '../stores/game.js'
 import {useUserStore} from '../stores/user'
 import {useRoutingStore} from '../stores/routing'
 import {useMarketStore} from '../stores/market'
@@ -529,31 +529,48 @@ export default {
           </details>
 
           <details>
-            <summary>Total CP: {{ formatFixed(userStore.totalCP) }}</summary>
+            <summary>Total CP: {{ formatFixed(userStore.totalCP, 2, false, true) }}</summary>
             <p class="fsxs">
               
-              <draggable v-model="userStore.linkOrder" itemKey="id">
+              <draggable v-if="userStore.strictPriority || !userStore.wasmRouting" v-model="userStore.linkOrder" itemKey="id">
                 <template #item="{ element, index }">
                   <div class="draggable">
                     {{ index+1 }}.
                     <template v-if="element.name == 'grind'">
                       invested for droprate: 
                       <abbr class="tooltip" :title="userStore.grindTakenDesc">
-                        {{ routingStore.routing.autotakenGrindNodesCP }}
+                        {{ formatFixed(routingStore.routing.autotakenGrindNodesCP, 2, false, true) }}
                       </abbr><br/>
                     </template>
                     <template v-else-if="element.name == 'worker'">
-                      nodes: {{ routingStore.routing.autotakenWorkerNodesCP }} <br/>
+                      nodes: {{ formatFixed(routingStore.routing.autotakenWorkerNodesCP, 2, false, true) }} <br/>
                     </template>
                     <template v-else-if="element.name == 'wagon'">
                       wagon routes: 
                       <abbr class="tooltip" :title="[...userStore.wagonRoutes].reduce((acc, rt) => acc + `${gameStore.uloc.node[rt.origin]} - ${gameStore.uloc.node[rt.destination]}\n`, '')">
-                        {{ routingStore.routing.autotakenWagonNodesCP }}
+                        {{ formatFixed(routingStore.routing.autotakenWagonNodesCP, 2, false, true) }}
                       </abbr><br/>
                     </template>
                   </div>
                 </template>
               </draggable>
+              <template v-else>
+                <p v-if="routingStore.routing.autotakenGrindNodesCP != 0">
+                  invested for droprate:
+                  <abbr class="tooltip" :title="userStore.grindTakenDesc">
+                    {{ formatFixed(routingStore.routing.autotakenGrindNodesCP, 2, false, true) }}
+                  </abbr>
+                </p>
+                <p v-if="routingStore.routing.autotakenWagonNodesCP != 0">
+                  wagon routes: 
+                  <abbr class="tooltip" :title="[...userStore.wagonRoutes].reduce((acc, rt) => acc + `${gameStore.uloc.node[rt.origin]} - ${gameStore.uloc.node[rt.destination]}\n`, '')">
+                    {{ formatFixed(routingStore.routing.autotakenWagonNodesCP, 2, false, true) }}
+                  </abbr>
+                </p>
+                <p v-if="routingStore.routing.autotakenWorkerNodesCP != 0">
+                  nodes: {{ formatFixed(routingStore.routing.autotakenWorkerNodesCP, 2, false, true) }}
+                </p>
+              </template>
 
               lodging/storage: {{ userStore.lodgage }} <br/>
                 
@@ -609,7 +626,9 @@ export default {
           </details>
 
           <input type="checkbox" id="wr_cb" v-model="userStore.wasmRouting">
-            <label for="wr_cb"> wasm routing</label><br/>
+          <label for="wr_cb"> wasm routing</label><br/>
+          <input type="checkbox" id="wr_cb" v-model="userStore.strictPriority">
+          <label for="wr_cb"> strict priority</label><br/>
           <!--<input type="checkbox" v-model="userStore.wasm.tryMoreFrontierRings">
           tryMoreFrontierRings<br/>
           <input 

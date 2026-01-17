@@ -5,7 +5,7 @@ import {useRoutingStore} from '../stores/routing'
 import {useMarketStore} from '../stores/market'
 import {useMapStore} from '../stores/map'
 import {Deck, OrthographicView, LinearInterpolator, TransitionInterpolator} from '@deck.gl/core';
-import {BitmapLayer, LineLayer, IconLayer} from '@deck.gl/layers';
+import {BitmapLayer, LineLayer, PathLayer, IconLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
 import Heap from 'heap';
 import {makeIconImg, formatFixed} from '../util.js'
@@ -92,6 +92,7 @@ export default {
     highlightedIconLayer: null,
     lineData: [],
     lineLayer: null,
+    pathLayer: null,
     clickedObject: null,
     pzkSelectedTown: {},
     initialViewState: {
@@ -147,7 +148,7 @@ export default {
     'userStore.mapHideInactive'(newValue) {
       this.updateLayers()
     },
-    'linesCalc'(newValue) {
+    'pathsCalc'(newValue) {
       this.updateLayers()
     },
     'highlightNodes'(newValue) {
@@ -212,10 +213,10 @@ export default {
       const highlighteds = []
       this.iconData.forEach(([key, kind]) => {
         if (key in this.gameStore.nodes) {
+          // by autotaken
           const taken = this.routingStore.routing.autotakenNodes.has(key)
           if (this.userStore.mapHideInactive && !taken) {
             this.hiddenNodesCount += 1
-            //return
           }
           // by search
           const isHighlighted = this.highlightNodes && this.highlightNodes.has(key)
@@ -226,10 +227,6 @@ export default {
             taken,
             isHighlighted,
             thisCpCost: this.gameStore.ready ? this.gameStore.nodes[key].CP : 0,
-            // not displayed:
-            //fromTown: this.scores.needTakes[key][0],
-            //fromTownCpCost: this.scores.pathCosts[key],
-            //fromTownPath: this.scores.needTakes[key],
           }
 
           ret.push({
@@ -248,24 +245,39 @@ export default {
     },
 
     linesCalc() {
-      const colorInactive = [172,172,172,255]
-      const colorWorker =   [255,179,  0,255]
-      const colorGrind =    [255,109,  0,255]
-      const colorWagon =    [255, 49,  0,255]
+      const COLORS = {
+        'inactive': [172,172,172,255],
+        'worker':   [255,179,  0,255],
+        'grind':    [255,109,  0,255],
+        'wagon':    [255, 49,  0,255],
+      }
       
       let ret = []
       this.lineData.forEach(([a, b]) => {
-        let color = colorInactive
-        const key = `${a}-${b}`
-        if (key in this.routingStore.routing.linkColors) {
-          if (this.routingStore.routing.linkColors[key] == 'grind') {
-            color = colorGrind
+        let color = COLORS['inactive']
+        const linkid = `${a}-${b}`
+        if (linkid in this.routingStore.routing.linkColors) {
+          const colorDesc = this.routingStore.routing.linkColors[linkid]
+          if (typeof(colorDesc) == 'string') {
+            // either 'worker', 'grind', or 'wagon'
+            color = COLORS[colorDesc]
           }
-          else if (this.routingStore.routing.linkColors[key] == 'worker') {
-            color = colorWorker
-          }
-          else if (this.routingStore.routing.linkColors[key] == 'wagon') {
-            color = colorWagon
+          else if (typeof(colorDesc) == 'object') {
+            // {'worker': 1, 'wagon': 9} -> 10% yellow, 90% red
+            let totalWeight = 0
+            const mixed = [0, 0, 0, 0]
+            for (const colorType in colorDesc) {
+              if (!COLORS[colorType]) continue
+              const weight = colorDesc[colorType]
+              totalWeight += weight
+              for (let i = 0; i < 4; i++) {
+                mixed[i] += COLORS[colorType][i] * weight
+              }
+            }
+            for (let i = 0; i < 4; i++) {
+              mixed[i] /= totalWeight
+            }
+            color = mixed
           }
         }
 
@@ -276,62 +288,87 @@ export default {
         })
       })
 
-      const colorSpreadPlantzone = [64,255,0,255]
-      const colorSpreadWorkshop = [34,222,168,255]
+      //console.log('linesCalc', ret)
+      return ret
+    },
 
-      if (this.clickedObject) {
-        if (this.clickedObject.key in this.routingStore.pzJobs) {
-          const job = this.routingStore.pzJobs[this.clickedObject.key]
-          let prev = undefined
-          for (const nk of job.usedPath) {
-            if (prev)
-              ret.push({
-                start: this.iconPositions[prev],
-                end: this.iconPositions[nk],
-                color: colorSpreadPlantzone,
-              })
-            prev = nk
+    pathsCalc() {
+      const highlightColor = [255,255,255,70]
+      
+      let ret = []
+      if (!this.clickedObject) return ret
+
+      // [middle] any to any
+      if (this.clickedObject.key in this.routingStore.nodesUsedBy) {
+        for (const mapJob of this.routingStore.nodesUsedBy[this.clickedObject.key]) {
+          const path = []
+          for (const nk of mapJob.route.usedPath) {
+            path.push(this.iconPositions[nk][0])
+            path.push(this.iconPositions[nk][1])
           }
-        }
-        if (this.gameStore.isLodgingTown(this.clickedObject.key)) {
-          const tk = this.gameStore.tnk2tk(this.clickedObject.key)
-          this.userStore.townWorkers(tk).forEach(w => {
-            if (this.gameStore.jobIsPz(w.job)) {
-              const job = this.routingStore.pzJobs[w.job.pzk]
-
-              let prev = undefined
-              for (const nk of job.usedPath) {
-                if (prev)
-                  ret.push({
-                    start: this.iconPositions[prev],
-                    end: this.iconPositions[nk],
-                    color: colorSpreadPlantzone,
-                  })
-                prev = nk
-              }
-            }
-            if (this.gameStore.jobIsWorkshop(w.job)) {
-              // multiple workers can meet this criteria but we only need one
-              const job = this.routingStore.wsJobs.find(j => 
-                j.worker.tnk == this.clickedObject.key &&
-                j.hk == w.job.hk
-              )
-              
-              let prev = undefined
-              for (const nk of job.usedPath) {
-                if (prev)
-                  ret.push({
-                    start: this.iconPositions[prev],
-                    end: this.iconPositions[nk],
-                    color: colorSpreadWorkshop,
-                  })
-                prev = nk
-              }
-            }
-          })
+          ret.push({path, color: highlightColor})
         }
       }
-      //console.log('linesCalc', ret)
+
+      // [end] plantzone to town
+      /*if (this.clickedObject.key in this.routingStore.pzJobs) {
+        const job = this.routingStore.pzJobs[this.clickedObject.key]
+        const path = []
+        for (const nk of job.route.usedPath) {
+          path.push(this.iconPositions[nk][0])
+          path.push(this.iconPositions[nk][1])
+        }
+        ret.push({path, color: colorSpreadPlantzone})
+      }
+      // [start] town to ...
+      if (this.gameStore.isLodgingTown(this.clickedObject.key)) {
+        const tk = this.gameStore.tnk2tk(this.clickedObject.key)
+        this.userStore.townWorkers(tk).forEach(w => {
+          if (this.gameStore.jobIsPz(w.job)) {
+            // ... plantzone
+            const mapJob = this.routingStore.pzJobs[w.job.pzk]
+            const path = []
+            for (const nk of mapJob.route.usedPath) {
+              path.push(this.iconPositions[nk][0])
+              path.push(this.iconPositions[nk][1])
+            }
+            ret.push({path, color: colorSpreadPlantzone})
+          }
+          if (this.gameStore.jobIsWorkshop(w.job)) {
+            // ... workshop
+            const mapJobWorkshop = this.routingStore.wsJobs.find(j => 
+              j.worker.tnk == this.clickedObject.key &&
+              j.hk == w.job.hk
+            )
+            const pathWorkshop = []
+            for (const nk of mapJobWorkshop.route.usedPath) {
+              pathWorkshop.push(this.iconPositions[nk][0])
+              pathWorkshop.push(this.iconPositions[nk][1])
+            }
+            ret.push({path: pathWorkshop, color: colorSpreadWorkshop})
+          }
+        })
+      }
+
+      // [start] town to town (wagon)
+      const wagonRoute = this.userStore.wagonRoutes.find(j => 
+        j.origin == this.clickedObject.key || j.destination == this.clickedObject.key
+      )
+      if (wagonRoute) {
+        const mapJobWagon = this.routingStore.mapJobs.find(j => 
+          j.nk_orig == wagonRoute.origin
+        )
+        if (mapJobWagon) {
+          const pathWagon = []
+          for (const nk of mapJobWagon.route.usedPath) {
+            pathWagon.push(this.iconPositions[nk][0])
+            pathWagon.push(this.iconPositions[nk][1])
+          }
+          ret.push({path: pathWagon, color: colorSpreadWorkshop})
+        }
+      }*/
+      
+      //console.log('pathsCalc', ret)
       return ret
     },
   },
@@ -438,6 +475,24 @@ export default {
       })
     },
 
+    makePathLayer() {
+      return new PathLayer({
+        data: this.pathsCalc,
+        getPath: d => d.path,
+        positionFormat: 'XY',
+        getColor: d => d.color,
+        widthMinPixels: 5,
+        //getWidth: 1000,
+        //jointRounded: true,
+        modelMatrix: [
+          1, 0, 0, 0,
+          0, -1, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1
+        ],
+      })
+    },
+
     initializeDeck() {
       console.log('initializeDeck', this.initialViewState, this.mapStore.target)
 
@@ -466,6 +521,7 @@ export default {
         }
       })
       this.lineLayer = this.makeLineLayer()
+      this.pathLayer = this.makePathLayer()
       this.iconLayer = this.makeIconsLayer()
       this.highlightedIconLayer = this.makeHighlightedIconsLayer()
       
@@ -480,6 +536,7 @@ export default {
         
         layers: [
           this.tileLayer,
+          this.pathLayer,
           this.lineLayer,
           this.iconLayer,
           this.highlightedIconLayer,
@@ -501,11 +558,13 @@ export default {
         return
       console.log('updateLayers')
       this.lineLayer = this.makeLineLayer()
+      this.pathLayer = this.makePathLayer()
       this.highlightedIconLayer = this.makeHighlightedIconsLayer()
       this.iconLayer = this.makeIconsLayer()
       this.deck.setProps({
         layers: [
           this.tileLayer,
+          this.pathLayer,
           this.lineLayer,
           this.iconLayer,
           this.highlightedIconLayer,
@@ -523,6 +582,7 @@ export default {
       this.deck.setProps({
         layers: [
           this.tileLayer,
+          this.pathLayer,
           this.lineLayer,
           this.iconLayer,
           this.highlightedIconLayer,

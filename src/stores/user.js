@@ -1,7 +1,9 @@
 import {defineStore} from "pinia";
 import {useGameStore} from './game'
+import {useMarketStore} from './market'
 import {useRoutingStore} from './routing'
-import {searchSorted, formatFixed} from '../util.js'
+import {searchSorted, formatFixed, hoursToHMS} from '../util.js'
+import { MapJobWagon } from "../types/all.ts";
 
 export const useUserStore = defineStore({
   id: "user",
@@ -47,6 +49,7 @@ export const useUserStore = defineStore({
     displayProfitPerCp: false,
 
     grindTakenList: [],
+    grindTakenValues: {},
     userWorkshops: {},
     defaultUserWorkshop: {
       industry: 'unknown',
@@ -64,11 +67,13 @@ export const useUserStore = defineStore({
     palaceProfit: 0,
 
     tradeDestinations: {},
+    tradeRouteOn: {},
     tradeRouteAlwaysOn: {},
     tradeInfraCp: {},
-    tradeRouteCp: {},
+    //tradeRouteCp: {},
     tradingLevel: 91,
 
+    strictPriority: false,  // false = share, true = order by category
     linkOrder: [
       { name: 'grind', id: 1 },
       { name: 'worker', id: 2 },
@@ -76,11 +81,11 @@ export const useUserStore = defineStore({
     ],
 
     wasm: {
-      tryMoreFrontierRings: true,
-      //maxRemovalAttempts: 350,
-      //maxFrontierRings: 3,
-      //ringComboCutoff: 2,
+      tryMoreFrontierRings: false,
+      debugMoreFrontierRings: false,
     },
+
+    pcHours: 16,
   }),
   actions: {
   
@@ -292,14 +297,18 @@ export const useUserStore = defineStore({
       return ret
     },
 
-    modifyGrindTakens(e, pzk) {
+    modifyGrindTakens(e, nk) {
+      const newSet = new Set(this.grindTakenSet)
       if (e.target.checked) {
-        this.grindTakenSet.add(pzk)
+        newSet.add(nk)
       }
       else {
-        this.grindTakenSet.delete(pzk)
+        newSet.delete(nk)
       }
-      this.grindTakenList = [...this.grindTakenSet]
+      this.grindTakenList = [...newSet]
+      if (!this.grindTakenValues[nk]) {
+        this.grindTakenValues[nk] = 50
+      }
     },
 
     workerLabel(w) {
@@ -677,28 +686,6 @@ export const useUserStore = defineStore({
       return ret
     },
 
-    wagonRoutes(state) {
-      const uniq = new Set()
-      const ret = []
-      const gameStore = useGameStore()
-      if (!gameStore.ready) return ret
-      for (const worker of this.workingWorkers) {
-        if (gameStore.jobIsWorkshop(worker.job)) {
-          const origin = worker.tnk
-          if (state.tradeRouteAlwaysOn[origin]) {
-            const destination = Number(state.tradeDestinations[origin])
-            //const a = origin < destination ? origin : destination
-            //const b = origin < destination ? destination : origin
-            const key = `${origin}-${destination}`
-            if (uniq.has(key)) continue
-            ret.push({origin, destination})
-            uniq.add(key)
-          }
-        }
-      }
-      return ret
-    },
-
     grindTakenDesc(state) {
       let ret = ""
       const gameStore = useGameStore()
@@ -709,28 +696,13 @@ export const useUserStore = defineStore({
       } 
       return ret
     },
-    
-    
-
-    currentNodesJobs(state) {
-      const nodesJobs = {}
-      const routingStore = useRoutingStore()
-      for (const job of routingStore.mapJobs) {
-        if (job.usedPath) {
-          job.usedPath.forEach(nk => 
-            nk in nodesJobs ? nodesJobs[nk].push(job) : nodesJobs[nk] = [job]
-          )
-        }
-      }
-      return nodesJobs
-    },
 
     pzjobsSharedEfficiency(state) {
       const ret = {}
       const routingStore = useRoutingStore()
-      for (const [pzk, job] of Object.entries(routingStore.pzJobs)) {
-        if (job.usedPath) {
-          ret[pzk] = job.profit.priceDaily / state.pzjobsSharedConnectionCP[pzk]
+      for (const [pzk, mapJob] of Object.entries(routingStore.pzJobs)) {
+        if (mapJob.route.usedPath) {
+          ret[pzk] = mapJob.profit.priceDaily / state.pzjobsSharedConnectionCP[pzk]
         }
       }
       //console.log('pzjobsSharedEfficiency', ret)
@@ -902,7 +874,7 @@ export const useUserStore = defineStore({
           state.townWorkingWorkers(tk).length, 
           state.townsStoreItemkeys[tk] ? state.townsStoreItemkeys[tk].size : 0
         )
-        if (isNaN(ret[tk].cost)) throw Error(`no infra for tk=${tk}`)
+        //if (isNaN(ret[tk].cost)) throw Error(`no infra for tnk=${tnk} tk=${tk}`)
       })
 
       //console.log('townsInfra', ret)
@@ -1089,7 +1061,7 @@ export const useUserStore = defineStore({
       let sum = 0
       const routingStore = useRoutingStore()
       if (!routingStore.pzJobs) return sum
-      for (const [pzk, job] of Object.entries(routingStore.pzJobs)) {
+      for (const job of Object.values(routingStore.pzJobs)) {
         sum += job.profit.priceDaily
       }
       return sum
@@ -1370,6 +1342,254 @@ export const useUserStore = defineStore({
       return this.tradingLevel * 0.005;
     },
 
+    // TRADING //
+
+    wagonRoutes(state) {
+      const dict = {}
+      const ret = []
+      const gameStore = useGameStore()
+      if (!gameStore.ready) return ret
+      for (const worker of this.workingWorkers) {
+        if (gameStore.jobIsWorkshop(worker.job)) {
+          const origin = worker.tnk
+          if (state.tradeRouteOn[origin]) {
+            const destination = Number(state.tradeDestinations[origin])
+            //const a = origin < destination ? origin : destination
+            //const b = origin < destination ? destination : origin
+            const key = `${origin}-${destination}`
+            const wagon = {origin, destination, profit: 0}
+            if (!(key in dict)) {
+              dict[key] = wagon
+            }
+            dict[key].profit += worker.job.profit
+          }
+        }
+      }
+      for (const wagon of Object.values(dict)) {
+        ret.push(wagon)
+      }
+      console.log('wagonRoutes', ret)
+      return ret
+    },
+
+    perTownPerRecipePerThrifty(state) {
+      const ret = {}
+      const routingStore = useRoutingStore()
+      const gameStore = useGameStore()
+      for (const wsj of routingStore.wsJobs) {
+        const tnk = wsj.worker.tnk
+        const rcp = wsj.worker.job.recipe
+        const thriftyPercent = wsj.thriftyWorks ? wsj.thriftyPercent : 'x'
+        if (!(rcp in gameStore.craftInputs)) {
+          console.log('rcp', rcp, 'not supported')  // non stackable
+          continue
+        }
+        const repeatGroup = gameStore.craftInfo[rcp].rp
+
+        ret[tnk] ??= {}
+        ret[tnk][rcp] ??= {}
+        ret[tnk][rcp][thriftyPercent] ??= {  // `perf`
+          repeatGroup,
+          workers: 0, 
+          cyclesPerDay: 0, 
+          completionsPerDay: 0,
+          workload: gameStore.craftInfo[rcp].wl,
+        } 
+        
+        ret[tnk][rcp][thriftyPercent].workers += 1
+        const industry = gameStore.craftInfo[rcp].rp
+        const hk = wsj.worker.job.hk
+        const workshop = state.userWorkshops[hk]
+        const cyclesPerDay = gameStore.measureWorkshopWorker(hk, workshop, wsj.worker).cyclesDaily
+        ret[tnk][rcp][thriftyPercent].cyclesPerDay += cyclesPerDay
+        const repeats = gameStore.repeatsWorkshopWorker(wsj.worker, industry)
+        const completionsPerDay = cyclesPerDay * gameStore.craftInfo[rcp].aoc * repeats
+        //console.log(industry, cyclesPerDay, repeats, completionsPerDay)
+        ret[tnk][rcp][thriftyPercent].completionsPerDay += completionsPerDay
+      }
+      return ret
+    },
+
+    townStat(state) {
+      const ret = {}
+      const usedOrigins = new Set()
+      for (const [origin, rcps] of Object.entries(state.perTownPerRecipePerThrifty)) {
+        usedOrigins.add(origin)
+
+        ret[origin] = { 
+          workers: 0,
+          completionsPerDay: 0,
+          completionsPerDayDoubleEnded: 0,  // A→B & B→A connection combined
+          reverseConnection: false,
+        }
+        const destination = state.tradeDestinations[origin]
+        if (usedOrigins.has(destination)) {
+          if (state.tradeDestinations[destination] == origin)
+            ret[origin].reverseConnection = true
+        }
+
+        for (const thrifties of Object.values(rcps)) {
+          for (const perf of Object.values(thrifties)) {
+            ret[origin].workers += perf.workers
+            ret[origin].completionsPerDay += perf.completionsPerDay
+            //ret[origin].lt += perf.completionsPerDay * // crateWeight
+          }
+        }
+
+        if (!ret[origin].reverseConnection) {
+          ret[origin].completionsPerDayDoubleEnded += ret[origin].completionsPerDay
+        }
+        else {
+          ret[destination].completionsPerDayDoubleEnded += ret[origin].completionsPerDay
+          ret[origin].completionsPerDayDoubleEnded = ret[destination].completionsPerDayDoubleEnded
+        }
+      }
+      console.log('townStat', ret)
+      return ret
+    },
+
+    tradingTable(state) {
+      const start = Date.now()
+      const ret = {
+        towns: {},  // tnk: { row, row, ... }
+        transport: {},
+        total: {
+          silver: 0,
+          CP: 0,
+          transportUtilization: 0,
+        },
+      }
+      const gameStore = useGameStore()
+      const marketStore = useMarketStore()
+      const routingStore = useRoutingStore()
+      if (!gameStore.ready) return ret
+      for (const [origin, rcps] of Object.entries(state.perTownPerRecipePerThrifty)) {
+        ret.towns[origin] = []
+        const destination = state.tradeDestinations[origin]
+        const routeBase = state.townStat[origin].reverseConnection ? destination : origin
+
+        const hours = gameStore.transportHours(origin, destination)
+        const wagonRuns = Math.ceil(this.pcHours / hours)
+        const transportCycles = Math.ceil(this.pcHours / hours)
+        const transportLtPerDay = 5 * transportCycles * 60000
+        //if (!(origin in state.tradeRouteCp)) state.tradeRouteCp[origin] = 0
+        //const routeCp = state.tradeRouteCp[routeBase] // TODO: f(origin, destination)
+        const routeCp = routingStore.wagonCpCosts[origin]?.value || 0
+        if (!(origin in state.tradeInfraCp)) state.tradeInfraCp[origin] = 0
+
+        const origDest = `${gameStore.uloc.node[origin]} → ${gameStore.uloc.node[destination]}`
+        if (!(origDest in ret.transport)) {
+          //console.log(this.pcHours, hours, wagonRuns)
+          const haveWagons = 5 * wagonRuns
+          ret.transport[origDest] = {
+            duration: hoursToHMS(hours),
+            wagonRuns,
+            haveWagons,
+            needWagons: 0,
+            utilization: 0,
+          }
+        }
+
+        for (const [rcp, thrifties] of Object.entries(rcps)) {
+          for (const [thriftyPercent, perf] of Object.entries(thrifties)) {
+            const makeCost = gameStore.recipeCost(rcp, Number(thriftyPercent))
+            const avgRepeats = perf.completionsPerDay / perf.cyclesPerDay
+            const feedCost = marketStore.prices[9492]
+            const crateFeedCost = feedCost / 3 / avgRepeats
+            makeCost.val += crateFeedCost
+            makeCost.desc += `${feedCost} / 3 / ${formatFixed(avgRepeats, 2)} = ${formatFixed(crateFeedCost)}\n`
+            const aoc = gameStore.craftInfo[rcp].aoc
+            if (aoc != 1) {
+              makeCost.val /= aoc
+              makeCost.desc += `----------------------\n`
+              makeCost.desc += `divided by ${aoc}\n`
+            }
+
+            //const workshopCostPerCrate = workshopCostDaily * perf.workers / perf.completionsPerDay
+            //makeCost.val += workshopCostPerCrate
+            //makeCost.desc += `${formatFixed(workshopCostDaily/1000000, 2)}M x ${perf.workers} / ${formatFixed(perf.completionsPerDay)} = ${formatFixed(workshopCostPerCrate)}\n`
+
+            const tradeInfo = gameStore.tradeInfo(rcp, origin, destination, state.tradeRouteOn[routeBase])
+
+            tradeInfo.delta = tradeInfo.sellPrice - makeCost.val - tradeInfo.transportFee
+            tradeInfo.deltaDesc = `${formatFixed(tradeInfo.sellPrice)} - ${formatFixed(makeCost.val)} - ${formatFixed(tradeInfo.transportFee)}`
+            tradeInfo.roi = tradeInfo.delta / (makeCost.val + tradeInfo.transportFee)
+            tradeInfo.dailyProfit = tradeInfo.delta * perf.completionsPerDay / 1000000
+            tradeInfo.routeCp = state.tradeRouteAlwaysOn[routeBase]
+              ? routeCp * perf.completionsPerDay / state.townStat[origin].completionsPerDayDoubleEnded
+              : routeCp * perf.completionsPerDay * tradeInfo.crateWeight / transportLtPerDay
+            const routeCpDesc = state.tradeRouteAlwaysOn[origin]
+              ? `${formatFixed(routeCp, 2, false, true)}CP conn * ${formatFixed(perf.completionsPerDay)} / ${formatFixed(state.townStat[origin].completionsPerDayDoubleEnded)} crates`
+              : `${formatFixed(routeCp, 2, false, true)}CP conn * ${formatFixed(perf.completionsPerDay * tradeInfo.crateWeight / transportLtPerDay * 100, 3)}% utilization`
+            tradeInfo.cp = state.tradeInfraCp[origin] / state.townStat[origin].workers * perf.workers + tradeInfo.routeCp
+            tradeInfo.cpDesc = `${state.tradeInfraCp[origin]}CP infra * ${perf.workers} / ${state.townStat[origin].workers} workers + ${routeCpDesc}`
+            tradeInfo.eff = tradeInfo.dailyProfit / tradeInfo.cp
+
+            const prevRow = ret.towns[origin][ret.towns[origin].length - 1]
+            const collapsed = (prevRow && rcp == prevRow.rcp)
+
+            
+            ret.towns[origin].push({
+              rcp, collapsed, rowspan: 1,
+              thriftyPercent,
+              makeCost,
+              perf,
+              tradeInfo,
+            })
+
+            ret.transport[origDest].needWagons += perf.completionsPerDay * tradeInfo.crateWeight / 60000
+            
+            ret.total.silver += perf.completionsPerDay * tradeInfo.delta
+            ret.total.CP += tradeInfo.cp
+          }
+        }
+      }
+
+      let incrementingRow
+      for (const [origin, rows] of Object.entries(ret.towns)) {
+        for (const row of rows) {
+          if (!row.collapsed) incrementingRow = row
+          else incrementingRow.rowspan++
+        }
+      }
+
+      for (const tinfo of Object.values(ret.transport)) {
+        tinfo.utilization = tinfo.needWagons / tinfo.haveWagons
+        ret.total.transportUtilization += tinfo.utilization
+      }
+      
+      ret.total.eff = ret.total.silver / 1000000 / ret.total.CP
+      console.log('tradingTable took', Date.now()-start, 'ms', ret)
+      return ret
+    },
+
+    wagonRoutesProfits(state) {
+      const ret = []
+      const gameStore = useGameStore()
+      if (!gameStore.ready) return ret
+      const origDestWagons = {}
+      if (state.perTownPerRecipePerThrifty) {
+        for (const [origin, rcps] of Object.entries(state.perTownPerRecipePerThrifty)) {
+          origDestWagons[origin] ??= {}
+          for (const [rcp, thrifties] of Object.entries(rcps)) {
+            for (const [thr, perf] of Object.entries(thrifties)) {
+              const destination = state.tradeDestinations[origin]
+              origDestWagons[origin][destination] ??= 0
+              const tradeInfo = gameStore.tradeInfo(rcp, origin, destination)
+              origDestWagons[origin][destination] += perf.completionsPerDay * tradeInfo.crateWeight / 60000
+            }
+          }
+        }
+      }
+      
+      for (const {origin, destination} of state.wagonRoutes) {
+        const wagons = (origDestWagons[origin] && origDestWagons[origin][destination]) ? origDestWagons[origin][destination] : 0
+        const wagonConnectionProfit = gameStore.wagonFee(origin, destination, false) - gameStore.wagonFee(origin, destination, true)
+        const profit = wagons * wagonConnectionProfit / 1000000
+        ret.push({origin, destination, profit})
+      }
+      return ret
+    },
     
   },
 

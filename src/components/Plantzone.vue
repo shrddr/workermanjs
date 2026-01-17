@@ -1,5 +1,5 @@
 <script>
-import {useGameStore} from '../stores/game'
+import {useGameStore} from '../stores/game.js'
 import {useUserStore} from '../stores/user'
 import {useRoutingStore} from '../stores/routing'
 import {useMarketStore} from '../stores/market'
@@ -134,7 +134,7 @@ export default {
       <br/>
       connection cost: 
       {{ formatFixed(this.routingStore.pzjobsSharedConnectionCP[pzk].value, 3) }} CP 
-      <abbr class="tooltip" :title="'full cost of this node + Σ of connection nodes costs shared proportionally between all active jobs using them\n'+this.routingStore.pzjobsSharedConnectionCP[pzk].tooltip">ℹ</abbr>
+      <abbr class="tooltip" :title="'full cost of this node + Σ of connection nodes costs after sharing with other jobs using them\n'+this.routingStore.pzjobsSharedConnectionCP[pzk].tooltip">ℹ</abbr>
       <br/>
       lodgage cost: 
       {{ formatFixed(userStore.workerSharedLodgageCP(this.routingStore.pzJobs[pzk].worker).value, 3) }} CP 
@@ -152,8 +152,6 @@ export default {
 
 
   <div>
-
-
 
     <div class="spaced-columns">
       <div>

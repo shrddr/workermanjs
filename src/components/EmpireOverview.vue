@@ -1,7 +1,7 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useRoutingStore} from '../stores/routing'
-import {useGameStore} from '../stores/game'
+import {useGameStore} from '../stores/game.js'
 import {useMarketStore} from '../stores/market'
 import {formatFixed, strShortenLeft} from '../util.js'
 import WorkerJobDescription from '../components/WorkerJobDescription.vue'

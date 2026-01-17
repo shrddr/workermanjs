@@ -55,7 +55,6 @@ export default {
         }
       }
       count = 0
-      let countk = 0
       for (const [nodeKey, nodeName] of Object.entries(this.gameStore.uloc.node)) {
         if (nodeName.toLowerCase().includes(newQuery.toLowerCase())) {
           if (!(nodeName in this.searchResults)) {
@@ -72,7 +71,7 @@ export default {
         if (nodeKeyStr.toLowerCase().includes(newQuery.toLowerCase())) {
           if (!(nodeKeyStr in this.searchResults)) {
             this.searchResults[nodeKeyStr] = {
-              type: 'key',
+              type: 'nk',
               hlSet: new Set([]),
             }
           }
@@ -81,7 +80,21 @@ export default {
           if (count >= 10) break
         }
       }
-      
+      count = 0
+      for (const nodeKey of Object.keys(this.gameStore.uloc.town)) {
+        const nodeKeyStr = `${nodeKey}`
+        if (nodeKeyStr.toLowerCase().includes(newQuery.toLowerCase())) {
+          if (!(nodeKeyStr in this.searchResults)) {
+            this.searchResults[nodeKeyStr] = {
+              type: 'tk',
+              hlSet: new Set([]),
+            }
+          }
+          this.searchResults[nodeKeyStr].hlSet.add(Number(nodeKey))
+          count++
+          if (count >= 10) break
+        }
+      }
 
       //console.log(this.searchResults)
     },
@@ -153,8 +166,11 @@ export default {
         <template v-else-if="data.type == 'name'">
           🗺️ {{ str }}
         </template>
-        <template v-else-if="data.type == 'key'">
+        <template v-else-if="data.type == 'nk'">
           🗺️ {{ str }} - {{ gameStore.uloc.node[str] }}
+        </template>
+        <template v-else-if="data.type == 'tk'">
+          🗺️ {{ str }} - {{ gameStore.uloc.town[str] }}
         </template>
       </li>
     </ul>

@@ -1,6 +1,6 @@
 <script>
 import {useUserStore} from '../stores/user'
-import {useGameStore} from '../stores/game'
+import {useGameStore} from '../stores/game.js'
 import {formatFixed} from '../util.js'
 import WorkerJobDescription from '../components/WorkerJobDescription.vue'
 import ItemIcon from '../components/lo/ItemIcon.vue'

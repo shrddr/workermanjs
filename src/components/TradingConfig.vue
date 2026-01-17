@@ -5,6 +5,7 @@ import {useGameStore} from '../stores/game.js'
 import {useMarketStore} from '../stores/market'
 import {formatFixed, hoursToHMS} from '../util.js'
 import ItemIcon from '../components/lo/ItemIcon.vue'
+import PriceInput from './lo/PriceInputAbbrHeld.vue'
 
 export default {
   setup() {
@@ -31,6 +32,7 @@ export default {
 
   components: {
     ItemIcon,
+    PriceInput,
   },
 
   created() {
@@ -38,8 +40,7 @@ export default {
   },
 
   data: () => ({
-    cpCost: 0.4,
-    pcHours: 16,
+    
     repeatGroupMeanings: {
       '0': 'wspd',
       '1': 'wspd_jewelry',
@@ -65,48 +66,10 @@ export default {
       return ret
     },
 
-    perTownPerRecipePerThrifty() {
-      const ret = {}
-      for (const wsj of this.routingStore.wsJobs) {
-        const tnk = wsj.worker.tnk
-        const rcp = wsj.worker.job.recipe
-        const thriftyPercent = wsj.thriftyPercent
-        if (!(rcp in this.gameStore.craftInputs)) {
-          console.log('rcp', rcp, 'not supported')  // non stackable
-          continue
-        }
-
-        if (!(tnk in ret)) { ret[tnk] = {} }
-        if (!(rcp in ret[tnk])) { ret[tnk][rcp] = { } }
-        if (!(thriftyPercent in ret[tnk][rcp])) {
-          const rp = this.gameStore.craftInfo[rcp].rp
-          ret[tnk][rcp][thriftyPercent] = {  // `perf`
-            repeatGroup: rp,
-            workers: 0, 
-            cyclesPerDay: 0, 
-            completionsPerDay: 0,
-            workload: this.gameStore.craftInfo[rcp].wl,
-          } 
-        }
-
-        ret[tnk][rcp][thriftyPercent].workers += 1
-        const industry = this.gameStore.craftInfo[rcp].rp
-        const hk = wsj.worker.job.hk
-        const workshop = this.userStore.userWorkshops[hk]
-        const cyclesPerDay = this.gameStore.measureWorkshopWorker(hk, workshop, wsj.worker).cyclesDaily
-        ret[tnk][rcp][thriftyPercent].cyclesPerDay += cyclesPerDay
-        const repeats = this.gameStore.repeatsWorkshopWorker(wsj.worker, industry)
-        const completionsPerDay = cyclesPerDay * this.gameStore.craftInfo[rcp].aoc * repeats
-        //console.log(industry, cyclesPerDay, repeats, completionsPerDay)
-        ret[tnk][rcp][thriftyPercent].completionsPerDay += completionsPerDay
-      }
-      return ret
-    },
-
     usedInputItems() {
       const ret = new Set([9492])
       if (!this.gameStore.ready) return ret
-      for (const rcps of Object.values(this.perTownPerRecipePerThrifty)) {
+      for (const rcps of Object.values(this.userStore.perTownPerRecipePerThrifty)) {
         for (const rcp of Object.keys(rcps)) {
           const inputs = this.gameStore.craftInputs[rcp]
           for (const ik of Object.keys(inputs)) {
@@ -124,264 +87,12 @@ export default {
       return `${i}`
     },
 
-    townStat() {
-      const ret = {}
-      const usedOrigins = new Set()
-      for (const [origin, rcps] of Object.entries(this.perTownPerRecipePerThrifty)) {
-        usedOrigins.add(origin)
-
-        ret[origin] = { 
-          workers: 0,
-          completionsPerDay: 0,
-          completionsPerDayDoubleEnded: 0,  // A→B & B→A connection combined
-          reverseConnection: false,
-        }
-        const destination = this.userStore.tradeDestinations[origin]
-        if (usedOrigins.has(destination)) {
-          if (this.userStore.tradeDestinations[destination] == origin)
-            ret[origin].reverseConnection = true
-        }
-
-        for (const thrifties of Object.values(rcps)) {
-          for (const perf of Object.values(thrifties)) {
-            ret[origin].workers += perf.workers
-            ret[origin].completionsPerDay += perf.completionsPerDay
-            //ret[origin].lt += perf.completionsPerDay * // crateWeight
-          }
-        }
-
-        if (!ret[origin].reverseConnection) {
-          ret[origin].completionsPerDayDoubleEnded += ret[origin].completionsPerDay
-        }
-        else {
-          ret[destination].completionsPerDayDoubleEnded += ret[origin].completionsPerDay
-          ret[origin].completionsPerDayDoubleEnded = ret[destination].completionsPerDayDoubleEnded
-        }
-      }
-      return ret
-    },
-
-    rows() {
-      const ret = {
-        towns: {},  // tnk: { row, row, ... }
-        transport: {},
-        total: {
-          silver: 0,
-          CP: 0,
-          transportUtilization: 0,
-        },
-      }
-      if (!this.gameStore.ready) return ret
-      for (const [origin, rcps] of Object.entries(this.perTownPerRecipePerThrifty)) {
-        ret.towns[origin] = []
-        const destination = this.userStore.tradeDestinations[origin]
-        const routeBase = this.townStat[origin].reverseConnection ? destination : origin
-
-        const hours = this.transportHours(origin, destination)
-        const wagonRuns = Math.ceil(this.pcHours / hours)
-        const transportCycles = Math.ceil(this.pcHours / hours)
-        const transportLtPerDay = 5 * transportCycles * 30000
-        if (!(origin in this.userStore.tradeRouteCp)) this.userStore.tradeRouteCp[origin] = 0
-        
-        const routeCp = this.userStore.tradeRouteCp[routeBase] // TODO: f(origin, destination)
-        if (!(origin in this.userStore.tradeInfraCp)) this.userStore.tradeInfraCp[origin] = 0
-
-        const origDest = `${this.gameStore.uloc.node[origin]} → ${this.gameStore.uloc.node[destination]}`
-        if (!(origDest in ret.transport)) {
-          //console.log(this.pcHours, hours, wagonRuns)
-          const haveWagons = 5 * wagonRuns
-          ret.transport[origDest] = {
-            duration: hoursToHMS(hours),
-            wagonRuns,
-            haveWagons,
-            needWagons: 0,
-            utilization: 0,
-          }
-        }
-
-        for (const [rcp, thrifties] of Object.entries(rcps)) {
-          for (const [thriftyPercent, perf] of Object.entries(thrifties)) {
-            const makeCost = this.recipeCost(rcp, Number(thriftyPercent))
-            const avgRepeats = perf.completionsPerDay / perf.cyclesPerDay
-            const feedCost = this.marketStore.prices[9492]
-            const crateFeedCost = feedCost / 3 / avgRepeats
-            makeCost.val += crateFeedCost
-            makeCost.desc += `${feedCost} / 3 / ${formatFixed(avgRepeats, 2)} = ${formatFixed(crateFeedCost)}\n`
-            const aoc = this.gameStore.craftInfo[rcp].aoc
-            if (aoc != 1) {
-              makeCost.val /= aoc
-              makeCost.desc += `----------------------\n`
-              makeCost.desc += `divided by ${aoc}\n`
-            }
-
-            //const workshopCostPerCrate = workshopCostDaily * perf.workers / perf.completionsPerDay
-            //makeCost.val += workshopCostPerCrate
-            //makeCost.desc += `${formatFixed(workshopCostDaily/1000000, 2)}M x ${perf.workers} / ${formatFixed(perf.completionsPerDay)} = ${formatFixed(workshopCostPerCrate)}\n`
-
-            const tradeInfo = this.tradeInfo(rcp, origin, destination)
-
-            tradeInfo.delta = tradeInfo.sellPrice - makeCost.val - tradeInfo.transportFee
-            tradeInfo.deltaDesc = `${formatFixed(tradeInfo.sellPrice)} - ${formatFixed(makeCost.val)} - ${formatFixed(tradeInfo.transportFee)}`
-            tradeInfo.roi = tradeInfo.delta / (makeCost.val + tradeInfo.transportFee)
-            tradeInfo.dailyProfit = tradeInfo.delta * perf.completionsPerDay / 1000000
-            tradeInfo.routeCp = this.userStore.tradeRouteAlwaysOn[routeBase] 
-              ? routeCp * perf.completionsPerDay / this.townStat[origin].completionsPerDayDoubleEnded
-              : routeCp * perf.completionsPerDay * tradeInfo.crateWeight / transportLtPerDay
-            const routeCpDesc = this.userStore.tradeRouteAlwaysOn[origin]
-              ? `${routeCp}CP * ${formatFixed(perf.completionsPerDay)} / ${formatFixed(this.townStat[origin].completionsPerDayDoubleEnded)} crates`
-              : `${routeCp}CP * ${formatFixed(perf.completionsPerDay * tradeInfo.crateWeight / transportLtPerDay * 100, 3)}% utilization`
-            tradeInfo.cp = this.userStore.tradeInfraCp[origin] / this.townStat[origin].workers * perf.workers + tradeInfo.routeCp
-            tradeInfo.cpDesc = `${this.userStore.tradeInfraCp[origin]}CP / ${this.townStat[origin].workers} x ${perf.workers} workers + ${routeCpDesc}`
-            tradeInfo.eff = tradeInfo.dailyProfit / tradeInfo.cp
-
-            const prevRow = ret.towns[origin][ret.towns[origin].length - 1]
-            const collapsed = (prevRow && rcp == prevRow.rcp)
-
-            ret.towns[origin].push({
-              rcp, collapsed, rowspan: 1,
-              thriftyPercent,
-              makeCost,
-              perf,
-              tradeInfo,
-            })
-
-            ret.transport[origDest].needWagons += perf.completionsPerDay * tradeInfo.crateWeight / 30000
-
-            ret.total.silver += perf.completionsPerDay * tradeInfo.delta
-            ret.total.CP += tradeInfo.cp
-          }
-        }
-      }
-
-      for (const tinfo of Object.values(ret.transport)) {
-        tinfo.utilization = tinfo.needWagons / tinfo.haveWagons
-        ret.total.transportUtilization += tinfo.utilization
-      }
-
-      ret.total.eff = ret.total.silver / 1000000 / ret.total.CP
-      return ret
-    },
-
-    table() {
-      // semantic sugar to not call this.rows from template twice
-      const a = this.rows
-      // collapse `out` and `sell`
-      let incrementingRow
-      for (const [origin, rows] of Object.entries(a.towns)) {
-        for (const row of rows) {
-          if (!row.collapsed) incrementingRow = row
-          else incrementingRow.rowspan++
-        }
-      }
-      return this.rows
-    }
   },
 
   methods: {
     formatFixed,
     hoursToHMS,
     
-    recipeCost(rcp, thriftyPercent) {
-      //console.log('recipeCost', rcp, thriftyPercent)
-      if (!(rcp in this.gameStore.craftInputs)) {
-        const desc = `recipe ${rcp} can't be priced`
-        console.log(desc)
-        return {
-          val: NaN,
-          desc,
-        }
-      }
-      const inputs = this.gameStore.craftInputs[rcp]
-      if (thriftyPercent > 0) {
-        const inputsCopy = {}
-        const inputsCount = Object.entries(inputs).length
-        for (const ik of Object.keys(inputs)) {
-          if (inputs[ik] >= 10) {
-            const thriftable = Math.floor(inputs[ik] / 10)
-            const thrifted = thriftable * (1 - thriftyPercent/inputsCount/100)
-            inputsCopy[ik] = inputs[ik] - thriftable + thrifted
-            //console.log('applied thrifty', rcp, ik, thriftyPercent, inputsCopy[ik])
-          }
-          else {
-            inputsCopy[ik] = inputs[ik]
-          }
-        }
-        return this.marketStore.priceBunch(inputsCopy)
-      }
-      return this.marketStore.priceBunch(inputs)
-    },
-    
-    distanceToTrader(tnka, tnkb) {
-      if (!(this.gameStore.ready)) return NaN
-      if (!tnka) return NaN
-      if (!tnkb) return NaN
-      const a = this.gameStore.nodes[tnka].pos
-      const b = this.gameStore.traders[tnkb]
-      const dx = a.x-b[0]
-      const dy = 0
-      const dz = a.z-b[1]
-      const dist = Math.sqrt(dx*dx+dy*dy+dz*dz)
-      return dist
-    },
-    
-    distancePriceBonus(tnka, tnkb) {
-      const dist = this.distanceToTrader(tnka, tnkb)
-      const bonus = dist * 68 / 100000000
-      return bonus > 1.5 ? 1.5 : bonus
-    },
-    
-    distance(tnka, tnkb) {
-      if (!(this.gameStore.ready)) return NaN
-      if (!tnka) return NaN
-      if (!tnkb) return NaN
-      const a = this.gameStore.nodes[tnka].pos
-      const b = this.gameStore.nodes[tnkb].pos
-      const dx = a.x-b.x
-      const dy = 0
-      const dz = a.z-b.z
-      const dist = Math.sqrt(dx*dx+dy*dy+dz*dz)
-      return dist
-    },
-
-    transportCostPerLt(tnka, tnkb, unconnected) {
-      const dist = this.distance(tnka, tnkb)
-      const cost = dist * 1.8 / 30000
-      return unconnected ? cost * 4 : cost
-    },
-    
-    transportHours(tnka, tnkb) {
-      // yuk-alt 5:59:??
-      // val-dal 6:18:??
-      // val-yuk 7:12:??
-      const dist = this.distance(tnka, tnkb)
-      const hours = dist * 2.6 / 1000000
-      return hours
-    },
-
-    tradeInfo(rcp, origin, destination) {
-      //console.log('tradeInfo', ik, origin, destination)
-      if (!(this.gameStore.ready)) return NaN
-      if (!(rcp in this.gameStore.craftOutputs)) return NaN
-      const ik = this.gameStore.craftOutputs[rcp][0]
-      if (!(ik in this.gameStore.itemInfo)) return NaN
-
-      const basePrice = this.gameStore.itemInfo[ik].vendorPrice// * this.gameStore.craftInfo[rcp].aoc
-      const distanceBonus = this.distancePriceBonus(origin, destination)
-      const sellPrice = basePrice * (1 + distanceBonus) * (1 + this.userStore.bargainBonus)
-      const sellPriceDesc = `${basePrice} x ${1 + distanceBonus} x ${(1 + this.userStore.bargainBonus)}`
-      
-      const crateWeight = this.gameStore.itemInfo[ik].weight
-      //const stackSize = Math.floor(2147483648 / crateWeight / 100)
-      const costPerLt = this.transportCostPerLt(origin, destination)
-      const transportFee = crateWeight * costPerLt
-      //console.log('tradeInfo', sellPrice, crateTransportCost, transportedSellPrice)
-      return { 
-        destination, distanceBonus, crateWeight, costPerLt,
-        sellPrice, sellPriceDesc,
-        transportFee
-      }
-    },
-
     routeSortedDestinations(rcp, origin) {
       const ret = []
       for (const destination of Object.keys(this.gameStore.traders)) {
@@ -393,9 +104,9 @@ export default {
 
     townSortedDestinations(origin) {
       const ret = []
-      const rcp = 9212  // TODO: does this matter?
+      const rcp = 9212  // TODO: depends on what is actually being produced
       for (const destination of Object.keys(this.gameStore.traders)) {
-        ret.push(this.tradeInfo(rcp, origin, destination))
+        ret.push(this.gameStore.tradeInfo(rcp, origin, destination))
       }
       ret.sort((a,b) => (b.sellPrice-b.transportFee)-(a.sellPrice-a.transportFee))  // TODO: connection cost
       return ret
@@ -409,8 +120,8 @@ export default {
         const hk = wsj.worker.job.hk
         const workshop = this.userStore.userWorkshops[hk]
         
-        if (origin in this.table.towns) {
-          for (const row of this.table.towns[origin]) {
+        if (origin in this.userStore.tradingTable.towns) {
+          for (const row of this.userStore.tradingTable.towns[origin]) {
             if (rcp == row.rcp && thriftyPercent == row.thriftyPercent) {
               //console.log(wsj.worker.label, workshop, row)
               workshop.industry = row.perf.repeatGroup
@@ -460,7 +171,7 @@ export default {
               </abbr>
             </th>
             <th>
-              <abbr class="tooltip" title="thrifty %">
+              <abbr class="tooltip" title="thrifty% (x = not applicable)">
                 🧪
               </abbr>
             </th>
@@ -480,7 +191,7 @@ export default {
           </tr>
         </thead>
         <tbody>
-          <template v-for="rows, origin in table.towns">
+          <template v-for="rows, origin in userStore.tradingTable.towns">
             <tr>
               <td colspan="2" class="tac">
                 {{ gameStore.uloc.node[origin] }}
@@ -498,20 +209,26 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
                   <option v-for="e in townSortedDestinations(origin)" :key="e.destination" :value="e.destination">
                     {{ gameStore.uloc.node[e.destination] }}
                     {{ formatFixed(e.distanceBonus*100, 2) }}%
-                    {{ formatFixed(30 * e.costPerLt) }}$
+                    {{ formatFixed(e.wagonFee/1000) }}k$
                   </option>
                 </select>
+                <button @click="delete userStore.tradeDestinations[origin]">x</button>
                 
-                <template v-if="townStat[origin].reverseConnection == false">
+                <abbr v-if="routingStore.wagonCpCosts[origin]" :title="routingStore.wagonCpCosts[origin].tooltip" class="tooltip">
+                  {{ formatFixed(routingStore.wagonCpCosts[origin].value, 1, false, true) }}
+                </abbr>
+
+                <template v-if="userStore.townStat[origin].reverseConnection == false">
                   cost
-                  <input 
+                  <!--<input 
                     v-model.number="userStore.tradeRouteCp[origin]"
                     type="number" 
                     class="w3em">
-                  CP
+                  CP-->
                   
                   <span class="spacer"></span>
-                  <input type="checkbox" v-model="userStore.tradeRouteAlwaysOn[origin]"> always on
+                  <input type="checkbox" v-model="userStore.tradeRouteOn[origin]"> on
+                  <input type="checkbox" v-model="userStore.tradeRouteAlwaysOn[origin]"> always
                 </template>
                 <template v-else>(reusing)</template>
               </td>
@@ -524,7 +241,9 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
                     <template v-if="gameStore.craftInfo[row.rcp].aoc != 1">
                       {{ gameStore.craftInfo[row.rcp].aoc }}
                     </template>
-                    <ItemIcon :ik="ik"/>
+                    <abbr :title="gameStore.itemName(ik)">
+                      <ItemIcon :ik="ik"/>
+                    </abbr>
                   </template>
                 </template>
                 <template v-else>
@@ -580,15 +299,15 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
       </div>
       <br/>
       Total:
-      {{ formatFixed(table.total.silver/1000000, 1) }} M$/day,
-      {{ formatFixed(table.total.CP, 2) }} CP,
-      {{ formatFixed(table.total.eff, 3) }} M$/day/CP
+      {{ formatFixed(userStore.tradingTable.total.silver/1000000, 1) }} M$/day,
+      {{ formatFixed(userStore.tradingTable.total.CP, 2) }} CP,
+      {{ formatFixed(userStore.tradingTable.total.eff, 3) }} M$/day/CP
 
 
 
       <details>
         <summary>Wagons</summary>
-        Order issuing hours: <input type="number" class="w3em" v-model.number="pcHours">
+        Order issuing hours: <input type="number" class="w3em" v-model.number="userStore.pcHours">
         <br/>
         <!--At over 100% capacity, cost of transporting 214kLT:-->
         <table>
@@ -602,7 +321,7 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
             </tr>
           </thead>
           <tbody>
-            <tr v-for="tinfo, origDest in table.transport">
+            <tr v-for="tinfo, origDest in userStore.tradingTable.transport">
               <td>{{ origDest }}</td>
               <td>{{ tinfo.duration }}</td>
               <td class="tar">{{ formatFixed(tinfo.needWagons, 2) }}</td>
@@ -614,7 +333,7 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
             <tr>
               <td class="tar" colspan="4"></td>
               <td class="tar">
-                {{ formatFixed(table.total.transportUtilization * 100, 2) }}%
+                {{ formatFixed(userStore.tradingTable.total.transportUtilization * 100, 2) }}%
               </td>
             </tr>
           </tbody>
@@ -637,15 +356,17 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
         <tbody>
           <tr v-for="ik in usedInputItems">
             <td>
-              <ItemIcon :ik="Number(ik)"/>
+              <abbr :title="gameStore.itemName(ik)">
+                <ItemIcon :ik="Number(ik)"/>
+              </abbr>
             </td>
             <td>
-              <input type="number" class="w5em tar" v-model.number="userStore.customPrices[ik]">
+              <PriceInput v-model="userStore.customPrices[ik]"/>
             </td>
-            <td>
+            <td class="tac">
               <input type="checkbox" :disabled="ik in gameStore.vendorPrices" v-model="userStore.keepItems[ik]">
             </td>
-            <td>
+            <td class="tar">
               {{ formatFixed(marketStore.prices[ik]) }}
             </td>
           </tr>

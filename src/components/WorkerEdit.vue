@@ -1,7 +1,7 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useRoutingStore} from '../stores/routing'
-import {useGameStore} from '../stores/game'
+import {useGameStore} from '../stores/game.js'
 import {formatFixed, randBetween, levelup} from '../util.js'
 import FloatingResourceEdit from './FloatingResourceEdit.vue'
 import WorkerJobDescription from '../components/WorkerJobDescription.vue'
@@ -116,13 +116,11 @@ export default {
       return 1 + Math.floor(level / 5)
     },
 
-    suggestBestSkills(level, isPlantzone) {
+    suggestBestSkillsPz(level) {
       const maxSkills = this.maxSkillsAtLevel(level)
 
       const wBonuses = {0: {skills: []}}
-      const wActions = ["wspd"]
-      if (isPlantzone)
-        wActions.push("wspd_farm")
+      const wActions = ["wspd", "wspd_farm"]
 
       const wSkills = []
       for (const [key, skill] of Object.entries(this.gameStore.skillData)) {
@@ -230,6 +228,18 @@ export default {
       }
       else
         console.log('worker skills optimization failed')
+    },
+
+    suggestBestSkillsWs(level) {
+      const maxSkills = this.maxSkillsAtLevel(level)
+
+      // prereq: current profit calculation uses "user workshop" entity which is after thrifty
+      // Q: how to deal with negative profit?
+      // 1 - packing
+      // 2 - workpeed breakpoint (prefer +2w+7m if possible)
+      // 3 - thrifty (if works)
+      // 4 - movespeed
+
     },
 
     recalcStats(newChar, newLevel) {
@@ -531,9 +541,24 @@ export default {
           <td>skills:</td>
           <td>
             <div style="float:right;">
-              <button :disabled="!(workerEditing.job && workerEditing.job.pzk in this.routingStore.pzJobs)" @click="suggestBestSkills(workerEditing.level, true)">
-                optimize
-              </button>
+              <template v-if="workerEditing.job">
+                <template v-if="workerEditing.job.pzk in this.routingStore.pzJobs">
+                  <button @click="suggestBestSkillsPz(workerEditing.level)">
+                    optimize
+                  </button>
+                </template>
+                <template v-else-if="0 && gameStore.jobIsWorkshop(workerEditing.job)">
+                  <button @click="suggestBestSkillsWs(workerEditing.level)">
+                    optimize
+                  </button>
+                </template>
+                <template v-else>
+                  <button :disabled="1">
+                    optimize
+                  </button>
+                </template>
+              </template>
+              
             </div>
           </td>
         </tr>

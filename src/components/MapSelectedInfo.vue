@@ -1,7 +1,7 @@
 <script>
 import {useUserStore} from '../stores/user'
 import {useRoutingStore} from '../stores/routing'
-import {useGameStore} from '../stores/game'
+import {useGameStore} from '../stores/game.js'
 import {useMarketStore} from '../stores/market'
 import {useMapStore} from '../stores/map'
 import {formatFixed} from '../util.js'
@@ -92,7 +92,7 @@ export default {
   computed: {
 
     activeNodeJobs_sorted() {
-      const ret = this.userStore.currentNodesJobs[this.clickedNode.key]  // list of jobs (pz/ws)
+      const ret = this.routingStore.nodesUsedBy[this.clickedNode.key]  // list of jobs (pz/ws)
       ret.sort((a,b) => this.jobCashFlowPercent(b) - this.jobCashFlowPercent(a))
       return ret
     },
@@ -151,28 +151,67 @@ export default {
         </template>
       </p>
 
-      <p class="fsxs" v-if="clickedNode.key in userStore.currentNodesJobs">
-        shared by active nodejobs:
-        <p v-for="job in activeNodeJobs_sorted">
-          {{ formatFixed(jobCashFlowPercent(job) * 100) }}% -
-          <span 
-            v-if="this.gameStore.jobIsPz(job.worker.job)"
-            @click="$emit('panToPaPos', this.gameStore.nodes[job.pzk].pos)" 
-            class="clickable"
-          >
-            {{ gameStore.plantzoneName(job.pzk) }} 
-          </span>
-          <span v-else>
-            {{ gameStore.uloc.char[job.worker.job.hk] }}
-            {{ userStore.userWorkshops[job.worker.job.hk].label }}
-          </span>
-          @
-          {{ formatFixed(job.profit.priceDaily, 2) }} M$/day
-        </p>
+      <p class="fsxs" v-if="clickedNode.key in routingStore.nodesUsedBy && activeNodeJobs_sorted && activeNodeJobs_sorted.length > 0">
+        used by:
+        <table id="link_sharing">
+          <thead>
+            <tr>
+              <th>share</th>
+              <th>description</th>
+              <th>M$/day</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="mapJob in activeNodeJobs_sorted">
+              <th>{{ formatFixed(jobCashFlowPercent(mapJob) * 100) }}%</th>
+              <th>
+                <span 
+                  v-if="mapJob.pzk"
+                  @click="$emit('panToPaPos', this.gameStore.nodes[mapJob.pzk].pos)" 
+                  class="clickable"
+                >
+                  plantzone {{ gameStore.plantzoneName(mapJob.pzk) }} 
+                </span>
+                <span v-else-if="mapJob.hk">
+                  workshop {{ gameStore.uloc.char[mapJob.hk] }}
+                  {{ userStore.userWorkshops[mapJob.hk].label }}
+                </span>
+                <span 
+                  v-else-if="mapJob.nk"
+                  @click="$emit('panToPaPos', this.gameStore.nodes[mapJob.nk].pos)" 
+                  class="clickable"
+                >
+                  grinding {{ gameStore.uloc.node[mapJob.nk] }}
+                </span>
+                <template v-else-if="mapJob.nk_orig && mapJob.nk_dest">
+                  wagon 
+                  <span 
+                    @click="$emit('panToPaPos', this.gameStore.nodes[mapJob.nk_orig].pos)" 
+                    class="clickable"
+                  >
+                    {{ gameStore.uloc.node[mapJob.nk_orig] }}
+                  </span>
+                   → 
+                  <span 
+                    @click="$emit('panToPaPos', this.gameStore.nodes[mapJob.nk_dest].pos)" 
+                    class="clickable"
+                  >
+                    {{ gameStore.uloc.node[mapJob.nk_dest] }}
+                  </span>
+                </template>
+              </th>
+              <th>{{ formatFixed(mapJob.profit.priceDaily, 2) }}</th>
+            </tr>
+          </tbody>
+        </table>
       </p>
 
       <input type="checkbox" @change="userStore.modifyGrindTakens($event, clickedNode.key)" :checked="userStore.grindTakenSet.has(clickedNode.key)">
       grind node (invested for droprate)
+      <div v-if="userStore.grindTakenSet.has(clickedNode.key)">
+        brings <input type="number" class="price tar" v-model.number="userStore.grindTakenValues[clickedNode.key]">
+        M$/day
+      </div>
     </div>
 
     <div id="clickedPlantzoneInfo" v-if="gameStore.isPlantzone(clickedNode.key)">

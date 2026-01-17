@@ -1,10 +1,11 @@
 import {defineStore} from "pinia";
-import {useMarketStore} from './market'
-import {useUserStore} from './user'
-import {useRoutingStore} from './routing'
+import {useMarketStore} from './market.js'
+import {useUserStore} from './user.js'
+import {useRoutingStore} from './routing.js'
 import Heap from 'heap';
 import {extractNumbers, binarySearch} from '../util.js';
 import init, { WasmNodeRouter } from '../pkg/noderouter.js';
+import { WorkerProfit } from '../types/all.ts'
 
 export const useGameStore = defineStore({
   id: "game",
@@ -792,19 +793,19 @@ export const useGameStore = defineStore({
     // return one plantzone specific town profit
     // used by nearestByCP, by WorkerEditor, ...
     profitPzTownStats(pzk, tnk, wspd, mspd, luck, is_giant) {
+      const ret = new WorkerProfit(NaN, NaN, NaN, NaN)
       if (!(pzk in this.plantzones))
-        return {cycleValue:0, cycleMinutes:NaN, cyclesDaily:NaN, priceDaily:0}
+        return ret
       const userStore = useUserStore()
       const marketStore = useMarketStore()
       const pzd = this.plantzones[pzk]
-      let ret = {
-        dist: this.pzDistance(tnk, pzk),
-        cycleValue: marketStore.priceLerp(
-          is_giant ? pzd.luckyValue_gi: pzd.luckyValue,
-          is_giant ? pzd.unluckyValue_gi : pzd.unluckyValue, 
-          luck
-        ),
-      }
+      ret.dist = this.pzDistance(tnk, pzk)
+      ret.cycleValue = marketStore.priceLerp(
+        is_giant ? pzd.luckyValue_gi: pzd.luckyValue,
+        is_giant ? pzd.unluckyValue_gi : pzd.unluckyValue, 
+        luck
+      ),
+      
       ret.cyclesDaily = userStore.calcCyclesDaily(pzd.workload, pzd.regiongroup, wspd, ret.dist, mspd)
       
       //if (pzk == '1893') console.log(`profitPzTownStats at pzk=${pzk}`, pzd.workload, pzd.regiongroup, wspd, ret.dist, mspd, 'cyclesDaily', ret.cyclesDaily)
@@ -1128,7 +1129,7 @@ export const useGameStore = defineStore({
       return result
     },
 
-    routeOld(unused, routees) {
+    routeOld(routees) {
       const ret = {
         autotakenNodes: new Set(),
         autotakenNodesCP: 0,
@@ -1307,6 +1308,113 @@ export const useGameStore = defineStore({
       return [needTakes.reverse(), pathCosts[finish]]
     },
 
+    distance(tnka, tnkb) {
+      if (!this.ready) return NaN
+      if (!tnka) return NaN
+      if (!tnkb) return NaN
+      const a = this.nodes[tnka].pos
+      const b = this.nodes[tnkb].pos
+      const dx = a.x-b.x
+      const dy = 0
+      const dz = a.z-b.z
+      const dist = Math.sqrt(dx*dx+dy*dy+dz*dz)
+      return dist
+    },
+
+    wagonFee(tnka, tnkb, connected) {
+      // 4100 cal-bukpo should be 2117998 unconnected (of which 1716 is flat) / 706000 connected
+      // 4100 val-dalbeol should be 2684503 unconnected (of which 2176 is flat) / ? connected
+      const dist = this.distance(tnka, tnkb)
+      const cost = dist * 0.36
+      return connected ? cost : cost * 3
+    },
+
+    transportHours(tnka, tnkb) {
+      // yuk-alt 5:59:??
+      // val-dal 6:18:??
+      // val-yuk 7:12:??
+      const dist = this.distance(tnka, tnkb)
+      const hours = dist * 2.6 / 1000000
+      return hours
+    },
+
+    recipeCost(rcp, thriftyPercent) {
+      const marketStore = useMarketStore()
+      //console.log('recipeCost', rcp, thriftyPercent)
+      if (!(rcp in this.craftInputs)) {
+        const desc = `recipe ${rcp} can't be priced`
+        console.log(desc)
+        return {
+          val: NaN,
+          desc,
+        }
+      }
+      const inputs = this.craftInputs[rcp]
+      if (thriftyPercent > 0) {
+        const inputsCopy = {}
+        const inputsCount = Object.entries(inputs).length
+        for (const ik of Object.keys(inputs)) {
+          if (inputs[ik] >= 10) {
+            const thriftable = Math.floor(inputs[ik] / 10)
+            const thrifted = thriftable * (1 - thriftyPercent/inputsCount/100)
+            inputsCopy[ik] = inputs[ik] - thriftable + thrifted
+            //console.log('applied thrifty', rcp, ik, thriftyPercent, inputsCopy[ik])
+          }
+          else {
+            inputsCopy[ik] = inputs[ik]
+          }
+        }
+        return marketStore.priceBunch(inputsCopy)
+      }
+      return marketStore.priceBunch(inputs)
+    },
+    
+    distanceToTrader(tnka, tnkb) {
+      if (!(this.ready)) return NaN
+      if (!tnka) return NaN
+      if (!tnkb) return NaN
+      const a = this.nodes[tnka].pos
+      const b = this.traders[tnkb]
+      const dx = a.x-b[0]
+      const dy = 0
+      const dz = a.z-b[1]
+      const dist = Math.sqrt(dx*dx+dy*dy+dz*dz)
+      return dist
+    },
+
+    distancePriceBonus(tnka, tnkb) {
+      const dist = this.distanceToTrader(tnka, tnkb)
+      const bonus = dist * 68 / 100000000
+      return bonus > 1.5 ? 1.5 : bonus
+    },
+
+    tradeInfo(rcp, origin, destination, connected) {
+      const userStore = useUserStore()
+      //console.log('tradeInfo', ik, origin, destination)
+      if (!(this.ready)) return NaN
+      if (!(rcp in this.craftOutputs)) return NaN
+      const ik = this.craftOutputs[rcp][0]
+      if (!(ik in this.itemInfo)) return NaN
+
+      const basePrice = this.itemInfo[ik].vendorPrice// * this.craftInfo[rcp].aoc
+      const distanceBonus = this.distancePriceBonus(origin, destination)
+      const sellPrice = basePrice * (1 + distanceBonus) * (1 + userStore.bargainBonus)
+      const sellPriceDesc = `${basePrice} x ${1 + distanceBonus} x ${(1 + userStore.bargainBonus)}`
+      
+      const crateWeight = this.itemInfo[ik].weight
+      //const stackSize = Math.floor(2147483648 / crateWeight / 100)
+      const wagonFee = this.wagonFee(origin, destination, connected)
+      const costPerLt = wagonFee / 60000
+      const transportFee = crateWeight * costPerLt
+      //console.log('tradeInfo', sellPrice, crateTransportCost, transportedSellPrice)
+      return { 
+        destination, distanceBonus, wagonFee,
+        crateWeight, costPerLt,
+        sellPrice, sellPriceDesc,
+        transportFee
+      }
+    },
+
   },
 
   getters: {
@@ -1416,7 +1524,7 @@ export const useGameStore = defineStore({
       }
       //console.log('itemkeyPlantzones', ret)
       return ret
-    },
+    },    
 
   },
 });
