@@ -170,19 +170,21 @@ export default {
       </div>
     </div>
     
-    <template v-if="freeWorkers.length > 0">
-      <table>
-        <tr>
-          <th>town</th>
-          <th>walk</th>
-          <th>worker <abbr class="tooltip" title="same town&stat workers are hidden in this view">ℹ</abbr></th>
-          <th>+M$/day</th>
-          <th>+CP <abbr class="tooltip" title="node connection + town housing = total">ℹ</abbr></th>
-          <th>M$/day/CP</th>
-          <th>action</th>
-        </tr>
-        <template v-for="e in freeWorkers">
+    <div class="vscroll30" v-if="freeWorkers.length > 0">
+      <table class="stickyhead">
+        <thead>
           <tr>
+            <th>town</th>
+            <th>walk</th>
+            <th>worker <abbr class="tooltip" title="same town&stat workers are hidden in this view">ℹ</abbr></th>
+            <th>+M$/day</th>
+            <th>+CP <abbr class="tooltip" title="node connection + town housing = total">ℹ</abbr></th>
+            <th>M$/day/CP</th>
+            <th>action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="e in freeWorkers">
             <td>{{ gameStore.nodeName(e.tnk) }}</td>
             <td>{{ formatFixed(e.profit.dist) }}</td>
             <td>
@@ -213,9 +215,9 @@ export default {
               </button>
             </td>
           </tr>
-        </template>
+        </tbody>
       </table>
-    </template>
+    </div>
     
     
     <MakeAWorker
@@ -239,5 +241,9 @@ export default {
 }
 .tooltip {
   cursor: help;
+}
+.vscroll30 {
+    max-height: 30vh;  /* percents of viewport height */
+    overflow-y: auto;   /* Show scrollbar only when needed */
 }
 </style>
