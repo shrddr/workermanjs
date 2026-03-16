@@ -181,7 +181,7 @@ export default {
     makeRLayer() {
       return new GeoJsonLayer({
         id: 'RegionLayer',
-        data: 'data/r_latest_s1_5.geojson',
+        data: 'data/r_latest_1_5.geojson',
 
         stroked: false,  // default: true
         getLineWidth: 50,  
