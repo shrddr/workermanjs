@@ -268,6 +268,9 @@ export default {
         controller: {doubleClickZoom: false},
         getTooltip: ({object}) => {
           if (object && object.properties) {
+            if (object.properties.r) {
+              return `R${object.properties.r}`
+            }
             if (object.properties.rg) {
               let ret = `RG${object.properties.rg}`
               //const member_indices = object.properties.rs
@@ -275,9 +278,6 @@ export default {
               //  ret += `\n${this.gameStore.uloc.town[ri]}`
               //}
               return ret
-            }
-            if (object.properties.r) {
-              return `R${object.properties.r}`
             }
           }
         },
