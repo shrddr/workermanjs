@@ -24,8 +24,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <li>Quick and simple: do nothing and just look at <RouterLink to="/plantzones">Plantzones</RouterLink> page - nodes at the top are good, nodes at the bottom are bad. Use Plantzones page if just starting out.</li>
         <li>
           Personalized and nuanced: go to <RouterLink to="/">Home</RouterLink> page, 
-          select a town, hire a worker, send to whatever node gives highest efficiency, repeat
-          (OR select a node, select, hire+assign in one click).
+          select a town on the map, hire a worker, send to whatever node gives highest efficiency, repeat
+          (OR select a plantzone on the map and hire+assign a worker with a single button).
           Use Home page if you want to improve or rework an existing empire.
         </li>
       </ul>
@@ -34,7 +34,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         Is there any video or guide?
       </template>
-      <a href="https://youtu.be/EknUHU1Lvq0">Setup and Usage by Yura</a>, <a href="https://youtu.be/sEHK7cX4SIE">Best Workers Video by Summer</a>
+      <a href="https://youtu.be/EknUHU1Lvq0">Setup and Usage</a> by Yura, <a href="https://youtu.be/sEHK7cX4SIE">Best Workers Video</a> by Summer
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -117,23 +117,29 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         How does the giant bonus work? Is it not just average goblin yield increased by 68.4%?
       </template>
-      It is not, because of rounding down, which makes giant worse than expected. Low yield nodes are more affected by rounding, since <code>floor(1*1.684)=1</code>.
+      It is not, because of rounding down, which makes giants worse than expected. Low yield nodes are more affected by rounding, since <code>floor(1*1.684)=1</code>.
       <ul>
         <li>yields of a specific item at a specific plantzone follow a <a href="https://en.wikipedia.org/wiki/Binomial_distribution">binomial</a> distribution with parameters <i>n</i> (number of rolls) and <i>p</i> (roll success chance)</li>
-        <li>some of them were leaked at some point, some inferred by observation</li>
-        <li>for goblins and humans, the <i>np</i> product is basically the average yield per cycle; for giants, it's more complicated:</li>
+          <ul><li>some of them were leaked at some point, some inferred by observation</li></ul>
+        <li>for goblins and humans, the <i>np</i> product is straight up the average yield per cycle 
+          <ul>
+            <li>doesn't matter if it's 10 rolls with 0.8 chance each or 100 rolls with 0.08 chance each,
+            long term it will average out to 8 items per cycle</li>
+          </ul>
+        </li>
+        <li>for giants, it's more complicated:</li>
         <ul>
           <li>
-            <details><summary>build the distribution of non-giant yields and their chances</summary>
+            <details><summary>build the distribution of non-giant yields and their chances (need at least a rough estimate of both <i>n</i> and <i>p</i>)</summary>
               <img src="/data/images/yields_gob.webp">
             </details>
           </li>
           <li>
-            <details><summary>build the distribution of giant yields by increasing each yield 68.4% but rounded down</summary>
+            <details><summary>build the distribution of giant yields by keeping the same observations, but increase each integer yield 68.4% rounded down</summary>
               <img src="/data/images/yields_gia.webp">
             </details>
           </li>
-          <li>do a weighted sum back into average yield per cycle for giants (which turns out less than 1.684<i>np</i>)</li>
+          <li>do a weighted sum back into average yield per cycle specifically for giants, which turns out less than 1.684<i>np</i>, but how much less depends on <i>n</i> and <i>p</i></li>
         </ul>
       </ul>
     </QnaItem>
@@ -141,10 +147,11 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <template #q>
         What are stat ranks?
       </template>
+      Worker stat consist of innate stats (those he was born with, always the same) and those gained through levelups (random in a range).<br/>
       If levelup range for a given stat is 1.0-2.0, rolling 1.4 is 40% rank, and rolling 1.9 is 90% rank.<br/>
-      Rank 50% level 3 worker means 2 avg rolls (1.5+1.5=3.0), or one min roll and one max roll (1.0+2.0=3.0), or any combination of rolls giving 3.0 total.<br/>
-      Rank 100% level 40 worker means 39 max rolls in a row (39*2.0=78.0).<br/>
-      "+stat per level" skills are not accounted for when calculating rank, so you can potentially have >100% rank (by having >78.0 stat).
+      Rank 50% level 3 worker means 2 avg rolls (1.5+1.5=3.0), or one min roll and one max roll (1.0+2.0=3.0), or any combination of rolls giving 3.0 total stat increase.<br/>
+      Rank 100% level 40 worker means 39 max rolls in a row (2.0*39=78.0).<br/>
+      "+stat per level" skills are not accounted for when calculating rank, so you can potentially have >100% rank (by having >78.0 stat gained through levelups).
     </QnaItem>
     <QnaItem>
       <template #q>
@@ -158,7 +165,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       5. Seoul drops: observed non-thoroughly in september 2024, when in doubt picked values most similar to existing node drops from (1).<br/>
       6. Ulukita drops: observed in june 2025.<br/>
       7. Edania drops: observed in august 2025.<br/>
-      I've been adjusting all of the above over time (when relevant changes are published in patch notes, like "increased yields at node X by Y%").
+      I've been adjusting all of the above over time when relevant changes were published in patch notes, like "increased yields at node X by Y%".
     </QnaItem>
 
     <h2>Tips & tricks</h2>
@@ -232,356 +239,359 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
 
     <h2>Changelog</h2>
-    <li>[2026-03-26 patch] new Frozen Halo node</li>
-    <li>[2025-08-28 patch] trade wagons carry 2x weight, price per LT reduced 10x</li>
-    <li>[2025-08-28 patch] updated Edania housing</li>
-    <li>[2025-07-21 patch] added new Edania area with 15 plantzones</li>
+    <ul style="padding-left: 16px;">
+      <li>[2026-03-26 patch] new Frozen Halo node</li>
+      <li>[2025-08-28 patch] trade wagons carry 2x weight, price per LT reduced 10x</li>
+      <li>[2025-08-28 patch] updated Edania housing</li>
+      <li>[2025-07-21 patch] added new Edania area with 15 plantzones</li>
+        <ul>
+          <li>✓ connections</li>
+          <li>✓ walk distances</li>
+          <li>✓ housecraft</li>
+          <li>✓ droprates v7 (cycles observed: ~2400)</li>
+        </ul>
+      <li>a consistent fast way to build optimal connections (orderless) by @Thell</li>
+      <li>sticky table headers</li>
+      <li>show product icon for workshop jobs</li>
+      <li>[2025-05-22 patch] Reduced CP costs of houses</li>
+      <li>[2025-05-22 patch] Reduced CP costs of nodes</li>
+      <li>[2025-05-22 patch] Added 12 plantzones in Ulukita + 4 around Keplan</li>
+        <ul>
+          <li>droprates: v6 (cycles observed: ~22k)</li>
+        </ul>
+      <li>Plantzones page > <strong class="notranslate">hide taken</strong> checkbox</li>
+      <li>In Empire > Best untaken, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">ignore storage cost</strong> option.</li>
+      <li>In Empire > Best untaken and selected Plantzone pane, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">cheapest storage 🧊</strong> option.</li>
       <ul>
-        <li>✓ connections</li>
-        <li>✓ walk distances</li>
-        <li>✓ housecraft</li>
-        <li>✓ droprates v7 (cycles observed: ~2400)</li>
+        <li>it does apply to <strong class="notranslate">assign</strong> action, but is frozen in a sense that it means cheapest at this point in time, and not a commitment to keep it cheapest going forward (after adding more jobs).</li>
       </ul>
-    <li>a consistent fast way to build optimal connections (orderless) by @Thell</li>
-    <li>sticky table headers</li>
-    <li>show product icon for workshop jobs</li>
-    <li>[2025-05-22 patch] Reduced CP costs of houses</li>
-    <li>[2025-05-22 patch] Reduced CP costs of nodes</li>
-    <li>[2025-05-22 patch] Added 12 plantzones in Ulukita + 4 around Keplan</li>
+      <li><strong class="notranslate">Town config > storage</strong> view shows item source on mouseover</li>
+      <li>Ctrl+F on <strong class="notranslate">Home</strong> page searches for items and node names, Esc to remove highlight. If you need builtin Chrome search it is still accessible through F3</li>
+      <li>[2024-11-21 patch] updated Yukjo houses to have more lodging</li>
+      <li>worker seals don't require town storage space anymore</li>
+      <li>[2024-09-12 patch] added Seoul area with 19 nodes</li>
+      <li>can assign Personal Items in Muzgar > config (do not enter too much, will show <strong class="notranslate">?</strong> in totals)</li>
+      <li>Home page > selected plantzone pane > added "hire+assign" section, which autosuggests best race</li>
+      <li>custom prices import/export</li>
+      <li>workshop tweaks</li>
       <ul>
-        <li>droprates: v6 (cycles observed: ~22k)</li>
+        <li>worker packing skills now improve profit (please review <strong class="notranslate">$/cycle</strong> column in <RouterLink to="/settings">Settings</RouterLink> > 🏭Workshops config, probably needs to be reduced if you set it to 4x before)</li>
+        <li>skill #1008 (refining) affects crate packing workspeed</li>
+        <li>added intracity distances for workshops (and improved intercity)</li>
+        <li>remote town workshop job requires (creates) a connection</li>
+        <li>Home page > selected town pane has workshop section, sorted by type</li>
       </ul>
-    <li>Plantzones page > <strong class="notranslate">hide taken</strong> checkbox</li>
-    <li>In Empire > Best untaken, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">ignore storage cost</strong> option.</li>
-    <li>In Empire > Best untaken and selected Plantzone pane, <strong class="notranslate">stash</strong> dropbox has new <strong class="notranslate">cheapest storage 🧊</strong> option.</li>
-    <ul>
-      <li>it does apply to <strong class="notranslate">assign</strong> action, but is frozen in a sense that it means cheapest at this point in time, and not a commitment to keep it cheapest going forward (after adding more jobs).</li>
+      <li>fixed unexpected lodging redirect when using "send worker to" dialog > stash dropdown set to a remote town</li>
+      <li>added feed calc to Home > Empire > Daily yields (scroll down)</li>
+      <li>map: added a setting to hide all inactive elements</li>
+      <li>if any of jobs originating in a town has negative income, this town lodgage costs will be split between jobs equally (not proportionally)</li>
+      <li>allowed storage use at oquilla, asparkan, velandir, muzgar (muzgar is also slightly upgradeable)</li>
+      <li>updated all trace plantzones to output same amount of item 5960</li>
+      <li>updated sack 1024 to contain 1x item 5205 and sack 1026 to contain 1x item 5960</li>
+      <li>changed plantzone 1560 to use Lumbering lucky drops despite having Gathering icon, tweaked a couple of trace droprates</li>
+      <li>[2023-05-31 patch] new luck drops (current version: 13 aka the final one. data collection stopped)</li>
+        <ul>
+          <li>all nodes of kind 4 (plant growing): all luck drops replaced with 0.3x item 1024</li>
+          <li>all nodes of kind 6 (plant gathering): all luck drops replaced with 0.13x item 1024</li>
+          <li>all nodes of kind 7 (mining): all luck drops replaced with 3.5x item 1025</li>
+          <li>all nodes of kind 8 (lumbering): all luck drops replaced with 1x item 5005, 0.5x 5006, 0.15x 5007, 2.1x 5008, 1x 5011</li>
+          <li>all nodes of kind 11 (dried fish): all luck drops replaced with 0.17x item 1027, 0.77x 6501</li>
+          <li>all nodes of kind 15 (excavation): all luck drops replaced with 4x item 1026</li>
+          <li>nodes 1675, 1677, 1776: unlucky drop increased to 8 (not mentioned in patch notes, maybe happened on an earlier date)</li>
+          <li>nodes 1565, 1779: added 2x luck procs</li>
+        </ul>
+      <li>added TW language</li>
+      <li>Plantzones page > added town filter</li>
+      <li>[2024-01-31 patch] extended Ulukita area (still 0 plantzones)</li>
+      <li>added JP language</li>
+      <li>[2023-11-08 patch] replaced junk yields with ores at <details><summary>10 excavation nodes. yields are approximate</summary>
+        <LinkToNode :nodeKey="144"/>,
+        <LinkToNode :nodeKey="480"/>, 
+        <LinkToNode :nodeKey="488"/>, 
+        <LinkToNode :nodeKey="842"/>, 
+        <LinkToNode :nodeKey="902"/>, 
+        <LinkToNode :nodeKey="912"/>, 
+        <LinkToNode :nodeKey="1220"/>, 
+        <LinkToNode :nodeKey="1553"/>, 
+        <LinkToNode :nodeKey="1687"/>, 
+        <LinkToNode :nodeKey="1688"/>
+      </details></li>
+        
+      <li>[2023-11-08 patch] increased lumbering byproducts yields by set multipliers at <details><summary>17 lumbering nodes</summary>
+        <LinkToNode :nodeKey="142"/>,
+        <LinkToNode :nodeKey="167"/>, 
+        <LinkToNode :nodeKey="183"/>, 
+        <LinkToNode :nodeKey="455"/>, 
+        <LinkToNode :nodeKey="464"/>, 
+        <LinkToNode :nodeKey="834"/>, 
+        <LinkToNode :nodeKey="855"/>, 
+        <LinkToNode :nodeKey="905"/>, 
+        <LinkToNode :nodeKey="908"/>, 
+        <LinkToNode :nodeKey="952"/>, 
+        <LinkToNode :nodeKey="1212"/>, 
+        <LinkToNode :nodeKey="1215"/>, 
+        <LinkToNode :nodeKey="1216"/>, 
+        <LinkToNode :nodeKey="1219"/>, 
+        <LinkToNode :nodeKey="1777"/>,
+        <LinkToNode :nodeKey="1820"/>,
+        <LinkToNode :nodeKey="1821"/>
+      </details></li>
+      <li>[2023-11-01 patch] increased all trace yields</li>
+        <ul>
+          <li>
+            <details><summary>Main continent: x2</summary>
+              <LinkToNode :nodeKey="144"/>,
+              <LinkToNode :nodeKey="480"/>, 
+              <LinkToNode :nodeKey="488"/>, 
+              <LinkToNode :nodeKey="842"/>, 
+              <LinkToNode :nodeKey="902"/>, 
+              <LinkToNode :nodeKey="912"/>, 
+              <LinkToNode :nodeKey="1220"/>, 
+              <LinkToNode :nodeKey="1553"/>, 
+              <LinkToNode :nodeKey="1637"/>, 
+              <LinkToNode :nodeKey="1687"/>, 
+              <LinkToNode :nodeKey="1688"/>, 
+              <LinkToNode :nodeKey="1709"/>, 
+              <LinkToNode :nodeKey="1716"/>, 
+              <LinkToNode :nodeKey="1720"/>, 
+              <LinkToNode :nodeKey="1770"/>, 
+              <LinkToNode :nodeKey="1778"/>
+            </details>
+          </li>
+          <li>
+            <details><summary>Morning land: x5</summary>
+              <LinkToNode :nodeKey="1807"/>, 
+              <LinkToNode :nodeKey="1808"/>, 
+              <LinkToNode :nodeKey="1809"/>, 
+              <LinkToNode :nodeKey="1823"/>, 
+              <LinkToNode :nodeKey="1830"/>
+            </details>
+          </li>
+        </ul>
+      <li>[2023-11-01 patch] increased all sap yields</li>
+        <ul>
+          <li>
+            <details><summary>Maple & Pine Sap: x1.5</summary>
+              <LinkToNode :nodeKey="443"/>,
+              <LinkToNode :nodeKey="910"/>,
+              <LinkToNode :nodeKey="1216"/>,
+              <LinkToNode :nodeKey="1685"/>
+            </details>
+          </li>
+          <li>
+            <details><summary>Snowfield Cedar Sap: x5</summary>
+              <LinkToNode :nodeKey="1771"/>,
+              <LinkToNode :nodeKey="1780"/>
+            </details>
+          </li>
+          <li>
+            <details><summary>Other Sap: x2</summary>
+              <LinkToNode :nodeKey="160"/>,
+              <LinkToNode :nodeKey="840"/>,
+              <LinkToNode :nodeKey="901"/>,
+              <LinkToNode :nodeKey="903"/>,
+              <LinkToNode :nodeKey="907"/>,
+              <LinkToNode :nodeKey="1212"/>,
+              <LinkToNode :nodeKey="1215"/>,
+              <LinkToNode :nodeKey="1219"/>,
+              <LinkToNode :nodeKey="1502"/>,
+              <LinkToNode :nodeKey="1504"/>,
+              <LinkToNode :nodeKey="1512"/>,
+              <LinkToNode :nodeKey="1516"/>,
+              <LinkToNode :nodeKey="1526"/>,
+              <LinkToNode :nodeKey="1635"/>,
+              <LinkToNode :nodeKey="1638"/>,
+              <LinkToNode :nodeKey="1683"/>,
+              <LinkToNode :nodeKey="1684"/>,
+              <LinkToNode :nodeKey="1686"/>,
+              <LinkToNode :nodeKey="1712"/>,
+              <LinkToNode :nodeKey="1715"/>,
+              <LinkToNode :nodeKey="1560"/>
+            </details>
+          </li>
+        </ul>
+      <li>implemented manual output redirection (available at any worker level for easier prototyping)</li>
+      <li>added separate VP setting to add 16 P2W slots to every town</li>
+      <li>[2023-08-23 patch] added new Ulukita area with 0 plantzones</li>
+      <li>added KR language</li>
+      <li>[2023-03-10 patch] item 4206 yields tripled at 3 plantzones</li>
+      <li>housing config > items are now sorted exactly as ingame</li>
+      <li>home page > added worker icon, level, and optional stat rank (also always shown in editor)</li>
+      <li>added lodgage costs to Empire > Best Untaken</li>
+      <li>skip unknown (event?) plantzone jobs when importing - will display as an idle worker instead</li>
+      <li>Empire > Best Untaken selects best species automatically</li>
+      <li>[2023-06-05 patch] added node 1833</li>
+      <li>[2023-05-31 patch] big rework</li>
+        <ul>
+          <li>level cap 40, +2 skill slots</li>
+          <li>humans got +3 luck</li>
+          <li>giants got +68.4% yield of <s>all</s> all unlucky drops, rounded down</li>
+        </ul>
+      <li>fixed warehouse slot calculations to require lucky items too + 1 slot required to be free</li>
+      <li>[2023-06-14 patch] added LotML area with 24 nodes</li>
+      <li>in darkmode, buttons are now actually dark</li>
+      <li>[2023-05-31 patch] added sack items with auto-calculated prices</li>
+        <ul>
+          <li>item 1024 = equal chance of 1x any fruit</li>
+          <li>item 1025 = equal chance of 1x any gem</li>
+          <li>item 1026 = equal chance of 1x any trace</li>
+          <li>item 1027 = equal chance of 1x any coral</li>
+        </ul>
+      <li>you don't buy houses anymore, optimal lodging & storage provided automatically</li>
+        <ul>
+          <li>check town <strong class="notranslate">config</strong> to see which houses to buy</li>
+          <li>be careful to not exceed the town limits, profits will show <strong class="notranslate">NaN</strong>'s and <strong class="notranslate">?</strong>'s if you do, and whole town marked red in town list</li>
+          <li>for easier prototyping, idle workers do not consume lodging</li>
+        </ul>
+      <li>[2023-05-03 patch] reduced 10 fences cost to 80 CP</li>
+      <li>reimplemented workshop jobs to stay after worker reimport</li>
+        <ul>
+          <li>each house can be set up in <RouterLink to="/settings">Settings</RouterLink> &gt; <strong class="notranslate">Workshops config</strong> and stored separately from worker data</li>
+          <li>previously assigned <strong class="notranslate">🏭Workshop</strong> jobs have been converted into <strong class="notranslate">✍️Custom</strong> jobs</li>
+        </ul>
+      <li>on town/node click, map pans to its location</li>
+      <li>removed 13 nodes that are invisible ingame</li>
+      <li>added a ranking of untaken nodes in Empire pane</li>
+      <li>[2023-02-21 patch] updated node CP costs</li>
+      <li>job efficiency now includes lodging cost: eff = income / (connectionCost + lodgingCost)</li>
+        <ul>
+          <li>lodging costs are shared proportionally to job income values, same way as connections</li>
+        </ul>
+      <li>added more worker types + seamless transition between</li>
+      <li>can specify a zero-cost connection in node properties (when invested for droprate)</li>
+      <li>individual plantzone efficiency via cashflow</li>
+        <ul>
+          <li>ex: if a connection node is simultaneously used by a 4M$/day job and a 1M$/day job, they own it in 80/20 fashion</li>
+        </ul>
+      <li>added farming and workshop job types in Send Worker dialog</li>
+      <li>/plantzones page tweaks</li>
+      <ul>
+          <li>node name link navigates to its map location (upd: with permalinks)</li>
+          <li>item link navigates to its settings price row</li>
+          <li>shows item names to allow in-browser search</li>
+          <li>selects nearest town by CP instead of distance</li>
+        </ul>
+      <li>removed Blue Maned Lion's Manor</li>
+      <li>~floating resources support</li>
+      <li>selecting a node highlights connection path</li>
+      <li>worker job assignment moves to the end of connection queue</li>
+      <li>worker editor: added button to suggest best skills for current job</li>
+      <li>map: color active/inactive links</li>
+      <li>updated connection algorithm to encourage existing paths reuse</li>
+      <li>[2022-10-26 patch] updated house CP costs</li>
+      <li>worker revert button, plantzone luck effect indicator</li>
+      <li>configurable default worker for hire</li>
+      <li>send worker dialog: show worker stats</li>
+      <li>worker editor: when on job, show profit changes while editing</li>
+      <li>node info: show/edit the resource%</li>
+      <li>Ancado lodging now requires other town connection (nearest chosen automatically)</li>
+      <li>added nodes 911..914 & 1604 (ty @Ayashi)</li>
+      <li>added total daily items summary</li>
+      <li>added workers+lodging import/export to json file</li>
+      <li>[2022-09-21 patch] updated several node distances</li>
+      <li>added worker management</li>
+      <li>combined repeated items in node 1035 (ty @Yazel)</li>
+      <li>[2022-08-31 patch] modified nodes 463 & 487 for lucky drop 5422 instead of 5402</li>
     </ul>
-    <li><strong class="notranslate">Town config > storage</strong> view shows item source on mouseover</li>
-    <li>Ctrl+F on <strong class="notranslate">Home</strong> page searches for items and node names, Esc to remove highlight. If you need builtin Chrome search it is still accessible through F3</li>
-    <li>[2024-11-21 patch] updated Yukjo houses to have more lodging</li>
-    <li>worker seals don't require town storage space anymore</li>
-    <li>[2024-09-12 patch] added Seoul area with 19 nodes</li>
-    <li>can assign Personal Items in Muzgar > config (do not enter too much, will show <strong class="notranslate">?</strong> in totals)</li>
-    <li>Home page > selected plantzone pane > added "hire+assign" section, which autosuggests best race</li>
-    <li>custom prices import/export</li>
-    <li>workshop tweaks</li>
-    <ul>
-      <li>worker packing skills now improve profit (please review <strong class="notranslate">$/cycle</strong> column in <RouterLink to="/settings">Settings</RouterLink> > 🏭Workshops config, probably needs to be reduced if you set it to 4x before)</li>
-      <li>skill #1008 (refining) affects crate packing workspeed</li>
-      <li>added intracity distances for workshops (and improved intercity)</li>
-      <li>remote town workshop job requires (creates) a connection</li>
-      <li>Home page > selected town pane has workshop section, sorted by type</li>
-    </ul>
-    <li>fixed unexpected lodging redirect when using "send worker to" dialog > stash dropdown set to a remote town</li>
-    <li>added feed calc to Home > Empire > Daily yields (scroll down)</li>
-    <li>map: added a setting to hide all inactive elements</li>
-    <li>if any of jobs originating in a town has negative income, this town lodgage costs will be split between jobs equally (not proportionally)</li>
-    <li>allowed storage use at oquilla, asparkan, velandir, muzgar (muzgar is also slightly upgradeable)</li>
-    <li>updated all trace plantzones to output same amount of item 5960</li>
-    <li>updated sack 1024 to contain 1x item 5205 and sack 1026 to contain 1x item 5960</li>
-    <li>changed plantzone 1560 to use Lumbering lucky drops despite having Gathering icon, tweaked a couple of trace droprates</li>
-    <li>[2023-05-31 patch] new luck drops (current version: 13 aka the final one. data collection stopped)</li>
-      <ul>
-        <li>all nodes of kind 4 (plant growing): all luck drops replaced with 0.3x item 1024</li>
-        <li>all nodes of kind 6 (plant gathering): all luck drops replaced with 0.13x item 1024</li>
-        <li>all nodes of kind 7 (mining): all luck drops replaced with 3.5x item 1025</li>
-        <li>all nodes of kind 8 (lumbering): all luck drops replaced with 1x item 5005, 0.5x 5006, 0.15x 5007, 2.1x 5008, 1x 5011</li>
-        <li>all nodes of kind 11 (dried fish): all luck drops replaced with 0.17x item 1027, 0.77x 6501</li>
-        <li>all nodes of kind 15 (excavation): all luck drops replaced with 4x item 1026</li>
-        <li>nodes 1675, 1677, 1776: unlucky drop increased to 8 (not mentioned in patch notes, maybe happened on an earlier date)</li>
-        <li>nodes 1565, 1779: added 2x luck procs</li>
-      </ul>
-    <li>added TW language</li>
-    <li>Plantzones page > added town filter</li>
-    <li>[2024-01-31 patch] extended Ulukita area (still 0 plantzones)</li>
-    <li>added JP language</li>
-    <li>[2023-11-08 patch] replaced junk yields with ores at <details><summary>10 excavation nodes. yields are approximate</summary>
-      <LinkToNode :nodeKey="144"/>,
-      <LinkToNode :nodeKey="480"/>, 
-      <LinkToNode :nodeKey="488"/>, 
-      <LinkToNode :nodeKey="842"/>, 
-      <LinkToNode :nodeKey="902"/>, 
-      <LinkToNode :nodeKey="912"/>, 
-      <LinkToNode :nodeKey="1220"/>, 
-      <LinkToNode :nodeKey="1553"/>, 
-      <LinkToNode :nodeKey="1687"/>, 
-      <LinkToNode :nodeKey="1688"/>
-    </details></li>
-      
-    <li>[2023-11-08 patch] increased lumbering byproducts yields by set multipliers at <details><summary>17 lumbering nodes</summary>
-      <LinkToNode :nodeKey="142"/>,
-      <LinkToNode :nodeKey="167"/>, 
-      <LinkToNode :nodeKey="183"/>, 
-      <LinkToNode :nodeKey="455"/>, 
-      <LinkToNode :nodeKey="464"/>, 
-      <LinkToNode :nodeKey="834"/>, 
-      <LinkToNode :nodeKey="855"/>, 
-      <LinkToNode :nodeKey="905"/>, 
-      <LinkToNode :nodeKey="908"/>, 
-      <LinkToNode :nodeKey="952"/>, 
-      <LinkToNode :nodeKey="1212"/>, 
-      <LinkToNode :nodeKey="1215"/>, 
-      <LinkToNode :nodeKey="1216"/>, 
-      <LinkToNode :nodeKey="1219"/>, 
-      <LinkToNode :nodeKey="1777"/>,
-      <LinkToNode :nodeKey="1820"/>,
-      <LinkToNode :nodeKey="1821"/>
-    </details></li>
-    <li>[2023-11-01 patch] increased all trace yields</li>
-      <ul>
-        <li>
-          <details><summary>Main continent: x2</summary>
-            <LinkToNode :nodeKey="144"/>,
-            <LinkToNode :nodeKey="480"/>, 
-            <LinkToNode :nodeKey="488"/>, 
-            <LinkToNode :nodeKey="842"/>, 
-            <LinkToNode :nodeKey="902"/>, 
-            <LinkToNode :nodeKey="912"/>, 
-            <LinkToNode :nodeKey="1220"/>, 
-            <LinkToNode :nodeKey="1553"/>, 
-            <LinkToNode :nodeKey="1637"/>, 
-            <LinkToNode :nodeKey="1687"/>, 
-            <LinkToNode :nodeKey="1688"/>, 
-            <LinkToNode :nodeKey="1709"/>, 
-            <LinkToNode :nodeKey="1716"/>, 
-            <LinkToNode :nodeKey="1720"/>, 
-            <LinkToNode :nodeKey="1770"/>, 
-            <LinkToNode :nodeKey="1778"/>
-          </details>
-        </li>
-        <li>
-          <details><summary>Morning land: x5</summary>
-            <LinkToNode :nodeKey="1807"/>, 
-            <LinkToNode :nodeKey="1808"/>, 
-            <LinkToNode :nodeKey="1809"/>, 
-            <LinkToNode :nodeKey="1823"/>, 
-            <LinkToNode :nodeKey="1830"/>
-          </details>
-        </li>
-      </ul>
-    <li>[2023-11-01 patch] increased all sap yields</li>
-      <ul>
-        <li>
-          <details><summary>Maple & Pine Sap: x1.5</summary>
-            <LinkToNode :nodeKey="443"/>,
-            <LinkToNode :nodeKey="910"/>,
-            <LinkToNode :nodeKey="1216"/>,
-            <LinkToNode :nodeKey="1685"/>
-          </details>
-        </li>
-        <li>
-          <details><summary>Snowfield Cedar Sap: x5</summary>
-            <LinkToNode :nodeKey="1771"/>,
-            <LinkToNode :nodeKey="1780"/>
-          </details>
-        </li>
-        <li>
-          <details><summary>Other Sap: x2</summary>
-            <LinkToNode :nodeKey="160"/>,
-            <LinkToNode :nodeKey="840"/>,
-            <LinkToNode :nodeKey="901"/>,
-            <LinkToNode :nodeKey="903"/>,
-            <LinkToNode :nodeKey="907"/>,
-            <LinkToNode :nodeKey="1212"/>,
-            <LinkToNode :nodeKey="1215"/>,
-            <LinkToNode :nodeKey="1219"/>,
-            <LinkToNode :nodeKey="1502"/>,
-            <LinkToNode :nodeKey="1504"/>,
-            <LinkToNode :nodeKey="1512"/>,
-            <LinkToNode :nodeKey="1516"/>,
-            <LinkToNode :nodeKey="1526"/>,
-            <LinkToNode :nodeKey="1635"/>,
-            <LinkToNode :nodeKey="1638"/>,
-            <LinkToNode :nodeKey="1683"/>,
-            <LinkToNode :nodeKey="1684"/>,
-            <LinkToNode :nodeKey="1686"/>,
-            <LinkToNode :nodeKey="1712"/>,
-            <LinkToNode :nodeKey="1715"/>,
-            <LinkToNode :nodeKey="1560"/>
-          </details>
-        </li>
-      </ul>
-    <li>implemented manual output redirection (available at any worker level for easier prototyping)</li>
-    <li>added separate VP setting to add 16 P2W slots to every town</li>
-    <li>[2023-08-23 patch] added new Ulukita area with 0 plantzones</li>
-    <li>added KR language</li>
-    <li>[2023-03-10 patch] item 4206 yields tripled at 3 plantzones</li>
-    <li>housing config > items are now sorted exactly as ingame</li>
-    <li>home page > added worker icon, level, and optional stat rank (also always shown in editor)</li>
-    <li>added lodgage costs to Empire > Best Untaken</li>
-    <li>skip unknown (event?) plantzone jobs when importing - will display as an idle worker instead</li>
-    <li>Empire > Best Untaken selects best species automatically</li>
-    <li>[2023-06-05 patch] added node 1833</li>
-    <li>[2023-05-31 patch] big rework</li>
-      <ul>
-        <li>level cap 40, +2 skill slots</li>
-        <li>humans got +3 luck</li>
-        <li>giants got +68.4% yield of <s>all</s> all unlucky drops, rounded down</li>
-      </ul>
-    <li>fixed warehouse slot calculations to require lucky items too + 1 slot required to be free</li>
-    <li>[2023-06-14 patch] added LotML area with 24 nodes</li>
-    <li>in darkmode, buttons are now actually dark</li>
-    <li>[2023-05-31 patch] added sack items with auto-calculated prices</li>
-      <ul>
-        <li>item 1024 = equal chance of 1x any fruit</li>
-        <li>item 1025 = equal chance of 1x any gem</li>
-        <li>item 1026 = equal chance of 1x any trace</li>
-        <li>item 1027 = equal chance of 1x any coral</li>
-      </ul>
-    <li>you don't buy houses anymore, optimal lodging & storage provided automatically</li>
-      <ul>
-        <li>check town <strong class="notranslate">config</strong> to see which houses to buy</li>
-        <li>be careful to not exceed the town limits, profits will show <strong class="notranslate">NaN</strong>'s and <strong class="notranslate">?</strong>'s if you do, and whole town marked red in town list</li>
-        <li>for easier prototyping, idle workers do not consume lodging</li>
-      </ul>
-    <li>[2023-05-03 patch] reduced 10 fences cost to 80 CP</li>
-    <li>reimplemented workshop jobs to stay after worker reimport</li>
-      <ul>
-        <li>each house can be set up in <RouterLink to="/settings">Settings</RouterLink> &gt; <strong class="notranslate">Workshops config</strong> and stored separately from worker data</li>
-        <li>previously assigned <strong class="notranslate">🏭Workshop</strong> jobs have been converted into <strong class="notranslate">✍️Custom</strong> jobs</li>
-      </ul>
-    <li>on town/node click, map pans to its location</li>
-    <li>removed 13 nodes that are invisible ingame</li>
-    <li>added a ranking of untaken nodes in Empire pane</li>
-    <li>[2023-02-21 patch] updated node CP costs</li>
-    <li>job efficiency now includes lodging cost: eff = income / (connectionCost + lodgingCost)</li>
-      <ul>
-        <li>lodging costs are shared proportionally to job income values, same way as connections</li>
-      </ul>
-    <li>added more worker types + seamless transition between</li>
-    <li>can specify a zero-cost connection in node properties (when invested for droprate)</li>
-    <li>individual plantzone efficiency via cashflow</li>
-      <ul>
-        <li>ex: if a connection node is simultaneously used by a 4M$/day job and a 1M$/day job, they own it in 80/20 fashion</li>
-      </ul>
-    <li>added farming and workshop job types in Send Worker dialog</li>
-    <li>/plantzones page tweaks</li>
-    <ul>
-        <li>node name link navigates to its map location (upd: with permalinks)</li>
-        <li>item link navigates to its settings price row</li>
-        <li>shows item names to allow in-browser search</li>
-        <li>selects nearest town by CP instead of distance</li>
-      </ul>
-    <li>removed Blue Maned Lion's Manor</li>
-    <li>~floating resources support</li>
-    <li>selecting a node highlights connection path</li>
-    <li>worker job assignment moves to the end of connection queue</li>
-    <li>worker editor: added button to suggest best skills for current job</li>
-    <li>map: color active/inactive links</li>
-    <li>updated connection algorithm to encourage existing paths reuse</li>
-    <li>[2022-10-26 patch] updated house CP costs</li>
-    <li>worker revert button, plantzone luck effect indicator</li>
-    <li>configurable default worker for hire</li>
-    <li>send worker dialog: show worker stats</li>
-    <li>worker editor: when on job, show profit changes while editing</li>
-    <li>node info: show/edit the resource%</li>
-    <li>Ancado lodging now requires other town connection (nearest chosen automatically)</li>
-    <li>added nodes 911..914 & 1604 (ty @Ayashi)</li>
-    <li>added total daily items summary</li>
-    <li>added workers+lodging import/export to json file</li>
-    <li>[2022-09-21 patch] updated several node distances</li>
-    <li>added worker management</li>
-    <li>combined repeated items in node 1035 (ty @Yazel)</li>
-    <li>[2022-08-31 patch] modified nodes 463 & 487 for lucky drop 5422 instead of 5402</li>
-    
 
 
 
 
 
     <h2>Todo</h2>
-    <li>workshop name should include node name instead of affiliated town</li>
-    <li>remote workshops require node connections, check if shared correctly</li>
-    <li>stacking outputs from everywhere in 1 town makes that town less efficient - incorrect</li>
-    <li>copy workshops button - stop including connection CP</li>
-    <li>show qty in town pane - yield tooltip</li>
-    <li>empty personal items are treated as 1 personal item</li>
-    <li>personal items increase worker CP</li>
-    <li>crates - show mat usage per day</li>
-    <li>monk's branch rate is sus on plantzones where it is both unlucky and lucky</li>
-    <li>worker send dialog > stash > ulukita towns = error</li>
-    <li>price input up/down spinner should imitate CM steps</li>
-    <li>leveling a worker up/down needs to be faster</li>
-    <li>[2024-11-21 patch] palace stuff maybe</li>
-    <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
-      <ul>
-        <li>what's "max pearlable"?</li>
-      </ul>
-    <li>worker ranks are in linear stat space, should probably rework it to use "chance of achieving" space
-      <ul>
-        <li>ex: 98.55 workspeed giant shows as 56% rank when actually it is top 10% in "chance of achieving" space</li>
-      </ul>
-    </li>
-    <li>for some reason mousemove while hovering a node triggers continuous recalculations</li>
-    <li>change (again) the job resource sharing principle when negative profit jobs are involved</li>
-      <ul>
-        <li>when positive profit jobs A, B and negative profit jobs C, D are sharing the same resource,
-          A and B should split half of the resource proprtionally to their profits, while
-          C and D should split the remaining half of the resource equally
-        </li>
-      </ul>
-    <li>more pronounced warning when unable to resolve housing</li>
-    <li>home > when hovering an inactive plantzone, show the profit estimate (with optimal worker from optimal town?)</li>
-    <li>need to rethink default "random art gob" hire since gobs are not BiS anymore</li>
-      <ul>
-        <li>a quick popup would be nice right after clicking <strong>hire</strong> asking 👺 or 🐢</li>
-        <li>need to get a list of hireables per town to hire town-specific kind of 👺</li>
+    <ul style="padding-left: 16px;">
+      <li>workshop name should include node name instead of affiliated town</li>
+      <li>remote workshops require node connections, check if shared correctly</li>
+      <li>stacking outputs from everywhere in 1 town makes that town less efficient - incorrect</li>
+      <li>copy workshops button - stop including connection CP</li>
+      <li>show qty in town pane - yield tooltip</li>
+      <li>empty personal items are treated as 1 personal item</li>
+      <li>personal items increase worker CP</li>
+      <li>crates - show mat usage per day</li>
+      <li>monk's branch rate is sus on plantzones where it is both unlucky and lucky</li>
+      <li>worker send dialog > stash > ulukita towns = error</li>
+      <li>price input up/down spinner should imitate CM steps</li>
+      <li>leveling a worker up/down needs to be faster</li>
+      <li>[2024-11-21 patch] palace stuff maybe</li>
+      <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
         <ul>
-          <li>investigate via worker registration items (id 64000+)</li>
+          <li>what's "max pearlable"?</li>
         </ul>
-      </ul>
-    <li>totals pane > split out personal items storage CP</li>
+      <li>worker ranks are in linear stat space, should probably rework it to use "chance of achieving" space
+        <ul>
+          <li>ex: 98.55 workspeed giant shows as 56% rank when actually it is top 10% in "chance of achieving" space</li>
+        </ul>
+      </li>
+      <li>for some reason mousemove while hovering a node triggers continuous recalculations</li>
+      <li>change (again) the job resource sharing principle when negative profit jobs are involved</li>
+        <ul>
+          <li>when positive profit jobs A, B and negative profit jobs C, D are sharing the same resource,
+            A and B should split half of the resource proprtionally to their profits, while
+            C and D should split the remaining half of the resource equally
+          </li>
+        </ul>
+      <li>more pronounced warning when unable to resolve housing</li>
+      <li>home > when hovering an inactive plantzone, show the profit estimate (with optimal worker from optimal town?)</li>
+      <li>need to rethink default "random art gob" hire since gobs are not BiS anymore</li>
+        <ul>
+          <li>a quick popup would be nice right after clicking <strong>hire</strong> asking 👺 or 🐢</li>
+          <li>need to get a list of hireables per town to hire town-specific kind of 👺</li>
+          <ul>
+            <li>investigate via worker registration items (id 64000+)</li>
+          </ul>
+        </ul>
+      <li>totals pane > split out personal items storage CP</li>
+        <ul>
+          <li>make multiple queries to housecraft and compare</li>
+        </ul>
+      <li>handle lodging/storage in steps (like in AstroAllano's sheet) instead of linear sharing</li>
+        <ul>
+          <li>same idea with connections</li>
+        </ul>
+      <li>worker editor > hide charkeys not hireable in current town</li>
+      <li>smart worker↔job rearrangement within a town</li>
+        <ul>
+          <li>take both innate stat, current skills and potential reroll prospects into account</li>
+        </ul>
+      <li>on first run, pick server using geoip</li>
+      <li>some of morningland workers' levelup stats still unknown, using values from older cities</li>
+      <li>[2023-05-31 patch]</li>
+        <ul>
+          <li>implement species-restricted plantzones and workshops</li>
+        </ul>
+      <li>when exporting/importing, show what exactly is being -ported (maybe even choose with checkboxes?)</li>
+      <li>show real house positions in housecraft viewer</li>
+      <li>when optimizing skills, try to keep new skill of same type at same position as old one</li>
+        <ul>
+          <li>don't optimize +2 wspd into +2 wspd with no benefit</li>
+        </ul>
+      <li>add lodging/storage support to workshop system</li>
+      <li>on item icon hover: show tooltip with name and price</li>
+      <li>workerlist: show drops instead of pzname</li>
+      <li>grade towns/workers graphically with bar charts</li>
+      <li>map tweaks
+        <ul>
+          <li>node hover: highlight potential path to town</li>
+          <li>deal with missing tiles</li>
+        </ul>
+      </li>
+      <li>profit calculation: include feed cost</li>
+      <li>map: optionally show RegionGroups</li>
+      <li>unify job description strings - node 1565 should say "silk production" like ingame workerlist</li>
+      <li>introduce skill roll chances somehow</li>
       <ul>
-        <li>make multiple queries to housecraft and compare</li>
+        <li>help decide which skills should and should not be rerolled?</li>
+        <li>ex: for existing worker skill, show if it's going to get better or worse after 5 rerolls</li>
       </ul>
-    <li>handle lodging/storage in steps (like in AstroAllano's sheet) instead of linear sharing</li>
+      <li>detect unsellable items using current market offers divided by lifetime volume</li>
       <ul>
-        <li>same idea with connections</li>
+        <li>different items have different lifetime though</li>
       </ul>
-    <li>worker editor > hide charkeys not hireable in current town</li>
-    <li>smart worker↔job rearrangement within a town</li>
-      <ul>
-        <li>take both innate stat, current skills and potential reroll prospects into account</li>
-      </ul>
-    <li>on first run, pick server using geoip</li>
-    <li>some of morningland workers' levelup stats still unknown, using values from older cities</li>
-    <li>[2023-05-31 patch]</li>
-      <ul>
-        <li>implement species-restricted plantzones and workshops</li>
-      </ul>
-    <li>when exporting/importing, show what exactly is being -ported (maybe even choose with checkboxes?)</li>
-    <li>show real house positions in housecraft viewer</li>
-    <li>when optimizing skills, try to keep new skill of same type at same position as old one</li>
-      <ul>
-        <li>don't optimize +2 wspd into +2 wspd with no benefit</li>
-      </ul>
-    <li>add lodging/storage support to workshop system</li>
-    <li>on item icon hover: show tooltip with name and price</li>
-    <li>workerlist: show drops instead of pzname</li>
-    <li>grade towns/workers graphically with bar charts</li>
-    <li>map tweaks
-      <ul>
-        <li>node hover: highlight potential path to town</li>
-        <li>deal with missing tiles</li>
-      </ul>
-    </li>
-    <li>profit calculation: include feed cost</li>
-    <li>map: optionally show RegionGroups</li>
-    <li>unify job description strings - node 1565 should say "silk production" like ingame workerlist</li>
-    <li>introduce skill roll chances somehow</li>
-    <ul>
-      <li>help decide which skills should and should not be rerolled?</li>
-      <li>ex: for existing worker skill, show if it's going to get better or worse after 5 rerolls</li>
+      <li>detect and apply price floors and ceilings (±7.5%)</li>
+      <li>show the age of last market fetch</li>
+      <li>apparently OBS in Capture Window mode does not capture basic HTML tooltips, only custom rolled CSS ones</li>
     </ul>
-    <li>detect unsellable items using current market offers divided by lifetime volume</li>
-    <ul>
-      <li>different items have different lifetime though</li>
-    </ul>
-    <li>detect and apply price floors and ceilings (±7.5%)</li>
-    <li>show the age of last market fetch</li>
-    <li>apparently OBS in Capture Window mode does not capture basic HTML tooltips, only custom rolled CSS ones</li>
-    
+
     <h2>Misc</h2>
     <p><RouterLink to="/workshops">House Usage</RouterLink></p>
     <p><RouterLink to="/housecraft">HouseCraft Viewer</RouterLink></p>
@@ -591,6 +601,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <p><RouterLink to="/regionmap">RegionGroup Map</RouterLink></p>
     <p><RouterLink to="/lodging">All Towns Lodging (deprecated)</RouterLink></p>
   </div>
+
 </template>
 
 <style scoped>
