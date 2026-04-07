@@ -157,9 +157,9 @@ export function formatKMG(v) {
 
 export function formatPrice(n) {
   if (n === undefined) return ''
-  if (n >= 1e9) return (n / 1e9).toFixed(2).replace(/\.00$/, '').replace(/0$/, '') + 'b'
-  if (n >= 1e6) return (n / 1e6).toFixed(2).replace(/\.00$/, '').replace(/0$/, '') + 'm'
-  if (n >= 1e3) return (n / 1e3).toFixed(2).replace(/\.00$/, '').replace(/0$/, '') + 'k'
+  if (n >= 1e9) return (n / 1e9).toFixed(2).replace(/\.00$/, '').replace(/(\..)0$/, '$1') + 'b'
+  if (n >= 1e6) return (n / 1e6).toFixed(2).replace(/\.00$/, '').replace(/(\..)0$/, '$1') + 'm'
+  if (n >= 1e3) return (n / 1e3).toFixed(2).replace(/\.00$/, '').replace(/(\..)0$/, '$1') + 'k'
   return String(n)
 }
 
