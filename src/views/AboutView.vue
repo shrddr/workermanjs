@@ -240,6 +240,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
     <ul style="padding-left: 16px;">
+      <li>price spinner follows CM steps and supports kMG format</li>
       <li>[2026-03-26 patch] new Frozen Halo node</li>
       <li>[2025-08-28 patch] trade wagons carry 2x weight, price per LT reduced 10x</li>
       <li>[2025-08-28 patch] updated Edania housing</li>

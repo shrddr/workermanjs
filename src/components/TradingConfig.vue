@@ -642,9 +642,9 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
               <ItemIcon :ik="Number(ik)"/>
             </td>
             <td>
-              <PriceInput v-model="userStore.customPrices[ik]"/>
+              <PriceInput v-model="userStore.customPrices[ik]" :defaultValue="marketStore.apiPrices[ik] || marketStore.prices[ik]"/>
             </td>
-            <td>
+            <td class="tac">
               <input type="checkbox" :disabled="ik in gameStore.vendorPrices" v-model="userStore.keepItems[ik]">
             </td>
             <td>

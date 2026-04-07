@@ -9,7 +9,11 @@ export default {
     modelValue: {
       type: null,
       required: true
-    }
+    },
+    defaultValue: {
+      type: null,
+      required: false
+    },
   },
 
   emits: ['update:modelValue'],
@@ -76,10 +80,12 @@ export default {
     // but when white price is below 5000, steps are 4980-4990-5000.
     // we inherit this quirk here by allowing 4950-up->5000-down->4990
     stepUp() {
-      const step1 = this.getStep(this.modelValue)           // 4950 -> 10
-      const ret1 = (Math.floor(this.modelValue / step1) + 1) * step1  // 4950 -> 4960
-      /*const step2 = this.getStep(this.modelValue * 2)       // 9900 -> 50
-      const ret2 = (Math.floor(this.modelValue / step2) + 1) * step2  // 4950 -> 5000
+      const v = this.modelValue ? this.modelValue : this.defaultValue
+      console.log('this.modelValue', this.modelValue, 'this.defaultValue', this.defaultValue, 'v', v)
+      const step1 = this.getStep(v)           // 4950 -> 10
+      const ret1 = (Math.floor(v / step1) + 1) * step1  // 4950 -> 4960
+      /*const step2 = this.getStep(v * 2)       // 9900 -> 50
+      const ret2 = (Math.floor(v / step2) + 1) * step2  // 4950 -> 5000
       const step3 = this.getStep(ret2)                      // 5000 -> 50
       if (step2 == step3) {
         this.$emit('update:modelValue', ret2)
@@ -89,8 +95,9 @@ export default {
     },
 
     stepDown() {
-      const step = this.getStep(this.modelValue)
-      const ret = (Math.ceil(this.modelValue / step) - 1) * step
+      const v = this.modelValue ? this.modelValue : this.defaultValue
+      const step = this.getStep(v)
+      const ret = (Math.ceil(v / step) - 1) * step
       this.$emit('update:modelValue', ret)
     },
 

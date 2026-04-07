@@ -330,7 +330,7 @@ export default {
               </template>
             </td>
             <td>
-              <PriceInput v-model="userStore.customPrices[ik]"/>
+              <PriceInput v-model="userStore.customPrices[ik]" :defaultValue="marketStore.apiPrices[ik] || marketStore.prices[ik]"/>
             </td>
             <td class="tac">
               <input type="checkbox" :disabled="ik in gameStore.vendorPrices" v-model="userStore.keepItems[ik]">
