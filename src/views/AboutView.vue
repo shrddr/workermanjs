@@ -240,7 +240,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
     <ul style="padding-left: 16px;">
-      <li>price spinner follows CM steps and supports kMG format</li>
+      <li>price spinner follows CM steps and supports k/m/b suffix</li>
       <li>[2026-03-26 patch] new Frozen Halo node</li>
       <li>[2025-08-28 patch] trade wagons carry 2x weight, price per LT reduced 10x</li>
       <li>[2025-08-28 patch] updated Edania housing</li>
@@ -511,7 +511,6 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <li>crates - show mat usage per day</li>
       <li>monk's branch rate is sus on plantzones where it is both unlucky and lucky</li>
       <li>worker send dialog > stash > ulukita towns = error</li>
-      <li>price input up/down spinner should imitate CM steps</li>
       <li>leveling a worker up/down needs to be faster</li>
       <li>[2024-11-21 patch] palace stuff maybe</li>
       <li>add "max P2W" button to set all worker slots / storage space to max pearlable</li>
