@@ -8,6 +8,7 @@ import ModalDialog from '../components/ModalDialog.vue'
 import WorkerEdit from '../components/WorkerEdit.vue'
 import WorkshopsConfig from '../components/WorkshopsConfig.vue'
 import TradingConfig from '../components/TradingConfig.vue'
+import PriceInput from '../components/lo/PriceInputAbbrHeld.vue'
 
 export default {
   setup() {
@@ -29,6 +30,7 @@ export default {
     WorkerEdit,
     WorkshopsConfig,
     TradingConfig,
+    PriceInput,
   },
   data: () => ({
     workerDialogVisible: false,
@@ -328,7 +330,7 @@ export default {
               </template>
             </td>
             <td>
-              <input type="number" class="price tar" v-model.number="userStore.customPrices[ik]">
+              <PriceInput v-model="userStore.customPrices[ik]"/>
             </td>
             <td class="tac">
               <input type="checkbox" :disabled="ik in gameStore.vendorPrices" v-model="userStore.keepItems[ik]">

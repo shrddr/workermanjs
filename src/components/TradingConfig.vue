@@ -5,6 +5,7 @@ import {useGameStore} from '../stores/game.js'
 import {useMarketStore} from '../stores/market'
 import {formatFixed, hoursToHMS} from '../util.js'
 import ItemIcon from '../components/lo/ItemIcon.vue'
+import PriceInput from '../components/lo/PriceInputAbbrHeld.vue'
 
 export default {
   setup() {
@@ -31,6 +32,7 @@ export default {
 
   components: {
     ItemIcon,
+    PriceInput,
   },
 
   created() {
@@ -469,7 +471,7 @@ export default {
             <th>profit $</th>
             <th>
               ROI
-              <abbr class="tooltip" title="make $ / profit $">ℹ</abbr>
+              <abbr class="tooltip" title="profit / (make + wagon)">ℹ</abbr>
             </th>
             <th>M$/day</th>
             <th>
@@ -640,7 +642,7 @@ on Home page (lodging is autoassigned)">infra</abbr>{{  }}
               <ItemIcon :ik="Number(ik)"/>
             </td>
             <td>
-              <input type="number" class="w5em tar" v-model.number="userStore.customPrices[ik]">
+              <PriceInput v-model="userStore.customPrices[ik]"/>
             </td>
             <td>
               <input type="checkbox" :disabled="ik in gameStore.vendorPrices" v-model="userStore.keepItems[ik]">

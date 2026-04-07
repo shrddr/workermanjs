@@ -155,6 +155,23 @@ export function formatKMG(v) {
   return v
 }
 
+export function formatPrice(n) {
+  if (n === undefined) return ''
+  if (n >= 1e9) return (n / 1e9).toFixed(2).replace(/\.00$/, '').replace(/0$/, '') + 'b'
+  if (n >= 1e6) return (n / 1e6).toFixed(2).replace(/\.00$/, '').replace(/0$/, '') + 'm'
+  if (n >= 1e3) return (n / 1e3).toFixed(2).replace(/\.00$/, '').replace(/0$/, '') + 'k'
+  return String(n)
+}
+
+export function unformatPrice(str) {
+  if (str == '') return ''
+  const m = str.match(/^([\d.]+)\s*([kmb]?)$/)
+  if (!m) return NaN
+  return Number(m[1]) * (m[2].toLowerCase() === 'k' ? 1e3 :
+                          m[2].toLowerCase() === 'm' ? 1e6 :
+                          m[2].toLowerCase() === 'b' ? 1e9 : 1)
+}
+
 export function levelup(gameStore, w, targetlevel) {
   if (targetlevel == w.level) return
   const newlevel = Math.min(targetlevel, 40)
