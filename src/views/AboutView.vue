@@ -196,7 +196,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>pull actual worker stats from your PC (ty @Aman, @Thell, @Sbreeng, @thirtyeight):</li>
           <ul>
             <li>download and install <a href="https://www.python.org/">Python</a> 3.9+</li>
-            <li>download the <a href="https://pastebin.com/Fp2TbMdg">cache2json</a> script, and run it through Python</li>
+            <li>download the <a href="https://pastebin.com/PstgcgxU">cache2json</a> script, and run it through Python</li>
             <li>now head back to Workerman Home page > All towns/workers list > import the json file you just created by running the script</li>
           </ul>
           <li>warning: if the totals in top right corner show ? after the import, you probably exceeded the F2P town limits for lodging/storage. look for towns marked red in <strong class="notranslate">All towns/workers</strong> list and adjust their <strong class="notranslate">config > P2W</strong> numbers</li>
