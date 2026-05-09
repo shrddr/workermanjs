@@ -156,10 +156,25 @@ export function formatKMG(v) {
 }
 
 export function formatPrice(n) {
-  if (n === undefined) return ''
-  if (n >= 1e9) return (n / 1e9).toFixed(2).replace(/\.00$/, '').replace(/(\..)0$/, '$1') + 'b'
-  if (n >= 1e6) return (n / 1e6).toFixed(2).replace(/\.00$/, '').replace(/(\..)0$/, '$1') + 'm'
-  if (n >= 1e3) return (n / 1e3).toFixed(2).replace(/\.00$/, '').replace(/(\..)0$/, '$1') + 'k'
+  if (n === undefined || n === null) return ''
+
+  const format = (value, suffix) => {
+    const rounded =
+      value >= 100
+        ? value.toFixed(0)
+        : value >= 10
+        ? value.toFixed(1)
+        : value.toFixed(2)
+
+    return rounded
+      .replace(/\.0+$/, '')
+      .replace(/(\.\d*[1-9])0+$/, '$1') + suffix
+  }
+
+  if (n >= 1e9) return format(n / 1e9, 'b')
+  if (n >= 1e6) return format(n / 1e6, 'm')
+  if (n >= 1e3) return format(n / 1e3, 'k')
+
   return String(n)
 }
 
