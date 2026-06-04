@@ -240,6 +240,47 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
     <ul style="padding-left: 16px;">
+      <li>[2026-06-04 patch] some house CP costs reduced</li>
+      <li>[2026-06-04 patch] plantzone changes (droprates are zero for now, to be filled later)
+      <details><summary>31 new</summary>
+        <LinkToNode :nodeKey="2082"/>,
+        <LinkToNode :nodeKey="2081"/>,
+        <LinkToNode :nodeKey="2077"/>,
+        <LinkToNode :nodeKey="2076"/>,
+        <LinkToNode :nodeKey="2075"/>,
+        <LinkToNode :nodeKey="2070"/>,
+        <LinkToNode :nodeKey="2069"/>,
+        <LinkToNode :nodeKey="2066"/>,
+        <LinkToNode :nodeKey="2065"/>,
+        <LinkToNode :nodeKey="207"/>,
+        <LinkToNode :nodeKey="208"/>,
+        <LinkToNode :nodeKey="2084"/>,
+        <LinkToNode :nodeKey="2083"/>,
+        <LinkToNode :nodeKey="2061"/>,
+        <LinkToNode :nodeKey="2060"/>,
+        <LinkToNode :nodeKey="2078"/>,
+        <LinkToNode :nodeKey="2068"/>,
+        <LinkToNode :nodeKey="206"/>,
+        <LinkToNode :nodeKey="209"/>,
+        <LinkToNode :nodeKey="2067"/>,
+        <LinkToNode :nodeKey="2080"/>,
+        <LinkToNode :nodeKey="2063"/>,
+        <LinkToNode :nodeKey="2062"/>,
+        <LinkToNode :nodeKey="2059"/>,
+        <LinkToNode :nodeKey="2058"/>,
+        <LinkToNode :nodeKey="2079"/>,
+        <LinkToNode :nodeKey="2074"/>,
+        <LinkToNode :nodeKey="2073"/>,
+        <LinkToNode :nodeKey="2072"/>,
+        <LinkToNode :nodeKey="2071"/>,
+        <LinkToNode :nodeKey="2064"/>
+      </details> <details><summary>4 changed</summary>
+        <LinkToNode :nodeKey="201"/>,
+        <LinkToNode :nodeKey="202"/>,
+        <LinkToNode :nodeKey="1675"/>,
+        <LinkToNode :nodeKey="1676"/>
+      </details> 
+      </li>
       <li>price spinner follows CM steps and supports k/m/b suffix</li>
       <li>[2026-03-26 patch] new Frozen Halo node</li>
       <li>[2025-08-28 patch] trade wagons carry 2x weight, price per LT reduced 10x</li>
