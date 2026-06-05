@@ -241,7 +241,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <h2>Changelog</h2>
     <ul style="padding-left: 16px;">
       <li>[2026-06-04 patch] some node and house CP costs reduced</li>
-      <li>[2026-06-04 patch] plantzone changes (droprates v1 based on 332 observed cycles)
+      <li>[2026-06-04 patch] plantzone changes (droprates v1.1 based on 341 observed cycles)
       <details><summary>31 new</summary>
         <LinkToNode :nodeKey="2082"/>,
         <LinkToNode :nodeKey="2081"/>,
