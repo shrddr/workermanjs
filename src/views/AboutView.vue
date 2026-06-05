@@ -15,27 +15,37 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       </template>
       Optimize your <a href="https://discord.gg/xs6Bf9w5">#worker-empire</a> to bring more silver.
     </QnaItem>
+
     <QnaItem>
       <template #q>
         How to use?
       </template>
-      First of all go to <RouterLink to="/settings">Settings</RouterLink>, select your server and tax. After that, two options are available:
+      First of all go to <strong>Settings</strong>, select your server and tax. After that, two options are available:
       <ul>
-        <li>Quick and simple: do nothing and just look at <RouterLink to="/plantzones">Plantzones</RouterLink> page - nodes at the top are good, nodes at the bottom are bad. Use Plantzones page if just starting out.</li>
+        <li>Quick and simple: do nothing and just look at <strong>Plantzones</strong> page - nodes at the top are good, nodes at the bottom are bad. Use Plantzones page if just starting out.</li>
         <li>
-          Personalized and nuanced: go to <RouterLink to="/">Home</RouterLink> page, 
+          Personalized and nuanced: go to <strong>Home</strong> page, 
           select a town on the map, hire a worker, send to whatever node gives highest efficiency, repeat
-          (OR select a plantzone on the map and hire+assign a worker with a single button).
-          Use Home page if you want to improve or rework an existing empire.
+          (OR select a plantzone on the map and <strong>hire+assign</strong> a worker with a single button).
+          Use Home page if you want to improve or rework an existing empire (check Empire pane in top left for useful stats).
         </li>
       </ul>
     </QnaItem>
+    
     <QnaItem>
       <template #q>
         Is there any video or guide?
       </template>
       <a href="https://youtu.be/EknUHU1Lvq0">Setup and Usage</a> by Yura, <a href="https://youtu.be/sEHK7cX4SIE">Best Workers Video</a> by Summer
     </QnaItem>
+
+    <QnaItem>
+      <template #q>
+        Any way to support?
+      </template>
+      <a href="https://www.buymeacoffee.com/shrddr">buymeacoffee</a>
+    </QnaItem>
+
     <QnaItem>
       <template #q>
         How do i make an empire optimized for cooking/alchemy?
@@ -45,6 +55,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       Just sell the output and use that silver to buy whatever you need.
       If you want to completely avoid some item, go to Settings and put 0 as its <strong class="notranslate">Custom Value</strong>.
     </QnaItem>
+
     <QnaItem>
       <template #q>
         In send worker dialog, what does <strong class="notranslate">+efficiency</strong> column mean and why is it mostly negative for me?
@@ -53,6 +64,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       It being negative is good - means you already own all the best nodes, so remaining nodes reduce the current efficiency.
       You want to spend all available CP anyway, so just select those that are least negative (= highest in list).
     </QnaItem>
+
     <QnaItem>
       <template #q>
         What is <strong class="notranslate">M$/day/CP</strong>?
@@ -80,6 +92,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       </template>
       Because central market prices change over time.
     </QnaItem>
+
     <QnaItem>
       <template #q>
         What does <strong class="notranslate">wasm router</strong> checkbox do?
@@ -113,6 +126,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         </div>
       </details>
     </QnaItem>
+
     <QnaItem>
       <template #q>
         How does the giant bonus work? Is it not just average goblin yield increased by 68.4%?
@@ -143,6 +157,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         </ul>
       </ul>
     </QnaItem>
+
     <QnaItem>
       <template #q>
         What are stat ranks?
@@ -153,6 +168,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       Rank 100% level 40 worker means 39 max rolls in a row (2.0*39=78.0).<br/>
       "+stat per level" skills are not accounted for when calculating rank, so you can potentially have >100% rank (by having >78.0 stat gained through levelups).
     </QnaItem>
+
     <QnaItem>
       <template #q>
         Where does the drop data come from and how old?
@@ -165,6 +181,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       5. Seoul drops: observed non-thoroughly in september 2024, when in doubt picked values most similar to existing node drops from (1).<br/>
       6. Ulukita drops: observed in june 2025.<br/>
       7. Edania drops: observed in august 2025.<br/>
+      8. 31+4 patch: observed in june 2026.<br/>
       I've been adjusting all of the above over time when relevant changes were published in patch notes, like "increased yields at node X by Y%".
     </QnaItem>
 
@@ -232,7 +249,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <li>
         Try <a href="https://github.com/Thell/bdo-empire">bdo-empire</a> which takes a while to run, but creates an empire from scratch given a target amount of CP (and its output can be imported back into workerman)
         <ul>
-          <li>It uses Calpheon as stash for all workers so you may spread that out after the import</li>
+          <li>It uses Calpheon as stash for all workers, so after the import you may need to reassign stashes (to whatever your main town is, or spread out across multiple towns)</li>
         </ul>
       </li>
     </ul>
@@ -241,7 +258,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
     <h2>Changelog</h2>
     <ul style="padding-left: 16px;">
       <li>[2026-06-04 patch] some node and house CP costs reduced</li>
-      <li>[2026-06-04 patch] plantzone changes (droprates v1.1 based on 341 observed cycles)
+      <li>[2026-06-04 patch] plantzone changes (droprates v2 based on 602 observed cycles)
       <details><summary>31 new</summary>
         <LinkToNode :nodeKey="2082"/>,
         <LinkToNode :nodeKey="2081"/>,
