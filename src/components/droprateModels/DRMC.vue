@@ -690,7 +690,7 @@ export default {
   <br/>
   <p class="fsxs">MSE: <i>Σ (observed - model)²</i>, discard nothing ← this is used for fitting</p>
   <p class="fsxs">χ²: discard bins where model &lt; 3, then <i>Σ (observed - model)² / model</i></p>
-  <p class="fsxs">p-val: <i>1 - chisquare.cdf(χ², bins - 1 - dof) ← this depends too much on previous step discards</i></p>
+  <p class="fsxs">p-val: <i>1 - chisquare.cdf(χ², bins - 1 - dof)</i> ← on small datasets this depends too much on previous step discards</p>
 </template>
 
 <style scoped>
