@@ -257,8 +257,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
     <ul style="padding-left: 16px;">
-      <li>[2026-06-04 patch] some node and house CP costs reduced</li>
-      <li>[2026-06-04 patch] plantzone changes (droprates v2 based on 602 observed cycles)
+      <li>[2026-06-04 patch] plantzone changes (droprates v3 based on ~1200 observed cycles)
       <details><summary>31 new</summary>
         <LinkToNode :nodeKey="2082"/>,
         <LinkToNode :nodeKey="2081"/>,
@@ -298,6 +297,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
         <LinkToNode :nodeKey="1676"/>
       </details> 
       </li>
+      <li>[2026-06-04 patch] some node and house CP costs reduced</li>
       <li>price spinner follows CM steps and supports k/m/b suffix</li>
       <li>[2026-03-26 patch] new Frozen Halo node</li>
       <li>[2025-08-28 patch] trade wagons carry 2x weight, price per LT reduced 10x</li>
