@@ -95,6 +95,13 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <QnaItem>
       <template #q>
+        Why can't I use Ancado workers?
+      </template>
+      This is the only ingame town that requires connecting to some other town to be able to function properly. Workerman keeps this requirement but since you can't do arbitrary connections there's a checkbox in Ancado town config that does that for you
+    </QnaItem>
+
+    <QnaItem>
+      <template #q>
         What does <strong class="notranslate">wasm router</strong> checkbox do?
       </template>
       This is an experimental new way of connecting nodes, better than the old one in most cases.<br/>
@@ -213,9 +220,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>pull actual worker stats from your PC (ty @Aman, @Thell, @Sbreeng, @thirtyeight):</li>
           <ul>
             <li>download and install <a href="https://www.python.org/">Python</a> 3.9+</li>
-            <li>download the <a href="https://pastebin.com/z9bW2n68">cache2json</a> script, and run it through Python</li>
+            <li>download the <a href="https://pastebin.com/XpbwtqPA">cache2json</a> script, and run it through Python</li>
             <li>now head back to Workerman Home page > All towns/workers list > import the json file you just created by running the script</li>
           </ul>
+          <li>in case wrong or outdated jobs are retrieved, pay attention to what the script prints, is it using an incorrect or outdated cache file?</li>
           <li>warning: if the totals in top right corner show ? after the import, you probably exceeded the F2P town limits for lodging/storage. look for towns marked red in <strong class="notranslate">All towns/workers</strong> list and adjust their <strong class="notranslate">config > P2W</strong> numbers</li>
           <li>note: the script doesn't really fetch <i>current</i> jobs, but the jobs associated with ingame "restart job" button of each worker.</li>
           <ul>
@@ -257,7 +265,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
     <ul style="padding-left: 16px;">
-      <li>[2026-06-04 patch] plantzone changes (droprates v3 based on ~1200 observed cycles)
+      <li>[2026-06-04 patch] plantzone changes (droprates v4 based on ~2400 observed cycles)
       <details><summary>31 new</summary>
         <LinkToNode :nodeKey="2082"/>,
         <LinkToNode :nodeKey="2081"/>,
