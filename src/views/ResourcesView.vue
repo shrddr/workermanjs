@@ -150,7 +150,7 @@ export default {
 
   <div id="toptext">
     <p>These values are shown ingame as green bars at world map > resource view.</p>
-    <p>However, some green bars are hidden/misplaced, for those you can check the current workload in worker assignment panel ingame.</p>
+    <p>However, the client has several resource bars hidden/misplaced, for those you can check the current workload in worker assignment panel ingame and infer the resource% from that.</p>
     <p>Low (exhausted) resource means workloads of relevant nodes are increased (up to 2x of base) so each job takes longer to complete.</p>
     <p>If unspecified here, 0% resource will be used (= max workload = longest cycle = min cycles per day = min profit)</p>
     

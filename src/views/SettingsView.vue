@@ -95,7 +95,8 @@ export default {
         customPrices: this.userStore.customPrices,
         keepItems: this.userStore.keepItems,
         effectivePrices: this.marketStore.prices,
-      } 
+        farmingWorkerSilverPerDay: this.userStore.farmingProfitPerWorker * 1E6,
+      }
       const str = JSON.stringify(out)
       var file = new Blob([str], {type: 'text/plain'});
       a.href = URL.createObjectURL(file);
