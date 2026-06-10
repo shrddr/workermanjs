@@ -629,10 +629,12 @@ export const useGameStore = defineStore({
         // problem with Ancado is it's not in static townsConnectionRoots,
         // it can however become a Connection Root once userStore.activateAncado is set
         if (this.townsConnectionRoots.has(current)) {
-          if (mustHaveLodging && !this.townsWithLodgingSet.has(current)) continue
-          if (skipAncado && current == 1343) continue
-          found.add(current)
-          if (found.size == townLimit) break
+          if (!mustHaveLodging || this.townsWithLodgingSet.has(current)) {
+            if (current != 1343 || !skipAncado) {
+              found.add(current)
+              if (found.size == townLimit) break
+            }
+          }
         }
 
         this.links[current].forEach(neighbor => {
