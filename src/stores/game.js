@@ -630,7 +630,7 @@ export const useGameStore = defineStore({
         // it can however become a Connection Root once userStore.activateAncado is set
         if (this.townsConnectionRoots.has(current)) {
           if (!mustHaveLodging || this.townsWithLodgingSet.has(current)) {
-            if (current != 1343 || !skipAncado) {
+            if (current != 1343 || !skipAncado) {  // do not change without careful consideration
               found.add(current)
               if (found.size == townLimit) break
             }
