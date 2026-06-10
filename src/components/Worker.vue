@@ -104,7 +104,7 @@ export default {
       <button v-if="w.job" @click="w.job = null">stop</button>
       <template v-else>
         <div v-if="unsendable">
-          <button title="Ancado is not activated, can't house workers" disabled="true">send</button>
+          <button title="Ancado needs to be explicitly activated (see town config) to house workers" disabled="true">send</button>
         </div>
         <button v-else @click="$emit('send')">send</button>
       </template>

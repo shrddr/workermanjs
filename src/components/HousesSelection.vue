@@ -185,7 +185,8 @@ export default {
     
     <template v-if="tk == 619">
       <input type="checkbox" v-model="userStore.activateAncado"/>
-      Connect to nearest town
+      Activate (connect to nearest town) <abbr class="tooltip" title="this will not make Ancado findable in node menu > nearest towns with... or empire > best untaken,
+but will allow sending workers from Ancado town menu to a plantzone (or other job)">ℹ</abbr>
     </template>
 
     <div class="section" v-if="tk in gameStore.lodgingPerTown">

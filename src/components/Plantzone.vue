@@ -209,7 +209,7 @@ export default {
             <td>
               <button v-if="userStore.workedPlantzones.has(pzk.toString())" title="plantzone already occupied" disabled="true">assign</button>
               <button v-else-if="isNaN(e.townCp)" title="Can't resolve housing" disabled="true">assign</button>
-              <button v-else-if="gameStore.tnk2tk(e.w.tnk) && gameStore.tnk2tk(e.w.tnk) == 619 && !userStore.activateAncado" title="Ancado is not activated, can't house workers" disabled="true">assign</button>
+              <button v-else-if="gameStore.tnk2tk(e.w.tnk) && gameStore.tnk2tk(e.w.tnk) == 619 && !userStore.activateAncado" title="Ancado needs to be explicitly activated (see town config) to house workers" disabled="true">assign</button>
               <button v-else @click="userStore.assignWorker(e.w, {kind: 'plantzone', pzk: e.pz.key, storage: e.storageTnk})">
                 assign
               </button>
