@@ -616,6 +616,7 @@ export const useGameStore = defineStore({
         return
       //const ts = Date.now()
       let found = new Set()
+      const userStore = useUserStore()
 
       const prev = {[start]: null}
       const pathCosts = {[start]: takens && takens.has(start) ? 0 : this.nodes[start].CP}
@@ -626,14 +627,12 @@ export const useGameStore = defineStore({
       while (unvisited.size()) {
         current = unvisited.pop()
         
-        // problem with Ancado is it's not in static townsConnectionRoots,
-        // it can however become a Connection Root once userStore.activateAncado is set
-        if (this.townsConnectionRoots.has(current)) {
-          if (!mustHaveLodging || this.townsWithLodgingSet.has(current)) {
-            if (current != 1343 || !skipAncado) {  // do not change without careful consideration
-              found.add(current)
-              if (found.size == townLimit) break
-            }
+        // Ancado is not in static townsConnectionRoots, it can however become one once userStore.activateAncado is set
+        if (this.townsConnectionRoots.has(current) || (!skipAncado && userStore.activateAncado && current == 1343)) {
+          // in most cases we are searching for a town that is able to house workers, but there are some exceptions
+          if (this.townsWithLodgingSet.has(current) || !mustHaveLodging) {
+            found.add(current)
+            if (found.size == townLimit) break
           }
         }
 
