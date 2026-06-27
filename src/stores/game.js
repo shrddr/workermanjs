@@ -177,6 +177,7 @@ export const useGameStore = defineStore({
     },
 
     houseLodging(hk) {
+      if (!this.houseInfo[hk]) return 0
       const t = this.houseInfo[hk].CraftList[1] ?? 0
       const v = {0: 0, 1: 1, 2: 2, 3: 4, 4: 6, 5: 8}
       //console.log(hk, t)
@@ -184,6 +185,7 @@ export const useGameStore = defineStore({
     },
 
     houseStorage(hk) {
+      if (!this.houseInfo[hk]) return 0
       const t = this.houseInfo[hk].CraftList[2] ?? 0
       const v = {0: 0, 1: 3, 2: 5, 3: 8, 4: 12, 5: 16}
       return v[t]

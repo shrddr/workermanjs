@@ -101,8 +101,8 @@ export default {
       this.userStore.townsInfra[tk].indices.forEach((hk, i) => {
         if (this.userStore.townsInfra[tk].states[i] == 0)
           return
-        const icon = this.userStore.townsInfra[tk].states[i] == 1 ? '📦' : '🛏️'
-        ret.push(icon + this.gameStore.uloc.char[hk])
+        const icon = this.userStore.townsInfra[tk].states[i] == 1 ? this.gameStore.houseStorage(hk)+'📦' : this.gameStore.houseLodging(hk)+'🛏️'
+        ret.push(icon + ' ' + this.gameStore.uloc.char[hk])
       })
       return ret.join('\n')
     },

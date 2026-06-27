@@ -412,7 +412,7 @@ export default {
 </script>
 
 <template>
-  Observations:
+  Observations at RG{{ this.rgk }}:
   <abbr class="tooltip" title="Enter comma-separated resource values (0..100 range) observed evenly across all worker-active time.
 The order does not matter, but repeat occurence of same value does.
 You can sneak in newlines and comments like `evening,0,0.1,2, morning,3,22,0` - text will be stored, but ignored in calculations.">ℹ</abbr><br/>
