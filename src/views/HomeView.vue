@@ -645,7 +645,12 @@ export default {
             <label class="switch mauto">
               <input type="checkbox" v-model="userStore.displayWorkerNames">
               <span class="slider"></span>
-              names
+              wrkr names
+            </label>
+            <label class="switch mauto">
+              <input type="checkbox" v-model="userStore.displayNodeParent">
+              <span class="slider"></span>
+              parent node
             </label>
             <label class="switch mauto">
               <input type="checkbox" v-model="userStore.displayWorkerStatsRank" :disabled="userStore.displayWorkerStatsForPz">

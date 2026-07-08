@@ -45,6 +45,7 @@ export const useUserStore = defineStore({
     displayWorkerStatsRank: false,
     displayWorkerStatsForPz: true,
     displayProfitPerCp: false,
+    displayNodeParent: false,
 
     grindTakenList: [],
     userWorkshops: {},

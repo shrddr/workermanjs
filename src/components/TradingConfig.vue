@@ -347,7 +347,7 @@ export default {
 
     transportCostPerLt(tnka, tnkb, unconnected) {
       const dist = this.distance(tnka, tnkb)
-      const cost = dist * 0.18 / 60000
+      const cost = dist * 0.18 / 60000  // 2 million cm = 360k silver per wagon = 6 silver per LT
       return unconnected ? cost * 4 : cost
     },
     

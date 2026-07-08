@@ -24,6 +24,12 @@ export default {
     formatFixed,
     extractNumbers,
 
+    pz_text(w) {
+      const nk = w.job.pzk
+      if (this.userStore.displayNodeParent) return this.gameStore.parentNodeName(nk)
+      return this.gameStore.uloc.node[nk]
+    },
+
     workshop_text(w) {
       const contextTnk = w.tnk
 
@@ -51,7 +57,7 @@ export default {
     idle
   </template>
   <template v-else-if="gameStore.jobIsPz(w.job)">
-    {{ gameStore.uloc.node[w.job.pzk] }}
+    {{ pz_text(w) }}
   </template>
   <template v-else-if="gameStore.jobIsFarming(w.job)">
     [{{ gameStore.jobIcon(w.job) }}]
