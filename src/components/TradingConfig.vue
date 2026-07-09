@@ -298,15 +298,9 @@ export default {
         const inputsCopy = {}
         const inputsCount = Object.entries(inputs).length
         for (const ik of Object.keys(inputs)) {
-          if (inputs[ik] >= 10) {
-            const thriftable = Math.floor(inputs[ik] / 10)
-            const thrifted = thriftable * (1 - thriftyPercent/inputsCount/100)
-            inputsCopy[ik] = inputs[ik] - thriftable + thrifted
-            //console.log('applied thrifty', rcp, ik, thriftyPercent, inputsCopy[ik])
-          }
-          else {
-            inputsCopy[ik] = inputs[ik]
-          }
+          const thriftyChance = thriftyPercent / 100 / inputsCount
+          inputsCopy[ik] = inputs[ik] * (1 - thriftyChance)
+          //console.log('applied thrifty', rcp, ik, thriftyPercent, inputsCopy[ik])
         }
         return this.marketStore.priceBunch(inputsCopy)
       }

@@ -253,22 +253,14 @@ export const useRoutingStore = defineStore({
           const route = routeInfos[worker.tnk][houseTnk]
 
           let thriftyPercent = 0
-          let thriftyWorks = false
           const rcp = worker.job.recipe
           if (gameStore.craftInputs && rcp in gameStore.craftInputs) {
             const inputs = gameStore.craftInputs[rcp]
-            for (const ik of Object.keys(inputs)) {
-              if (inputs[ik] >= 10) {
-                thriftyWorks = true
-              }
-            }
-            if (thriftyWorks) {
-              for (const sk of worker.skills) {
-                if (sk > 0) {
-                  if ('thrifty5' in gameStore.skillData[sk]) thriftyPercent += 5
-                  if ('thrifty7' in gameStore.skillData[sk]) thriftyPercent += 7
-                  if ('thrifty10' in gameStore.skillData[sk]) thriftyPercent += 10
-                }
+            for (const sk of worker.skills) {
+              if (sk > 0) {
+                if ('thriftyA' in gameStore.skillData[sk]) thriftyPercent += gameStore.skillData[sk].thriftyA
+                if ('thriftyB' in gameStore.skillData[sk]) thriftyPercent += gameStore.skillData[sk].thriftyB
+                if ('thriftyC' in gameStore.skillData[sk]) thriftyPercent += gameStore.skillData[sk].thriftyC
               }
             }
           }
@@ -381,22 +373,14 @@ export const useRoutingStore = defineStore({
           const houseTnk = gameStore.tk2tnk(houseTk)
           const profit = gameStore.profitWorkshopWorker(hk, workshop, worker)
           let thriftyPercent = 0
-          let thriftyWorks = false
           const rcp = worker.job.recipe
           if (gameStore.craftInputs && rcp in gameStore.craftInputs) {
             const inputs = gameStore.craftInputs[rcp]
-            for (const ik of Object.keys(inputs)) {
-              if (inputs[ik] >= 10) {
-                thriftyWorks = true
-              }
-            }
-            if (thriftyWorks) {
-              for (const sk of worker.skills) {
-                if (sk > 0) {
-                  if ('thrifty5' in gameStore.skillData[sk]) thriftyPercent += 5
-                  if ('thrifty7' in gameStore.skillData[sk]) thriftyPercent += 7
-                  if ('thrifty10' in gameStore.skillData[sk]) thriftyPercent += 10
-                }
+            for (const sk of worker.skills) {
+              if (sk > 0) {
+                if ('thriftyA' in gameStore.skillData[sk]) thriftyPercent += gameStore.skillData[sk].thriftyA
+                if ('thriftyB' in gameStore.skillData[sk]) thriftyPercent += gameStore.skillData[sk].thriftyB
+                if ('thriftyC' in gameStore.skillData[sk]) thriftyPercent += gameStore.skillData[sk].thriftyC
               }
             }
           }
