@@ -265,8 +265,8 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
     <ul style="padding-left: 16px;">
-      <li>[2026-07-02 patch] thrifty skill changed</li>
-      <li>[2026-06-04 patch] plantzone changes (droprates v6 based on ~10k observed cycles)
+      <li>[2026-07-02 patch] thrifty skill reworked</li>
+      <li>[2026-06-04 patch] plantzone changes (droprates v7 based on ~22k observed cycles)
       <details><summary>31 new</summary>
         <LinkToNode :nodeKey="2082"/>,
         <LinkToNode :nodeKey="2081"/>,
@@ -309,7 +309,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <li>[2026-06-04 patch] some node and house CP costs reduced</li>
       <li>price spinner follows CM steps and supports k/m/b suffix</li>
       <li>[2026-03-26 patch] new Frozen Halo node</li>
-      <li>[2025-08-28 patch] trade wagons carry 2x weight, price per LT reduced 10x</li>
+      <li>[2026-01-08 patch] trade wagons carry 2x weight, price per LT reduced 10x</li>
       <li>[2025-08-28 patch] updated Edania housing</li>
       <li>[2025-07-21 patch] added new Edania area with 15 plantzones</li>
         <ul>
@@ -321,6 +321,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <li>a consistent fast way to build optimal connections (orderless) by @Thell</li>
       <li>sticky table headers</li>
       <li>show product icon for workshop jobs</li>
+      <li>[2025-05-29 patch] there are now 5 trade wagons instead of 1</li>
       <li>[2025-05-22 patch] Reduced CP costs of houses</li>
       <li>[2025-05-22 patch] Reduced CP costs of nodes</li>
       <li>[2025-05-22 patch] Added 12 plantzones in Ulukita + 4 around Keplan</li>
