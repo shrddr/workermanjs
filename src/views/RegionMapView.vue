@@ -140,7 +140,7 @@ export default {
     makeRgLayer() {
       return new GeoJsonLayer({
         id: 'RegionGroupLayer',
-        data: 'data/rg_latest_1_5.geojson',
+        data: 'data/rg_latest.geojson',
 
         stroked: false,  // default: true
         getLineWidth: 50,  
@@ -181,7 +181,7 @@ export default {
     makeRLayer() {
       return new GeoJsonLayer({
         id: 'RegionLayer',
-        data: 'data/r_latest_1_5.geojson',
+        data: 'data/r_latest.geojson',
 
         stroked: false,  // default: true
         getLineWidth: 50,  
@@ -269,7 +269,7 @@ export default {
         getTooltip: ({object}) => {
           if (object && object.properties) {
             if (object.properties.r) {
-              return `R${object.properties.r}`
+              return `R${object.properties.r} ${this.gameStore.uloc.town[object.properties.r]}`
             }
             if (object.properties.rg) {
               let ret = `RG${object.properties.rg}`
