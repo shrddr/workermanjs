@@ -161,15 +161,33 @@ export default {
         this.offsetValue + this.maxRollsValue / 2
       )
       const values = new Float64Array(Math.ceil(maxMultiplier / step) + 2)
+      const groupValues = [
+        new Float64Array(values.length),
+        new Float64Array(values.length),
+        new Float64Array(values.length),
+        new Float64Array(values.length),
+      ]
 
-      for (let index = 0; index < values.length; index++)
-        values[index] = this.distributionCdf(index * step)
+      for (let index = 0; index < values.length; index++) {
+        const multiplier = index * step
+        values[index] = this.distributionCdf(multiplier)
+        const probabilities = this.distributionCdfs(multiplier)
+        for (let group = 0; group < groupValues.length; group++) {
+          groupValues[group][index] = probabilities[group]
+        }
+      }
 
-      return { step, values }
+      return {
+        step,
+        values,
+        groupValues,
+        groupTotals: this.distributionCdfs(Infinity),
+      }
     },
 
     model() {
       const data = []
+      const groupData = [[], [], [], []]
       const theoreticalMax = this.valueFromRollSum(
         this.maxRollsValue,
         this.maxRollsValue,
@@ -180,10 +198,17 @@ export default {
         const probability = this.sizeCdf(bin + 1) - this.sizeCdf(bin)
         const expected = probability * this.stats.len
         data.push([bin, expected])
+        for (let group = 0; group < groupData.length; group++) {
+          const groupProbability =
+            this.sizeGroupCdf(bin + 1, group) -
+            this.sizeGroupCdf(bin, group)
+          groupData[group].push([bin, groupProbability * this.stats.len])
+        }
       }
 
       return {
         data,
+        groupData,
         loss: loss(data, this.histogram.map, 2),
       }
     },
@@ -194,6 +219,10 @@ export default {
 
     chartModelData() {
       return this.asPercentages(this.model.data)
+    },
+
+    chartModelGroupData() {
+      return this.model.groupData.map(data => this.asPercentages(data))
     },
 
     codeSnippet() {
@@ -253,6 +282,7 @@ export default {
         dataset: [
           { source: this.chartHistogram },
           { source: this.chartModelData },
+          ...this.chartModelGroupData.map(source => ({ source })),
         ],
         dataZoom: [{
           type: 'inside',
@@ -293,6 +323,39 @@ export default {
             datasetIndex: 1,
             encode: { x: 0, y: 1 },
             showSymbol: false,
+            lineStyle: { width: 3 },
+          },
+          {
+            name: `${Math.max(1, this.unconditionalRollsValue)} rolls`,
+            type: 'line',
+            datasetIndex: 2,
+            encode: { x: 0, y: 1 },
+            showSymbol: false,
+            lineStyle: { width: 1 },
+          },
+          {
+            name: `${Math.max(1, this.unconditionalRollsValue) + 1} rolls`,
+            type: 'line',
+            datasetIndex: 3,
+            encode: { x: 0, y: 1 },
+            showSymbol: false,
+            lineStyle: { width: 1 },
+          },
+          {
+            name: `${Math.max(1, this.unconditionalRollsValue) + 2} rolls`,
+            type: 'line',
+            datasetIndex: 4,
+            encode: { x: 0, y: 1 },
+            showSymbol: false,
+            lineStyle: { width: 1 },
+          },
+          {
+            name: `${Math.max(1, this.unconditionalRollsValue) + 3} rolls`,
+            type: 'line',
+            datasetIndex: 5,
+            encode: { x: 0, y: 1 },
+            showSymbol: false,
+            lineStyle: { width: 1 },
           },
         ],
       }
@@ -391,6 +454,22 @@ export default {
         fraction * (stop.cdf[index + 1] - stop.cdf[index])
     },
 
+    distributionCdfs(multiplier) {
+      const probabilities = [0, 0, 0, 0]
+      if (multiplier <= 0) return probabilities
+      const initialRolls = Math.max(1, this.unconditionalRollsValue)
+      for (const stop of this.distribution.stops) {
+        const center = this.offsetValue + stop.rollCount / 2
+        const sum = center * multiplier - this.offsetValue
+        const conditionalRolls = stop.rollCount - initialRolls
+        if (conditionalRolls < probabilities.length)
+          probabilities[conditionalRolls] += this.stopCdf(stop, sum)
+      }
+      return probabilities.map(
+        probability => probability / this.distribution.totalMass,
+      )
+    },
+
     distributionCdf(multiplier) {
       if (multiplier <= 0) return 0
       let probability = 0
@@ -412,11 +491,33 @@ export default {
       return values[index] + fraction * (values[index + 1] - values[index])
     },
 
+    multiplierGroupCdf(multiplier, group) {
+      if (multiplier <= 0) return 0
+      const {
+        step,
+        groupValues,
+        groupTotals,
+      } = this.multiplierCdfLookup
+      const values = groupValues[group]
+      const position = multiplier / step
+      if (position >= values.length - 1) return groupTotals[group]
+      const index = Math.floor(position)
+      const fraction = position - index
+      return values[index] + fraction * (values[index + 1] - values[index])
+    },
+
     sizeCdf(value) {
       if (value <= 0 || this.avg_size <= 0) return 0
       const normalized = value / this.avg_size
       const multiplier = this.square ? Math.sqrt(normalized) : normalized
       return this.multiplierCdf(multiplier)
+    },
+
+    sizeGroupCdf(value, group) {
+      if (value <= 0 || this.avg_size <= 0) return 0
+      const normalized = value / this.avg_size
+      const multiplier = this.square ? Math.sqrt(normalized) : normalized
+      return this.multiplierGroupCdf(multiplier, group)
     },
 
     valueFromRollSum(rollSum, rollCount) {
