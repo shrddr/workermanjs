@@ -68,7 +68,7 @@ export default {
       selectedLuck: 68.3,
       generalSigmas: 4,
       modelTab: 'rolls',
-      rollModelTab: 'fixed',
+      rollModelTab: 'variable',
       unconditionalVariableRolls: 2,
 
       fish_info: {},
@@ -477,7 +477,7 @@ export default {
           >
           unscale to Avg=
         </label>
-        <input type="number" v-model="relative_base" step="10" style="width: 3.5em;">
+        <input type="number" v-model="relative_base" step="10" class="w5em">
         <br/>
         <label>
           <input
@@ -530,16 +530,16 @@ export default {
           <div class="tabs roll-tabs">
             <span>number of rolls </span>
             <button
-              :class="{ pressed: rollModelTab === 'fixed' }"
-              @click="rollModelTab = 'fixed'"
-            >
-              fixed
-            </button>
-            <button
               :class="{ pressed: rollModelTab === 'variable' }"
               @click="rollModelTab = 'variable'"
             >
               variable
+            </button>
+            <button
+              :class="{ pressed: rollModelTab === 'fixed' }"
+              @click="rollModelTab = 'fixed'"
+            >
+              fixed
             </button>
           </div>
 

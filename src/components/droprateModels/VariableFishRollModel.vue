@@ -51,7 +51,7 @@ export default {
     return {
       previousLowerCutoff: 0.24,
       previousUpperCutoff: 0.76,
-      maxRolls: 100,
+      maxRolls: 36,
       square: false,
       offset: 1,
     }
@@ -83,14 +83,34 @@ export default {
       )
     },
 
+    maxRollsValue() {
+      return Math.min(
+        1000,
+        Math.max(
+          Math.max(1, this.unconditionalRollsValue),
+          Math.trunc(Number(this.maxRolls) || 1),
+        ),
+      )
+    },
+
     distribution() {
       const dx = DENSITY_STEP
-      const maxRolls = this.maxRolls
+      const maxRolls = this.maxRollsValue
       const initialRolls = Math.max(1, this.unconditionalRollsValue)
       const middle = [[this.decisionLower, this.decisionUpper]]
       const extremes = [[0, this.decisionLower], [this.decisionUpper, 1]]
       const stops = []
       let active
+
+      if (initialRolls === maxRolls) {
+        this.addStop(
+          stops,
+          maxRolls,
+          this.uniformSumDensity(maxRolls, dx),
+          dx,
+        )
+        return { dx, stops, totalMass: stops[0].mass }
+      }
 
       if (initialRolls === 1) {
         active = this.intervalDensity(extremes, dx)
@@ -136,9 +156,9 @@ export default {
     multiplierCdfLookup() {
       const step = CDF_STEP
       const maxMultiplier = (
-        this.offsetValue + this.maxRolls
+        this.offsetValue + this.maxRollsValue
       ) / (
-        this.offsetValue + this.maxRolls / 2
+        this.offsetValue + this.maxRollsValue / 2
       )
       const values = new Float64Array(Math.ceil(maxMultiplier / step) + 2)
 
@@ -150,7 +170,10 @@ export default {
 
     model() {
       const data = []
-      const theoreticalMax = this.valueFromRollSum(this.maxRolls, this.maxRolls)
+      const theoreticalMax = this.valueFromRollSum(
+        this.maxRollsValue,
+        this.maxRollsValue,
+      )
       const binCount = Math.ceil(Math.max(this.stats.max, theoreticalMax))
 
       for (let bin = 0; bin < binCount; bin++) {
@@ -189,7 +212,7 @@ export default {
         '  roll = rand()',
         '  randomRollSum += roll',
         '  rollCount++',
-        `} while ((rollCount < ${this.unconditionalRollsValue} || ${decisionCondition}) && rollCount < ${this.maxRolls})`,
+        `} while ((rollCount < ${this.unconditionalRollsValue} || ${decisionCondition}) && rollCount < ${this.maxRollsValue})`,
         `const r = (${this.offsetValue} + randomRollSum) / (${this.offsetValue} + rollCount / 2)`,
         `const size = ${sizeExpression}`,
       ].join('\n')
@@ -234,7 +257,7 @@ export default {
         dataZoom: [{
           type: 'inside',
           xAxisIndex: [0],
-          filterMode: 'none',
+          filterMode: 'filter',
           zoomOnMouseWheel: true,
           moveOnMouseWheel: false,
         }],
@@ -440,6 +463,19 @@ export default {
     </span>
 
     <label>
+      max rolls
+      <input
+        v-model.number="maxRolls"
+        type="number"
+        class="w5em"
+        :min="Math.max(1, unconditionalRollsValue)"
+        max="1000"
+        step="1"
+        @change="maxRolls = maxRollsValue"
+      >
+    </label>
+
+    <label>
       offset
       <input type="number" class="w5em" v-model.number="offset" min="0" step="0.1">
     </label>
@@ -451,7 +487,7 @@ export default {
   </div>
 
   <div class="chart">
-    <v-chart :option="chartOption" :update-options="{ notMerge: true }" autoresize />
+    <v-chart :option="chartOption" :update-options="{ notMerge: false }" autoresize />
   </div>
 
   <pre><code>{{ codeSnippet }}</code></pre>

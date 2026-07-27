@@ -239,7 +239,7 @@ export default {
         dataZoom: [{
           type: 'inside',
           xAxisIndex: [0],
-          filterMode: 'none',
+          filterMode: 'filter',
           zoomOnMouseWheel: true,
           moveOnMouseWheel: false,
         }],
@@ -322,7 +322,7 @@ export default {
   </div>
 
   <div id="chartHisto" style="float:left;" v-if="modelC.bell">
-    <v-chart :option="makeHistogramOption" :update-options="{notMerge: true}" autoresize />
+    <v-chart :option="makeHistogramOption" :update-options="{ notMerge: false }" autoresize />
   </div>
   
   <div style="clear:both;"></div>

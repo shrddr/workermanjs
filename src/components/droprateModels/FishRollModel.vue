@@ -164,7 +164,7 @@ export default {
         dataZoom: [{
           type: 'inside',
           xAxisIndex: [0],
-          filterMode: 'none',
+          filterMode: 'filter',
           zoomOnMouseWheel: true,
           moveOnMouseWheel: false,
         }],
@@ -300,7 +300,7 @@ export default {
   </div>
 
   <div class="chart">
-    <v-chart :option="chartOption" :update-options="{ notMerge: true }" autoresize />
+    <v-chart :option="chartOption" :update-options="{ notMerge: false }" autoresize />
   </div>
 
   <pre><code>{{ codeSnippet }}</code></pre>
