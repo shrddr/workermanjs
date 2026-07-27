@@ -1,6 +1,8 @@
 <script>
 import { formatFixed, isNumber } from '../util.js'
 import FishModel from '../components/droprateModels/FishModel.vue'
+import FishRollModel from '../components/droprateModels/FishRollModel.vue'
+import VariableFishRollModel from '../components/droprateModels/VariableFishRollModel.vue'
 
 import { jStat } from 'jstat-esm';
 
@@ -44,6 +46,8 @@ export default {
   components: {
     VChart,
     FishModel,
+    FishRollModel,
+    VariableFishRollModel,
   },
 
   provide() {
@@ -56,12 +60,16 @@ export default {
     const darkModeQuery = matchMedia('(prefers-color-scheme: dark)')
     return {
       mode_relative: true,
+      mode_unsquare: true,
       relative_base: 100,
 
       alldata: {},
       selectedFish: 'ALL',
       selectedLuck: 68.3,
       generalSigmas: 4,
+      modelTab: 'rolls',
+      rollModelTab: 'fixed',
+      unconditionalVariableRolls: 2,
 
       fish_info: {},
 
@@ -93,14 +101,43 @@ export default {
       if (this.selectedFish in this.alldata) {
         const info = this.get_fish_info(this.selectedFish)
         for (const v of this.alldata[this.selectedFish]) {
-          if (this.mode_relative)
-            ret.push(this.relative_base * v / info.avg_size)
-          else
-            ret.push(v)
+          let size = v
+          if (this.relativeSizesActive) {
+            const relativeSize = v / info.avg_size
+            size = this.relative_base * (
+              this.mode_unsquare ? Math.sqrt(relativeSize) : relativeSize
+            )
+          }
+          ret.push(size)
         }
 
       }
       return ret
+    },
+
+    currentAvgSize() {
+      const avgSize = this.relativeSizesActive
+        ? Number(this.relative_base)
+        : this.get_fish_info(this.selectedFish).avg_size
+      return avgSize
+    },
+
+    relativeSizesActive() {
+      return this.selectedFish === 'ALL' || this.mode_relative
+    },
+
+    menuEntries() {
+      const section = key => {
+        if (key === 'ALL') return 0
+        if (key.startsWith('by ')) return 1
+        return 2
+      }
+
+      return Object.entries(this.alldata).sort(([keyA], [keyB]) => {
+        const sectionDifference = section(keyA) - section(keyB)
+        if (sectionDifference !== 0) return sectionDifference
+        return keyA.localeCompare(keyB, undefined, { numeric: true })
+      })
     },
 
     weightedDataset() {
@@ -139,20 +176,8 @@ export default {
       const dataRaw = this.currentDataset
       let lenRaw = dataRaw.length      
 
-      const dataByLuck = this.weightedDataset
-      let luckyLenHi = 0
-      let luckyLenLo = 0
+      const dataByLuck = this.weightedDataset     
 
-      for (let chance of dataByLuck.weights) {
-        if (chance > this.stats.generalConfidence/100)
-          luckyLenLo++
-        if (chance > 1 - this.stats.generalConfidence/100)
-          luckyLenHi++
-      }
-      
-
-      let dataFlatSorted = []
-      let weightsFlat = []
       let totalLuckyLen = 0
       let minLuck = 100
       let maxLuck = 0
@@ -161,8 +186,8 @@ export default {
       maxLuck = Math.max(maxLuck, this.selectedLuck)
       let {len, luckyLen, sorted, weights, grouped} = dataByLuck
       totalLuckyLen += luckyLen
-      dataFlatSorted.push(...sorted)
-      weightsFlat.push(...weights)
+      const dataFlatSorted = sorted
+      const weightsFlat = weights
       
 
       const sigmas2confidence = {
@@ -272,7 +297,7 @@ export default {
       this.alldata = await (await fetch(`data/manual/catches_by_fish.json`)).json()
       this.fish_info = await (await fetch(`data/encyclopedia.json`)).json()
 
-      if (this.mode_relative) {
+      {
         console.log('filling group ALL')
         const all = []
         
@@ -366,6 +391,24 @@ export default {
 
     activate(ik) {
       this.selectedFish = ik
+      if (ik === 'ALL') this.mode_relative = true
+    },
+
+    downloadCurrentDataset() {
+      const json = JSON.stringify(this.currentDataset)
+      const blob = new Blob([json], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const fishName = this.selectedFish
+        .replace(/[^a-z0-9_-]+/gi, '_')
+        .replace(/^_+|_+$/g, '') || 'dataset'
+      const link = document.createElement('a')
+
+      link.href = url
+      link.download = `${fishName}_filtered.json`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
     },
 
     get_fish_info(ik) {
@@ -383,11 +426,6 @@ export default {
     <div id="menu">
       <div style="display: none;">{{ selectedFish }}</div>
 
-      <input type="checkbox" v-model="mode_relative">relative sizes (scaled to Avg=
-      <input type="number" v-model="relative_base" step="10" style="width: 3.5em;">
-      )
-      <br/>
-
       <table>
         <tr>
           <th>ik</th>
@@ -396,8 +434,8 @@ export default {
           <th>Avg</th>
           <th>data</th>
         </tr>
-        <template v-for="sizes, ik in alldata">
-          <tr v-if="sizes.length > 1000">
+        <template v-for="[ik, sizes] in menuEntries" :key="ik">
+          <tr v-if="sizes.length > 100">
             <td>
               <template v-if="ik.startsWith('by')">
                 <abbr class="tooltip" :title="ik">group</abbr>
@@ -429,6 +467,28 @@ export default {
     </div>
 
     <div id="content">
+      <div id="settings">
+        <label>
+          <input
+            type="checkbox"
+            :checked="relativeSizesActive"
+            :disabled="selectedFish === 'ALL'"
+            @change="mode_relative = $event.target.checked"
+          >
+          unscale to Avg=
+        </label>
+        <input type="number" v-model="relative_base" step="10" style="width: 3.5em;">
+        <br/>
+        <label>
+          <input
+            type="checkbox"
+            :checked="relativeSizesActive && mode_unsquare"
+            :disabled="!relativeSizesActive"
+            @change="mode_unsquare = $event.target.checked"
+          >
+          unsquare (take square root)
+        </label>
+      </div>
 
       <details>
         <summary>Dataset: 
@@ -436,23 +496,93 @@ export default {
           mean M = {{ formatFixed(stats.mean, 3) }}±{{ formatFixed(1.96 * stats.meanErr, 3) }},
           min = {{ formatFixed(stats.min, 3) }},
           max = {{ formatFixed(stats.max, 3) }}
+          (<a href="#" @click.prevent="downloadCurrentDataset">download</a>)
         </summary>
 
-        <div>
-          <table>
-            <tr v-for="vs, group in weightedDataset.grouped">
-              <td v-for="v in vs">{{ formatFixed(v, 3) }}</td>
-            </tr>
-          </table>
-        </div>
+        <table v-if="currentDataset.length <= 10000">
+          <tr v-for="vs, group in weightedDataset.grouped">
+            <td v-for="v in vs">{{ formatFixed(v, 3) }}</td>
+          </tr>
+        </table>
+        <p v-else>
+          your browser will not handle this
+        </p>
+
       </details>
 
       <div>
-        <FishModel 
-          :stats="stats" 
-          :histogram="histogram"
-          :avg_size="mode_relative ? relative_base : fish_info[selectedFish].avg_size"
-        />
+        <div class="tabs">
+          <button
+            :class="{ pressed: modelTab === 'rolls' }"
+            @click="modelTab = 'rolls'"
+          >
+            multiple rolls
+          </button>
+          <button
+            :class="{ pressed: modelTab === 'sum' }"
+            @click="modelTab = 'sum'"
+          >
+            sum of distributions
+          </button>
+        </div>
+
+        <div v-show="modelTab === 'rolls'">
+          <div class="tabs roll-tabs">
+            <span>number of rolls </span>
+            <button
+              :class="{ pressed: rollModelTab === 'fixed' }"
+              @click="rollModelTab = 'fixed'"
+            >
+              fixed
+            </button>
+            <button
+              :class="{ pressed: rollModelTab === 'variable' }"
+              @click="rollModelTab = 'variable'"
+            >
+              variable
+            </button>
+          </div>
+
+          <div v-show="rollModelTab === 'variable'">
+            <div class="variable-roll-options">
+              <label>
+                unconditional rolls
+                <input
+                  v-model.number="unconditionalVariableRolls"
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  @change="unconditionalVariableRolls = Math.min(5, Math.max(0, Math.trunc(Number(unconditionalVariableRolls) || 0)))"
+                >
+              </label>
+            </div>
+            <VariableFishRollModel
+              :unconditional-rolls="unconditionalVariableRolls"
+              :stats="stats"
+              :histogram="histogram"
+              :avg_size="currentAvgSize"
+              :mode_relative="relativeSizesActive"
+            />
+          </div>
+
+          <div v-show="rollModelTab === 'fixed'">
+            <FishRollModel
+              :stats="stats"
+              :histogram="histogram"
+              :avg_size="currentAvgSize"
+              :mode_relative="relativeSizesActive"
+            />
+          </div>
+        </div>
+        <div v-show="modelTab === 'sum'">
+          <FishModel
+            :stats="stats" 
+            :histogram="histogram"
+            :avg_size="currentAvgSize"
+            :mode_relative="relativeSizesActive"
+          />
+        </div>
       </div>
 
     </div>
@@ -462,9 +592,12 @@ export default {
 <style scoped>
 #menu {
   position: fixed;
-  /*width: 220px;*/
-  height: 90vh; 
-  overflow-y: scroll;
+  box-sizing: border-box;
+  width: 250px;
+  height: 90vh;
+  overflow-y: auto;
+  z-index: 1;
+  background: var(--color-background);
 }
 
 #content {
@@ -507,5 +640,21 @@ ul {
 
 .tooltip {
   cursor: help;
+}
+
+.tabs {
+  margin-top: 1em;
+}
+
+.roll-tabs {
+  margin-top: 0.25em;
+}
+
+.variable-roll-options {
+  margin-top: 0.25em;
+}
+
+.variable-roll-options input {
+  width: 3em;
 }
 </style>

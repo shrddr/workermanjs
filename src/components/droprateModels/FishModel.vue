@@ -1,5 +1,5 @@
 <script>
-import { formatFixed, formatKMG, isGoodVal } from '../../util.js'
+import { formatFixed, isGoodVal } from '../../util.js'
 import { makeBinomialArray, makeNormalArray, makeLognormalArray, makeUniformArray, makeTriangularArray, makeGammaArray, sumDistributions, loss } from '../../stats.js'
 import FishCurve from './FishCurve.vue'
 
@@ -12,6 +12,7 @@ import {
   LegendComponent,
   GridComponent,
   DatasetComponent,
+  DataZoomComponent,
   TransformComponent,
   MarkLineComponent,
   MarkAreaComponent,
@@ -28,6 +29,7 @@ use([
   LegendComponent,
   GridComponent,
   DatasetComponent,
+  DataZoomComponent,
   TransformComponent,
   MarkLineComponent,
   MarkAreaComponent,
@@ -84,7 +86,6 @@ export default {
   methods: {
     isGoodVal,
     formatFixed,
-    formatKMG,
     makeBinomialArray,
     makeNormalArray,
     makeLognormalArray,
@@ -197,6 +198,10 @@ export default {
     },
 
     makeHistogramOption() {
+      const asPercentages = data => data.map(([x, count]) => [
+        x,
+        this.stats.len > 0 ? 100 * count / this.stats.len : 0,
+      ])
       const chartOption = {
         legend: {},
         title: {
@@ -211,13 +216,12 @@ export default {
         tooltip: {
           trigger: 'axis',
           extraCssText: 'background: var(--color-background);border-color: gray;color: var(--color-text);',
-          valueFormatter: v => formatFixed(v, 1),
           formatter: function (params) {
             const x = params[0].axisValue
             let result = `<div style="text-align:center;">[ ${x}...${x+1} )</div>`
 
             params.forEach(item => {
-              const y = item.seriesName == 'observed' ? item.data[1] : formatFixed(item.data[1], 1)
+              const y = `${formatFixed(item.data[1], 3)}%`
               result += `<div>
                 <div style="display:inline-block;">${item.marker} ${item.seriesName}</div>
                 <div style="float:right;margin-left:10px;font-weight:600">${y}</div>
@@ -228,10 +232,17 @@ export default {
           }
         },
         dataset: [
-          { source: this.histogram.arr },
-          { source: this.modelC.bell },
+          { source: asPercentages(this.histogram.arr) },
+          { source: asPercentages(this.modelC.bell) },
           // ...
         ],
+        dataZoom: [{
+          type: 'inside',
+          xAxisIndex: [0],
+          filterMode: 'none',
+          zoomOnMouseWheel: true,
+          moveOnMouseWheel: false,
+        }],
         xAxis: {
           //axisLine: { onZero: false },
           //scale: false,
@@ -239,13 +250,15 @@ export default {
           max: this.mode_relative ? (this.stats.max < 5 ? this.stats.max + 1 : null) : this.avg_size * 3,
         },
         yAxis: { 
+          name: '% of total',
           axisLine: { onZero: false } ,
           axisLabel: {
-            formatter: value => this.formatKMG(value)
+            formatter: value => `${formatFixed(value, 2)}%`
           },
         },
         grid: { 
-          left: 35, top: 30, right: 10, bottom: 20,
+          left: 10, top: 30, right: 10, bottom: 20,
+          containLabel: true,
         },
         series: [
           {
@@ -254,7 +267,7 @@ export default {
             encode: { x: 0, y: 1, },
             tooltip: {
               trigger: 'axis',
-              valueFormatter: v => formatFixed(v, 0),
+              valueFormatter: v => `${formatFixed(v, 3)}%`,
             },
           },
           {
@@ -270,7 +283,7 @@ export default {
       }
       for (const [i, bell] of this.modelC.bells.entries()) {
         chartOption.dataset.push({
-          source: bell
+          source: asPercentages(bell)
         })
         chartOption.series.push({
           name: `curve ${i}`,
