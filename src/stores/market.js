@@ -16,11 +16,25 @@ export const useMarketStore = defineStore({
   actions: {
     async fetchData() {
       const start = Date.now()
+      this.apiAlive = false
+      this.ready = false
 
       const userStore = useUserStore()
       const lang = userStore.selectedLang == 'jp' ? 'ja' : userStore.selectedLang
-      const MARKETURL = `https://apiv2.bdolytics.com/${lang}/${userStore.selectedRegion}/market/central-market-data`
-      const bdolytics = await (await fetch(MARKETURL)).json()
+      const input = encodeURIComponent(JSON.stringify({
+        language: lang,
+        region: userStore.selectedRegion,
+      }))
+      const MARKETURL = `https://bdolytics.com/api/trpc/market.getMarket?input=${input}`
+      const response = await fetch(MARKETURL)
+      if (!response.ok) {
+        throw new Error(`BDOlytics market request failed: ${response.status}`)
+      }
+      const bdolytics = await response.json()
+      const marketEntries = bdolytics.result?.data
+      if (!Array.isArray(marketEntries)) {
+        throw new Error('BDOlytics market response has an unexpected format')
+      }
 
       const gameStore = useGameStore()
       const uset = new Set(gameStore.itemKeys)
@@ -28,12 +42,12 @@ export const useMarketStore = defineStore({
       //console.log('uset', uset)
 
       const apiPrices = {}
-      bdolytics.data.forEach(entry => {
-        if (uset.has(entry.item_id)) {
-          apiPrices[entry.item_id] = entry.price
+      marketEntries.forEach(entry => {
+        if (uset.has(entry.itemId)) {
+          apiPrices[entry.itemId] = entry.price
         }
-        else if (gameStore.ready && gameStore.craftInputItemKeySet.has(entry.item_id)) {
-          apiPrices[entry.item_id] = entry.price
+        else if (gameStore.ready && gameStore.craftInputItemKeySet.has(entry.itemId)) {
+          apiPrices[entry.itemId] = entry.price
         }
       })
 
@@ -56,7 +70,8 @@ export const useMarketStore = defineStore({
     },
 
     itemPriceUrl(ik) {
-      if (ik in this.apiPrices) return `https://bdolytics.com/market/central-market/item/${ik}`
+      //if (ik in this.apiPrices) return `https://bdolytics.com/market/central-market/item/${ik}`
+      if (ik in this.apiPrices) return `https://bdolytics.com/market/item/${ik}`
       const userStore = useUserStore()
       return userStore.itemUrl + ik
     },
