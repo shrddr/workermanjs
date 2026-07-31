@@ -314,7 +314,7 @@ export default {
         <tbody>
           <tr v-for="ik in gameStore.itemKeys" :id="'item'+ik">
             <td>
-              <a :href="this.userStore.itemUrl+ik">
+              <a :href="this.userStore.externalItemUrl+ik">
                 <ItemIcon :ik="ik" :with_name="true"/>
               </a>
               {{ ' ' }}

@@ -184,7 +184,7 @@ export default {
 
       <tr v-for="job in workerNearestCpPlantzonesProfit">
         <td>
-          <a :href="this.userStore.codexNodeUrl+job.pz.key">
+          <a :href="this.userStore.externalNodeUrl+job.pz.key">
           {{ job.pz.name }}
           </a>
           <template v-for="k in this.gameStore.plantzones[job.pz.key].itemkeys">

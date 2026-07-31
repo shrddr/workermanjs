@@ -109,7 +109,7 @@ export default {
             <table>
             <tr v-for="craft in crafts">
               <template v-for="ik in this.gameStore.craftOutputs[craft]">
-                <a :href="this.userStore.itemUrl+ik">
+                <a :href="this.userStore.externalItemUrl+ik">
                   <ItemIcon :ik="ik" :with_name="true"/>
                 </a>
               </template>

@@ -419,9 +419,8 @@ export const useUserStore = defineStore({
       return s 
     },
 
-    marketUrl: (state) => `https://apiv2.bdolytics.com/${state.selectedLang}/${state.selectedRegion}/market/central-market-data`,
-    codexNodeUrl: (state) => `https://bdolytics.com/${state.selectedLang}/${state.selectedRegion}/db/node/`,
-    itemUrl: (state) => `https://bdolytics.com/${state.selectedLang}/${state.selectedRegion}/db/item/`,
+    externalNodeUrl: (state) => `https://bdolytics.com/${state.selectedLang}/db/node/`,
+    externalItemUrl: (state) => `https://bdolytics.com/${state.selectedLang}/db/item/`,
     
     // --------- floating resource related
 

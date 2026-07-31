@@ -25,7 +25,7 @@ export default {
 </script>
 
 <template>
-  <a :href="userStore.itemUrl + ik">
+  <a :href="userStore.externalItemUrl + ik">
     <img :src="`data/icons/item/${ik}.webp`" class="iconitem" :data-key="ik" />
     <template v-if="with_name && gameStore.ready">
       {{ gameStore.uloc.item[ik] }}
