@@ -50,6 +50,7 @@ export default {
       
       let worldList = []
       this.gameStore.townsWithLodging.forEach(tnk => {
+        if (tnk == 1343 && !userStore.activateAncado) return
         // more than needed, discard after sorting
         const townList = this.gameStore.dijDiscountedNearestPlantzones(tnk, 12)
         //if (tnk == 1) console.log(tnk, townList)

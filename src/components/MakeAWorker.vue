@@ -70,7 +70,7 @@ export default {
       return this.workerStats(this.workerKind, this.homeTnk)
     },
 
-    nearestTowns() {
+    nearestTownsHireable() {
       const townsLimit = 5
       const townsData = []
       const lodgingTnkList = this.gameStore.dijkstraNearestTowns(this.pzk, townsLimit, this.routingStore.routing.autotakenNodes, true)
@@ -80,7 +80,7 @@ export default {
         const lodgingTk = this.gameStore._tnk2tk[lodgingTnk]
         const storageTk = this.redirect == -1 ? lodgingTk : this.gameStore.tnk2tk(this.redirect)  // sets to undefined if not found
         const addInfraInfo = this.userStore.townInfraAddCost(lodgingTk, 1, this.gameStore.plantzones[this.pzk].itemkeys, storageTk)
-        //console.log(`nearestTowns::addInfraInfo(${lodgingTnk}, ${storageTk}) = `, addInfraInfo)
+        //console.log(`nearestTownsHireable::addInfraInfo(${lodgingTnk}, ${storageTk}) = `, addInfraInfo)
 
         for (const kind of ['gia', 'hum', 'gob']) {
           const stats = this.workerStats(kind, lodgingTnk)
@@ -151,7 +151,7 @@ export default {
   <div>
     <h4>Nearest towns with hireable workers:</h4>
     
-    <table v-if="this.nearestTowns">
+    <table v-if="this.nearestTownsHireable">
       <tr>
         <th>🛏️town</th>
         <th>walk</th>
@@ -160,7 +160,7 @@ export default {
         <th>M$/day/CP</th>
         <th>action</th>
       </tr>
-      <tr v-for="nt in this.nearestTowns">
+      <tr v-for="nt in this.nearestTownsHireable">
         <td>
           {{ gameStore.uloc.node[nt.tnk] }}
         </td>
