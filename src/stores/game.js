@@ -266,6 +266,7 @@ export const useGameStore = defineStore({
       //
       // yuk, god, buk
       // asp, muz
+      // hak, ang
       this.townsWithLodging = [
         1,   61,  301, 302, 601, 602,
         604, 608, 1002,1101,1141,1301,
@@ -276,7 +277,7 @@ export const useGameStore = defineStore({
         // 1001, // lema costs cp, cannot provide storage, cannot house workers
         1853,1857,1858,
         1834,1843,
-        2001
+        2001,2057
       ]
       // town(1+2) again, but tk-based (TODO: unify)
       this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json()
@@ -290,6 +291,7 @@ export const useGameStore = defineStore({
       // tal, mut, ric, 
       // yuk, god
       // asp, muz
+      // hak, ang
       this.townsWithRentableStorage = [
         1,   61,  301, 302, 601, 602,
         604, 608, 1002,1101,1141,1301,
@@ -298,7 +300,7 @@ export const useGameStore = defineStore({
         1781,1785,1795,
         1853,1857,
         1834,1843,
-        2001
+        2001,2057
       ]
 
       // town(3a) can be a target of "stash redirect" feature, filled manually
@@ -309,6 +311,7 @@ export const useGameStore = defineStore({
       // tal, mut, ric, 
       // asf, muz, ber
       // yuk, god, buk
+      // hak, ang
       this.townsWithRedirectableStorage = [
         1,   61,  301, 302, 601, 602,
         604, 608, 1002,1101,1141,1301,
@@ -317,7 +320,7 @@ export const useGameStore = defineStore({
         1781,1785,1795,
         1834,1843,1850,
         1853,1857,1858,
-        2001
+        2001,2057
       ]
 
       // town(4) can be extracted from here if needed

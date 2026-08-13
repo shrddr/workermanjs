@@ -265,6 +265,13 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
     <ul style="padding-left: 16px;">
+      <li>[2026-08-13 patch] Edania pt2 with 14 plantzones</li>
+        <ul>
+          <li>✓ connections</li>
+          <li>✓ walk distances</li>
+          <li>✓ housecraft</li>
+          <li>✗ droprates (cycles observed: 0)</li>
+        </ul>
       <li>[2026-07-02 patch] thrifty skill reworked</li>
       <li>[2026-06-04 patch] plantzone changes (droprates v7 based on ~22k observed cycles)
       <details><summary>31 new</summary>
