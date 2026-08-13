@@ -40,7 +40,7 @@ export default {
     importDialogVisible: false,
   }),
   watch: {
-    'userStore.marketUrl': {
+    'userStore.selectedRegion': {
       handler(newValue, oldValue) {
         this.marketStore.fetchData()
       }
@@ -156,10 +156,9 @@ export default {
               <option>RU</option>
               <option>KR</option>
               <option>JP</option>
-              <option>TH</option>
               <option>TW</option>
               <option>SA</option>
-              <option>SEA</option>
+              <option>ASIA</option>
               <option>MENA</option>
               <option>CEU</option>
               <option>CNA</option>
