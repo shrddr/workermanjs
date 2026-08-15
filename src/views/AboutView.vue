@@ -270,7 +270,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>✓ connections</li>
           <li>✓ walk distances</li>
           <li>✓ housecraft</li>
-          <li>✓ droprates v1 (cycles observed: 89)</li>
+          <li>✓ droprates v2 (cycles observed: 210)</li>
         </ul>
       <li>[2026-07-02 patch] thrifty skill reworked</li>
       <li>[2026-06-04 patch] plantzone changes (droprates v7 based on 33k observed cycles)

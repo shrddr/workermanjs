@@ -70,8 +70,8 @@ export const useMarketStore = defineStore({
     },
 
     itemPriceUrl(ik) {
-      if (ik in this.apiPrices) return `https://bdolytics.com/market/item/${ik}`
       const userStore = useUserStore()
+      if (ik in this.apiPrices) return `https://bdolytics.com/${userStore.selectedLang}/market/item/${ik}`
       return userStore.externalItemUrl + ik
     },
 
