@@ -177,12 +177,12 @@ export default {
         else if (ret.init > 10) {
           ret.lo /= 1.684
           ret.init /= 1.684
-          ret.hi /= 1.5
+          ret.hi /= 1.55
         }
         else if (ret.init > 5) {
           ret.lo /= 1.684
           ret.init /= 1.684
-          ret.hi /= 1.3
+          ret.hi /= 1.5
         }
         else if (ret.init > 1) {
           ret.lo /= 1.684
