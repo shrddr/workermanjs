@@ -270,10 +270,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>✓ connections</li>
           <li>✓ walk distances</li>
           <li>✓ housecraft</li>
-          <li>✓ droprates v3 (cycles observed: 546)</li>
+          <li>✓ droprates v4 (cycles observed: 1047)</li>
         </ul>
       <li>[2026-07-02 patch] thrifty skill reworked</li>
-      <li>[2026-06-04 patch] plantzone changes (droprates v7 based on 33k observed cycles)
+      <li>[2026-06-04 patch] plantzone changes (droprates v8 based on 35k observed cycles)
       <details><summary>31 new</summary>
         <LinkToNode :nodeKey="2082"/>,
         <LinkToNode :nodeKey="2081"/>,
@@ -576,10 +576,6 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
     <ul style="padding-left: 16px;">
-      <li>try precalculating the best species (with skills) for each town-pz pair</li>
-        <ul>
-          <li>will allow for correct and fast 👺/🐢 in node pane and elsewhere</li>
-        </ul>
       <li>workshop name should include node name instead of affiliated town</li>
       <li>remote workshops require node connections, check if shared correctly</li>
       <li>stacking outputs from everywhere in 1 town makes that town less efficient - incorrect</li>
@@ -669,6 +665,11 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <li>detect and apply price floors and ceilings (±7.5%)</li>
       <li>show the age of last market fetch</li>
       <li>apparently OBS in Capture Window mode does not capture basic HTML tooltips, only custom rolled CSS ones</li>
+      <li>try precalculating the best species (with skills) for each town-pz pair</li>
+        <ul>
+          <li>this will not work - luck skill decisions depend on lucky items prices</li>
+          <li>could allow for correct and fast 👺/🐢 in node pane and elsewhere</li>
+        </ul>
     </ul>
 
     <h2>Misc</h2>
