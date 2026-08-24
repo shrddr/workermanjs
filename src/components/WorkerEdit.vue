@@ -531,6 +531,10 @@ export default {
           <td>skills:</td>
           <td>
             <div style="float:right;">
+              <button @click="workerEditing.skills = []">
+                clear
+              </button>
+              {{  }}
               <button :disabled="!(workerEditing.job && workerEditing.job.pzk in this.routingStore.pzJobs)" @click="suggestBestSkills(workerEditing.level, true)">
                 optimize
               </button>
