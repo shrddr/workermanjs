@@ -1305,6 +1305,10 @@ export const useGameStore = defineStore({
       return [needTakes.reverse(), pathCosts[finish]]
     },
 
+    workerIcon(w) {
+      const species = this.workerStatic[w.charkey].species
+      return this.speciesIcons[species]
+    },
   },
 
   getters: {

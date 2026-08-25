@@ -307,7 +307,7 @@ export const useUserStore = defineStore({
       let ret = this.displayWorkerNames ? w.label : ''
       const gameStore = useGameStore()
       if (gameStore && gameStore.ready) {
-        ret += gameStore.speciesIcons[gameStore.workerStatic[w.charkey].species]
+        ret += gameStore.workerIcon(w)
       }
       ret += w.level
       return ret

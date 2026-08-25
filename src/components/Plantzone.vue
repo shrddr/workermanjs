@@ -189,6 +189,7 @@ export default {
             <td>{{ formatFixed(e.profit.dist) }}</td>
             <td>
               {{ e.w.label }}
+              {{ gameStore.workerIcon(e.w) }}
               <span class="fsxs">
                 {{ formatFixed(e.statsOnPz.wspd, 2) }}🔨
                 {{ formatFixed(e.statsOnPz.mspd, 2) }}🦶
