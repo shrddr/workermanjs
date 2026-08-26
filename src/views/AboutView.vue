@@ -576,6 +576,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
     <ul style="padding-left: 16px;">
+      <li>make empire > best untaken use existing workers as an option</li>
       <li>workshop name should include node name instead of affiliated town</li>
       <li>remote workshops require node connections, check if shared correctly</li>
       <li>stacking outputs from everywhere in 1 town makes that town less efficient - incorrect</li>
