@@ -669,6 +669,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <li>try precalculating the best species (with skills) for each town-pz pair</li>
         <ul>
           <li>this will not work - luck skill decisions depend on lucky items prices</li>
+          <li>can add a button "calculate now" though; tie to price snapshot hash?</li>
           <li>could allow for correct and fast 👺/🐢 in node pane and elsewhere</li>
         </ul>
     </ul>
