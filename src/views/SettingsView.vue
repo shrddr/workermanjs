@@ -288,8 +288,10 @@ export default {
 
       <div class="spacer"></div>
       Market API status:
-      <span v-if="marketStore.apiAlive">✓</span>
-      <span v-else>❌</span>
+      <abbr v-if="marketStore.apiFetching" class="tooltip nound" :title="'fetching'">⏳</abbr>
+      <abbr v-else-if="marketStore.apiAlive" class="tooltip nound" :title="'all prices fetched'">✓</abbr>
+      <abbr v-else-if="marketStore.apiPartial" class="tooltip nound" :title="`not fetched from either provider: ${marketStore.apiMissingCount}`">⚠️</abbr>
+      <abbr v-else class="tooltip nound" :title="'no prices fetched'">❌</abbr>
       &nbsp;<button @click="reload()">reload</button>
       <p>By default everything marketable is supposed to be sold on Central Market (with tax).</p>
       <p>If the item is for self use, select Keep (=untax) and/or enter Custom price: 
@@ -365,6 +367,9 @@ export default {
 }
 .tooltip {
   cursor: help;
+}
+.nound {
+  text-decoration: none;
 }
 input[type="radio"] + label {
   margin-left: 0.3em;

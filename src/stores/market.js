@@ -9,14 +9,29 @@ export const useMarketStore = defineStore({
     ready: false,
     apiPrices: [],
     apiAlive: false,
+    apiPartial: false,
+    apiFetching: false,
+    apiMissingCount: 0,
     calculatedPrices: {},
     apiDatetime: 0,
   }),
   
   actions: {
     async fetchData() {
+      this.apiFetching = true
+      try {
+        await this.fetchDataFromApis()
+      }
+      finally {
+        this.apiFetching = false
+      }
+    },
+
+    async fetchDataFromApis() {
       const start = Date.now()
       this.apiAlive = false
+      this.apiPartial = false
+      this.apiMissingCount = 0
       this.ready = false
 
       const userStore = useUserStore()
@@ -43,27 +58,100 @@ export const useMarketStore = defineStore({
 
       const apiPrices = {}
       marketEntries.forEach(entry => {
-        if (uset.has(entry.itemId)) {
+        if (entry.price > 0 && uset.has(entry.itemId)) {
           apiPrices[entry.itemId] = entry.price
         }
-        else if (gameStore.ready && gameStore.craftInputItemKeySet.has(entry.itemId)) {
+        else if (entry.price > 0 && gameStore.ready && gameStore.craftInputItemKeySet.has(entry.itemId)) {
           apiPrices[entry.itemId] = entry.price
         }
       })
+
+      // openable sacks
+      this.calculatedPrices = await (await fetch(`data/manual/calculated_prices.json`)).json()
+
+      // Vendor-priced and locally calculated items do not need a market API price.
+      const requiredMarketItems = [...uset].filter(itemId =>
+        !(itemId in gameStore.vendorPrices) &&
+        !(itemId in this.calculatedPrices)
+      )
+      let missingItems = requiredMarketItems.filter(itemId => !(itemId in apiPrices))
+
+      // BDOlytics occasionally omits region-specific items. Arsha accepts repeated
+      // id query parameters and returns either one object or an array of objects.
+      if (missingItems.length > 0) {
+        const arshaRegion = {
+          CEU: 'console_eu',
+          CNA: 'console_na',
+        }[userStore.selectedRegion] ?? userStore.selectedRegion.toLowerCase()
+
+        const fetchArshaBatch = async itemIds => {
+          const params = new URLSearchParams()
+          itemIds.forEach(itemId => params.append('id', itemId))
+          params.set('lang', userStore.selectedLang)
+          const url = `https://api.arsha.io/v2/${arshaRegion}/item?${params}`
+          const response = await fetch(url)
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`)
+          }
+          const data = await response.json()
+          return Array.isArray(data) ? data : [data]
+        }
+
+        const addArshaPrices = entries => {
+          entries.forEach(entry => {
+            if (missingItems.includes(entry.id) && entry.basePrice > 0) {
+              apiPrices[entry.id] = entry.basePrice
+            }
+          })
+        }
+
+        // Small batches are more reliable on Arsha.
+        for (let offset = 0; offset < missingItems.length; offset += 3) {
+          const batch = missingItems.slice(offset, offset + 3)
+          try {
+            addArshaPrices(await fetchArshaBatch(batch))
+          }
+          catch (error) {
+            console.warn('Arsha market batch failed', batch, error)
+          }
+        }
+
+        // A successful response may still omit an item or contain a zero price.
+        // Retry every unresolved item separately, with a short delay between
+        // rounds to accommodate Arsha's occasionally flaky upstream cache.
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          const unresolvedItems = requiredMarketItems.filter(itemId => !(itemId in apiPrices))
+          if (unresolvedItems.length === 0) break
+          if (attempt > 1) {
+            await new Promise(resolve => setTimeout(resolve, 500 * attempt))
+          }
+          for (const itemId of unresolvedItems) {
+            try {
+              addArshaPrices(await fetchArshaBatch([itemId]))
+            }
+            catch (itemError) {
+              console.warn('Arsha market item failed', itemId, itemError)
+            }
+          }
+        }
+        missingItems = requiredMarketItems.filter(itemId => !(itemId in apiPrices))
+      }
+      this.apiMissingCount = missingItems.length
 
       for (const key of Object.keys(gameStore.vendorPrices)) {
         userStore.keepItems[key] = true
       }
 
-      // openable sacks
-      this.calculatedPrices = await (await fetch(`data/manual/calculated_prices.json`)).json()
-
       if (4202 in apiPrices) {
         this.apiPrices = apiPrices
         this.apiDatetime = Date.now()
-        this.apiAlive = true
+        this.apiAlive = missingItems.length === 0
+        this.apiPartial = missingItems.length > 0
         this.ready = true
-        localStorage.setItem('market', JSON.stringify(this.$state))
+        localStorage.setItem('market', JSON.stringify({...this.$state, apiFetching: false}))
+      }
+      if (missingItems.length > 0) {
+        console.warn('Missing required market prices', missingItems)
       }
       
       console.log('fetchMarket took', Date.now()-start, 'ms')

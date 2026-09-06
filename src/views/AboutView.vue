@@ -265,6 +265,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Changelog</h2>
     <ul style="padding-left: 16px;">
+      <li>fall back to arsha.io prices for items not served by bdolytics</li>
       <li>[2026-08-13 patch] Edania pt2 with 14 plantzones</li>
         <ul>
           <li>✓ connections</li>
