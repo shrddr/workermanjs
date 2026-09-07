@@ -399,7 +399,8 @@ export const useGameStore = defineStore({
       }
       //console.log('craftInputItemKeySet', this.craftInputItemKeySet)
 
-      this.traders = await (await fetch(`data/manual/traders.json`)).json()
+      this.origins = await (await fetch(`data/origins.json`)).json()
+      this.destinations = await (await fetch(`data/destinations.json`)).json()
 
       await this.initWasmRouter()
       

@@ -311,12 +311,11 @@ export default {
       if (!(this.gameStore.ready)) return NaN
       if (!tnka) return NaN
       if (!tnkb) return NaN
-      const a = this.gameStore.nodes[tnka].pos
-      const b = this.gameStore.traders[tnkb]
-      const dx = a.x-b[0]
-      const dy = 0
-      const dz = a.z-b[1]
-      const dist = Math.sqrt(dx*dx+dy*dy+dz*dz)
+      const a = this.gameStore.origins[tnka]
+      const b = this.gameStore.destinations[tnkb]
+      const dx = a[0]-b[0]
+      const dz = a[1]-b[1]
+      const dist = Math.sqrt(dx*dx+dz*dz)
       return dist
     },
     
@@ -380,7 +379,7 @@ export default {
 
     routeSortedDestinations(rcp, origin) {
       const ret = []
-      for (const destination of Object.keys(this.gameStore.traders)) {
+      for (const destination of Object.keys(this.gameStore.destinations)) {
         ret.push(this.tradeInfo(rcp, origin, destination))
       }
       ret.sort((a,b) => (b.sellPrice-b.transportFee)-(a.sellPrice-a.transportFee))  // TODO: connection cost
@@ -390,7 +389,7 @@ export default {
     townSortedDestinations(origin) {
       const ret = []
       const rcp = 9212  // TODO: does this matter?
-      for (const destination of Object.keys(this.gameStore.traders)) {
+      for (const destination of Object.keys(this.gameStore.destinations)) {
         ret.push(this.tradeInfo(rcp, origin, destination))
       }
       ret.sort((a,b) => (b.sellPrice-b.transportFee)-(a.sellPrice-a.transportFee))  // TODO: connection cost
