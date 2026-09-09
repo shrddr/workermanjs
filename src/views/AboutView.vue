@@ -271,7 +271,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
           <li>✓ connections</li>
           <li>✓ walk distances</li>
           <li>✓ housecraft</li>
-          <li>✓ droprates v5 (cycles observed: 1519)</li>
+          <li>✓ droprates v6 (cycles observed: 3119)</li>
         </ul>
       <li>[2026-07-02 patch] thrifty skill reworked</li>
       <li>[2026-06-04 patch] plantzone changes (droprates v8 based on 35k observed cycles)
@@ -577,6 +577,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
     <ul style="padding-left: 16px;">
+      <li>"how much more $ a lucky cycle brings vs unlucky" is outdated: does not take the giant bonus into account</li>
       <li>make empire > best untaken use existing workers as an option</li>
       <li>workshop name should include node name instead of affiliated town</li>
       <li>remote workshops require node connections, check if shared correctly</li>
