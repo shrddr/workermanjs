@@ -294,7 +294,12 @@ export default {
     async fetchObservations() {
       const start = Date.now()
       this.alldata = await (await fetch(`data/manual/catches_by_fish.json`)).json()
-      this.fish_info = await (await fetch(`data/encyclopedia.json`)).json()
+      const ency = await (await fetch(`data/encyclopedia.json`)).json()
+
+      for (const [ek, info] of Object.entries(ency)) {
+        const ik = info.itemkey
+        this.fish_info[ik] = info
+      }
 
       {
         console.log('filling group ALL')
