@@ -41,20 +41,23 @@ export default {
     histogram: Object,
     avg_size: Number,
     mode_relative: Boolean,
-    unconditionalRolls: {
-      type: Number,
-      default: 2,
-    },
   },
 
   data() {
     return {
+      unconditionalRolls: 2,
       previousLowerCutoff: 0.24,
       previousUpperCutoff: 0.76,
-      maxRolls: 36,
+      maxRolls: 7,
       square: false,
       offset: 1,
     }
+  },
+
+  watch: {
+    stats() {
+      this.$refs.chart?.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
+    },
   },
 
   computed: {
@@ -91,6 +94,58 @@ export default {
           Math.trunc(Number(this.maxRolls) || 1),
         ),
       )
+    },
+
+    achievableRange() {
+      const initialRolls = Math.max(1, this.unconditionalRollsValue)
+      const maxRolls = this.maxRollsValue
+      const lower = this.decisionLower
+      const upper = this.decisionUpper
+      const canStop = lower < upper
+      const canContinue = lower > 0 || upper < 1
+      const extremeMin = lower > 0 ? 0 : upper
+      const extremeMax = upper < 1 ? 1 : lower
+      let min = Infinity
+      let max = -Infinity
+
+      for (let rolls = initialRolls; rolls <= maxRolls; rolls++) {
+        if (rolls > initialRolls && !canContinue) break
+        if (rolls < maxRolls && !canStop) continue
+
+        const continuedRolls = rolls - initialRolls
+        const forcedStop = rolls === maxRolls
+        const minSum = continuedRolls * extremeMin +
+          (forcedStop ? 0 : lower)
+        const maxSum = initialRolls - 1 + continuedRolls * extremeMax +
+          (forcedStop ? 1 : upper)
+        min = Math.min(min, this.valueFromRollSum(minSum, rolls))
+        max = Math.max(max, this.valueFromRollSum(maxSum, rolls))
+      }
+
+      return { min, max }
+    },
+
+    theoreticalMean() {
+      const { dx, stops, totalMass } = this.distribution
+      if (!(totalMass > 0)) return NaN
+
+      let weightedSize = 0
+      for (const stop of stops) {
+        for (let index = 0; index < stop.cdf.length - 1; index++) {
+          const probability = stop.cdf[index + 1] - stop.cdf[index]
+          if (probability === 0) continue
+          const rollSum = (index + 0.5) * dx
+          weightedSize += probability *
+            this.valueFromRollSum(rollSum, stop.rollCount)
+        }
+      }
+      return weightedSize / totalMass
+    },
+
+    coversObservedRange() {
+      return this.stats.len > 0 &&
+        this.achievableRange.min <= this.stats.min &&
+        this.achievableRange.max >= this.stats.max
     },
 
     distribution() {
@@ -248,6 +303,24 @@ export default {
     },
 
     chartOption() {
+      const currentZoom = this.$refs.chart?.getOption()?.dataZoom?.[0]
+      const isZoomed = currentZoom &&
+        (currentZoom.start > 0.001 || currentZoom.end < 99.999)
+      const dataZoom = {
+        type: 'inside',
+        xAxisIndex: [0],
+        filterMode: 'filter',
+        zoomOnMouseWheel: true,
+        moveOnMouseWheel: false,
+        ...(isZoomed
+          ? {
+              start: null,
+              end: null,
+              startValue: currentZoom.startValue,
+              endValue: currentZoom.endValue,
+            }
+          : { start: 0, end: 100, startValue: null, endValue: null }),
+      }
       return {
         legend: {},
         title: {
@@ -284,18 +357,14 @@ export default {
           { source: this.chartModelData },
           ...this.chartModelGroupData.map(source => ({ source })),
         ],
-        dataZoom: [{
-          type: 'inside',
-          xAxisIndex: [0],
-          filterMode: 'filter',
-          zoomOnMouseWheel: true,
-          moveOnMouseWheel: false,
-        }],
+        dataZoom: [dataZoom],
         xAxis: {
           min: this.stats.min === 0 ? -1 : null,
           max: this.mode_relative
-            ? (this.stats.max < 5 ? this.stats.max + 1 : null)
-            : this.avg_size * 4,
+            ? (this.stats.max < 5
+                ? this.stats.max + 1
+                : Math.ceil(Math.max(this.stats.max, this.achievableRange.max) / 10) * 10)
+            : Math.max(this.avg_size * 4, this.achievableRange.max),
         },
         yAxis: {
           name: '% of total',
@@ -542,7 +611,25 @@ export default {
 </script>
 
 <template>
+  
+
+  <span class="controls">
+    <label>
+      unconditional rolls:
+      <input
+        v-model.number="unconditionalRolls"
+        type="number"
+        class="unconditional-rolls-input"
+        min="0"
+        max="5"
+        step="1"
+        @change="unconditionalRolls = unconditionalRollsValue"
+      >
+    </label>
+  </span>
+
   <div class="controls">
+    conditional rolls: if
     <span class="previous-cutoffs">
       <input
         v-model.number="previousLowerCutoff"
@@ -562,7 +649,6 @@ export default {
         aria-label="upper previous-roll cutoff"
       >
     </span>
-
     <label>
       max rolls
       <input
@@ -581,14 +667,29 @@ export default {
       <input type="number" class="w5em" v-model.number="offset" min="0" step="0.1">
     </label>
 
-    <label class="square-control">
-      <input type="checkbox" v-model="square">
-      square
-    </label>
+    
   </div>
 
+
+  mean M = {{ formatFixed(theoreticalMean, 3) }},
+  achievable range: min = {{ formatFixed(achievableRange.min, 3) }},
+  max = {{ formatFixed(achievableRange.max, 3) }}
+  <span
+    v-if="stats.len > 0"
+    role="img"
+    :aria-label="coversObservedRange ? 'covers observed range' : 'does not cover observed range'"
+  >{{ coversObservedRange ? '✓' : '✗' }}</span>
+
+  <div>
+    <input type="checkbox" v-model="square">
+    square
+  </div>
+
+
+  
+
   <div class="chart">
-    <v-chart :option="chartOption" :update-options="{ notMerge: false }" autoresize />
+    <v-chart ref="chart" :option="chartOption" :update-options="{ notMerge: false }" autoresize />
   </div>
 
   <pre><code>{{ codeSnippet }}</code></pre>
@@ -599,15 +700,23 @@ export default {
   display: flex;
   align-items: center;
   gap: 1em;
-  margin: 0.5em 0;
+  margin: 0.25em 0;
 }
 
 .w5em {
   width: 5em;
 }
 
+.unconditional-rolls-input {
+  width: 3em;
+}
+
 .previous-cutoffs input {
   width: 5em;
+}
+
+.achievable-range {
+  margin: 0.25em 0 0.5em;
 }
 
 .chart {

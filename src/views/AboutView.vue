@@ -668,9 +668,10 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
       <li>detect and apply price floors and ceilings (±7.5%)</li>
       <li>show the age of last market fetch</li>
       <li>apparently OBS in Capture Window mode does not capture basic HTML tooltips, only custom rolled CSS ones</li>
-      <li>try precalculating the best species (with skills) for each town-pz pair</li>
+      <li>try precalculating the best species (with skills) for each town-plantzone pair</li>
         <ul>
           <li>this will not work - luck skill decisions depend on lucky items prices</li>
+          <li>it is however possible to precalculate all skills that are not luck, so only 3 skills require placement in runtime</li>
           <li>can add a button "calculate now" though; tie to price snapshot hash?</li>
           <li>could allow for correct and fast 👺/🐢 in node pane and elsewhere</li>
         </ul>

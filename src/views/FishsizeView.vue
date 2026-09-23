@@ -69,7 +69,6 @@ export default {
       generalSigmas: 4,
       modelTab: 'rolls',
       rollModelTab: 'variable',
-      unconditionalVariableRolls: 2,
 
       fish_info: {},
 
@@ -467,7 +466,10 @@ export default {
     </div>
 
     <div id="content">
-      <div id="settings">
+      
+      observed preprocessing:
+      <br/>
+      <span class="preprocessing-control">
         <label>
           <input
             type="checkbox"
@@ -478,17 +480,18 @@ export default {
           unscale to Avg=
         </label>
         <input type="number" v-model="relative_base" step="10" class="w5em">
-        <br/>
-        <label>
-          <input
-            type="checkbox"
-            :checked="relativeSizesActive && mode_unsquare"
-            :disabled="!relativeSizesActive"
-            @change="mode_unsquare = $event.target.checked"
-          >
-          unsquare (take square root)
-        </label>
-      </div>
+      </span>
+      <br/>
+      <label>
+        <input
+          type="checkbox"
+          :checked="relativeSizesActive && mode_unsquare"
+          :disabled="!relativeSizesActive"
+          @change="mode_unsquare = $event.target.checked"
+        >
+        unsquare (take square root)
+      </label>
+      
 
       <details>
         <summary>Dataset: 
@@ -544,21 +547,7 @@ export default {
           </div>
 
           <div v-show="rollModelTab === 'variable'">
-            <div class="variable-roll-options">
-              <label>
-                unconditional rolls
-                <input
-                  v-model.number="unconditionalVariableRolls"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="1"
-                  @change="unconditionalVariableRolls = Math.min(5, Math.max(0, Math.trunc(Number(unconditionalVariableRolls) || 0)))"
-                >
-              </label>
-            </div>
             <VariableFishRollModel
-              :unconditional-rolls="unconditionalVariableRolls"
               :stats="stats"
               :histogram="histogram"
               :avg_size="currentAvgSize"
@@ -607,7 +596,16 @@ export default {
 }
 
 #settings {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75em;
   padding: 9px 0 9px 0;
+}
+
+.preprocessing-control {
+  display: inline-flex;
+  align-items: center;
 }
 
 .warning {
@@ -650,11 +648,4 @@ ul {
   margin-top: 0.25em;
 }
 
-.variable-roll-options {
-  margin-top: 0.25em;
-}
-
-.variable-roll-options input {
-  width: 3em;
-}
 </style>
