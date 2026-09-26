@@ -2,11 +2,14 @@
 import { formatFixed, isNumber } from '../util.js'
 import FishModel from '../components/droprateModels/FishModel.vue'
 import FishRollModel from '../components/droprateModels/FishRollModel.vue'
-import VariableFishRollModel from '../components/droprateModels/VariableFishRollModel.vue'
+import FishVariableRollModel from '../components/droprateModels/FishVariableRollModel.vue'
+import TopFishSizesChart from '../components/TopFishSizesChart.vue'
+import { leaderboardAnnouncements } from '../fishLeaderboard.mjs'
 
 import { jStat } from 'jstat-esm';
 
 import { use } from "echarts/core";
+import darkChartTheme from 'echarts/lib/theme/dark.js'
 import { CanvasRenderer } from "echarts/renderers";
 import { BarChart, LineChart, ScatterChart } from "echarts/charts";
 import {
@@ -47,12 +50,36 @@ export default {
     VChart,
     FishModel,
     FishRollModel,
-    VariableFishRollModel,
+    FishVariableRollModel,
+    TopFishSizesChart,
   },
 
   provide() {
     return {
-      [THEME_KEY]: computed(() => this.darkMode ? 'dark' : 'default')
+      [THEME_KEY]: computed(() => {
+        const theme = { ...(this.darkMode ? darkChartTheme : {}), backgroundColor: 'transparent' }
+        const gridColor = this.darkMode ? '#36363e' : '#c7cdd6'
+        const axisColor = this.darkMode ? '#36363e' : '#c7cdd6'
+        for (const axis of ['valueAxis', 'logAxis', 'categoryAxis', 'timeAxis']) {
+          const axisTheme = theme[axis] || {}
+          const originalAxisColor = axisTheme.axisLine?.lineStyle?.color ?? '#6E7079'
+          theme[axis] = {
+            ...axisTheme,
+            axisLine: {
+              ...axisTheme.axisLine,
+              lineStyle: { ...axisTheme.axisLine?.lineStyle, color: axisColor },
+            },
+            // Labels otherwise inherit the axis stroke color.
+            axisLabel: { color: originalAxisColor, ...axisTheme.axisLabel },
+            nameTextStyle: { color: originalAxisColor, ...axisTheme.nameTextStyle },
+            splitLine: {
+              ...axisTheme.splitLine,
+              lineStyle: { ...axisTheme.splitLine?.lineStyle, color: gridColor },
+            },
+          }
+        }
+        return theme
+      })
     }
   },
 
@@ -71,6 +98,8 @@ export default {
       rollModelTab: 'variable',
 
       fish_info: {},
+
+      top_sizes: {},
 
       
       hide_buckets: {},
@@ -123,6 +152,31 @@ export default {
 
     relativeSizesActive() {
       return this.selectedFish === 'ALL' || this.mode_relative
+    },
+
+    selectedItemkeys() {
+      if (this.selectedFish === 'ALL') {
+        return Object.keys(this.alldata).filter(key => /^\d+$/.test(key))
+      }
+      const group = this.selectedFish.match(/\(([^()]*)\)$/)
+      return group ? group[1].split('+') : [this.selectedFish]
+    },
+
+    selectedTopSizes() {
+      return this.preprocessLeaderboardSizes(this.top_sizes)
+    },
+
+    personalLeaderboardByItemkey() {
+      const announcements = {}
+      for (const [ik, catches] of Object.entries(this.alldata)) {
+        if (/^\d+$/.test(ik)) announcements[ik] = leaderboardAnnouncements(catches)
+      }
+      return announcements
+    },
+
+    selectedPersonalAnnouncements() {
+      return this.preprocessLeaderboardSizes(this.personalLeaderboardByItemkey)
+        .sort((a, b) => a - b)
     },
 
     menuEntries() {
@@ -291,9 +345,27 @@ export default {
     formatFixed,
     isNumber,
 
+    preprocessLeaderboardSizes(sizesByItemkey) {
+      const sizes = []
+      for (const ik of this.selectedItemkeys) {
+        const averageSize = this.get_fish_info(ik).avg_size
+        for (const absoluteSize of sizesByItemkey[ik] || []) {
+          const relativeSize = absoluteSize / averageSize
+          const size = this.relativeSizesActive
+            ? Number(this.relative_base) * (
+                this.mode_unsquare ? Math.sqrt(relativeSize) : relativeSize
+              )
+            : absoluteSize
+          if (Number.isFinite(size)) sizes.push(size)
+        }
+      }
+      return sizes
+    },
+
     async fetchObservations() {
       const start = Date.now()
       this.alldata = await (await fetch(`data/manual/catches_by_fish.json`)).json()
+      this.top_sizes = await (await fetch(`data/manual/sightings_top_sizes.json`)).json()
       const ency = await (await fetch(`data/encyclopedia.json`)).json()
 
       for (const [ek, info] of Object.entries(ency)) {
@@ -552,7 +624,7 @@ export default {
           </div>
 
           <div v-show="rollModelTab === 'variable'">
-            <VariableFishRollModel
+            <FishVariableRollModel
               :stats="stats"
               :histogram="histogram"
               :avg_size="currentAvgSize"
@@ -579,7 +651,15 @@ export default {
         </div>
       </div>
 
+      <TopFishSizesChart
+        :sizes="selectedTopSizes"
+        :personal-announcements-sorted="selectedPersonalAnnouncements"
+        :itemkey-count="selectedItemkeys.length"
+        :observed-max="stats.max"
+      />
+
     </div>
+
   </main>
 </template>
 

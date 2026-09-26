@@ -359,6 +359,7 @@ export default {
         ],
         dataZoom: [dataZoom],
         xAxis: {
+          maxInterval: 25,
           min: this.stats.min === 0 ? -1 : null,
           max: this.mode_relative
             ? (this.stats.max < 5
@@ -368,6 +369,7 @@ export default {
         },
         yAxis: {
           name: '% of total',
+          nameGap: 11,
           axisLine: { onZero: false },
           axisLabel: {
             formatter: value => `${formatFixed(value, 2)}%`,
@@ -392,7 +394,7 @@ export default {
             datasetIndex: 1,
             encode: { x: 0, y: 1 },
             showSymbol: false,
-            lineStyle: { width: 3 },
+            lineStyle: { width: 2 },
           },
           {
             name: `${Math.max(1, this.unconditionalRollsValue)} rolls`,

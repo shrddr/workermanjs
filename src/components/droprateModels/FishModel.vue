@@ -193,7 +193,7 @@ export default {
   computed: {
     modelC() {
       const model = this.makeModel()
-      console.log('model', model)
+      //console.log('model', model)
       return model
     },
 
@@ -246,11 +246,13 @@ export default {
         xAxis: {
           //axisLine: { onZero: false },
           //scale: false,
+          maxInterval: 25,
           min: this.stats.min == 0 ? -1 : null,
           max: this.mode_relative ? (this.stats.max < 5 ? this.stats.max + 1 : null) : this.avg_size * 3,
         },
         yAxis: { 
           name: '% of total',
+          nameGap: 11,
           axisLine: { onZero: false } ,
           axisLabel: {
             formatter: value => `${formatFixed(value, 2)}%`
@@ -294,6 +296,7 @@ export default {
           lineStyle: { opacity: 1 },
         })
       }
+      //console.log('chartOption', chartOption)
       return chartOption
     },
   },
@@ -322,7 +325,7 @@ export default {
   </div>
 
   <div id="chartHisto" style="float:left;" v-if="modelC.bell">
-    <v-chart :option="makeHistogramOption" :update-options="{ notMerge: false }" autoresize />
+    <v-chart :option="makeHistogramOption" :update-options="{ notMerge: true }" autoresize />
   </div>
   
   <div style="clear:both;"></div>

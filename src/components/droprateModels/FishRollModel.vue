@@ -169,6 +169,7 @@ export default {
           moveOnMouseWheel: false,
         }],
         xAxis: {
+          maxInterval: 25,
           min: this.stats.min === 0 ? -1 : null,
           max: this.mode_relative
             ? (this.stats.max < 5 ? this.stats.max + 1 : null)
@@ -176,6 +177,7 @@ export default {
         },
         yAxis: {
           name: '% of total',
+          nameGap: 11,
           axisLine: { onZero: false },
           axisLabel: {
             formatter: value => `${formatFixed(value, 2)}%`,
