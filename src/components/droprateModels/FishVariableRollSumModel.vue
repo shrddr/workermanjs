@@ -1,6 +1,8 @@
 <script>
 import { formatFixed } from '../../util.js'
 import { loss } from '../../stats.js'
+import { sampleSizeDistribution } from '../../fishLeaderboard.mjs'
+import { productDistribution, productStopCdf } from '../../variableRollProduct.mjs'
 
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -32,6 +34,7 @@ use([
 ])
 
 export default {
+  emits: ['distribution-change'],
   components: {
     VChart,
   },
@@ -41,6 +44,7 @@ export default {
     histogram: Object,
     avg_size: Number,
     mode_relative: Boolean,
+    multiply: Boolean,
   },
 
   data() {
@@ -55,6 +59,14 @@ export default {
   },
 
   watch: {
+    model: {
+      immediate: true,
+      handler() {
+        this.$emit('distribution-change', sampleSizeDistribution(
+          value => this.sizeCdf(value), this.achievableRange.min, this.achievableRange.max,
+        ))
+      },
+    },
     stats() {
       this.$refs.chart?.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
     },
@@ -118,14 +130,40 @@ export default {
           (forcedStop ? 0 : lower)
         const maxSum = initialRolls - 1 + continuedRolls * extremeMax +
           (forcedStop ? 1 : upper)
-        min = Math.min(min, this.valueFromRollSum(minSum, rolls))
-        max = Math.max(max, this.valueFromRollSum(maxSum, rolls))
+        if (this.multiply) {
+          const denominator = this.offsetValue + rolls / 2
+          const factor = roll => 1 + (roll - 0.5) / denominator
+          const minProduct = factor(0) ** (initialRolls - 1) *
+            factor(extremeMin) ** continuedRolls * factor(forcedStop ? 0 : lower)
+          const maxProduct = factor(1) ** (initialRolls - 1) *
+            factor(extremeMax) ** continuedRolls * factor(forcedStop ? 1 : upper)
+          min = Math.min(min, this.avg_size * (this.square ? minProduct ** 2 : minProduct))
+          max = Math.max(max, this.avg_size * (this.square ? maxProduct ** 2 : maxProduct))
+        }
+        else {
+          min = Math.min(min, this.valueFromRollSum(minSum, rolls))
+          max = Math.max(max, this.valueFromRollSum(maxSum, rolls))
+        }
       }
 
       return { min, max }
     },
 
     theoreticalMean() {
+      if (this.multiply) {
+        const { step, stops, totalMass } = this.distribution
+        if (!(totalMass > 0)) return NaN
+        let weightedSize = 0
+        for (const stop of stops) {
+          for (let index = 0; index < stop.cdf.length - 1; index++) {
+            const probability = stop.cdf[index + 1] - stop.cdf[index]
+            const multiplier = Math.exp(stop.origin + index * step)
+            weightedSize += probability * this.avg_size *
+              (this.square ? multiplier ** 2 : multiplier)
+          }
+        }
+        return weightedSize / totalMass
+      }
       const { dx, stops, totalMass } = this.distribution
       if (!(totalMass > 0)) return NaN
 
@@ -149,6 +187,13 @@ export default {
     },
 
     distribution() {
+      if (this.multiply) return productDistribution({
+        unconditionalRolls: this.unconditionalRollsValue,
+        maxRolls: this.maxRollsValue,
+        lower: this.decisionLower,
+        upper: this.decisionUpper,
+        offset: this.offsetValue,
+      })
       const dx = DENSITY_STEP
       const maxRolls = this.maxRollsValue
       const initialRolls = Math.max(1, this.unconditionalRollsValue)
@@ -210,11 +255,12 @@ export default {
 
     multiplierCdfLookup() {
       const step = CDF_STEP
-      const maxMultiplier = (
-        this.offsetValue + this.maxRollsValue
-      ) / (
-        this.offsetValue + this.maxRollsValue / 2
-      )
+      const maxMultiplier = this.multiply
+        ? (this.square
+            ? Math.sqrt(this.achievableRange.max / this.avg_size)
+            : this.achievableRange.max / this.avg_size)
+        : (this.offsetValue + this.maxRollsValue) /
+          (this.offsetValue + this.maxRollsValue / 2)
       const values = new Float64Array(Math.ceil(maxMultiplier / step) + 2)
       const groupValues = [
         new Float64Array(values.length),
@@ -243,9 +289,8 @@ export default {
     model() {
       const data = []
       const groupData = [[], [], [], []]
-      const theoreticalMax = this.valueFromRollSum(
-        this.maxRollsValue,
-        this.maxRollsValue,
+      const theoreticalMax = this.multiply ? this.achievableRange.max : this.valueFromRollSum(
+        this.maxRollsValue, this.maxRollsValue,
       )
       const binCount = Math.ceil(Math.max(this.stats.max, theoreticalMax))
 
@@ -286,6 +331,22 @@ export default {
         : 'averageSize * r'
       const decisionCondition =
         `(roll <= ${this.decisionLower} || roll >= ${this.decisionUpper})`
+
+      if (this.multiply) return [
+        'const averageSize = (baseSize + varySize) / 2',
+        'let roll',
+        'const rolls = []',
+        'do {',
+        '  roll = rand()',
+        '  rolls.push(roll)',
+        `} while ((rolls.length < ${this.unconditionalRollsValue} || ${decisionCondition}) && rolls.length < ${this.maxRollsValue})`,
+        `const denominator = ${this.offsetValue} + rolls.length / 2`,
+        'let r = 1',
+        'for (let i = 0; i < rolls.length; i++) {',
+        '  r *= 1 + (rolls[i] - 0.5) / denominator',
+        '}',
+        `const size = ${sizeExpression}`,
+      ].join('\n')
 
       return [
         'const averageSize = (baseSize + varySize) / 2',
@@ -529,6 +590,14 @@ export default {
       const probabilities = [0, 0, 0, 0]
       if (multiplier <= 0) return probabilities
       const initialRolls = Math.max(1, this.unconditionalRollsValue)
+      if (this.multiply) {
+        for (const stop of this.distribution.stops) {
+          const conditionalRolls = stop.rollCount - initialRolls
+          if (conditionalRolls < probabilities.length)
+            probabilities[conditionalRolls] += productStopCdf(this.distribution, stop, multiplier)
+        }
+        return probabilities.map(probability => probability / this.distribution.totalMass)
+      }
       for (const stop of this.distribution.stops) {
         const center = this.offsetValue + stop.rollCount / 2
         const sum = center * multiplier - this.offsetValue
@@ -543,6 +612,9 @@ export default {
 
     distributionCdf(multiplier) {
       if (multiplier <= 0) return 0
+      if (this.multiply) return this.distribution.stops.reduce(
+        (probability, stop) => probability + productStopCdf(this.distribution, stop, multiplier), 0,
+      ) / this.distribution.totalMass
       let probability = 0
       for (const stop of this.distribution.stops) {
         const center = this.offsetValue + stop.rollCount / 2

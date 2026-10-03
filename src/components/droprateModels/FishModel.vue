@@ -2,6 +2,8 @@
 import { formatFixed, isGoodVal } from '../../util.js'
 import { makeBinomialArray, makeNormalArray, makeLognormalArray, makeUniformArray, makeTriangularArray, makeGammaArray, sumDistributions, loss } from '../../stats.js'
 import FishCurve from './FishCurve.vue'
+import { jStat } from 'jstat-esm'
+import { sampleSizeDistribution } from '../../fishLeaderboard.mjs'
 
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
@@ -37,6 +39,7 @@ use([
 
 
 export default {
+  emits: ['distribution-change'],
   data: () => ({
     curves: [],
     presets: [
@@ -73,6 +76,20 @@ export default {
   mounted() {
     this.loadPreset(0)
   },
+  watch: {
+    modelC: {
+      immediate: true,
+      handler() {
+        if (!this.curves.length || !(this.avg_size > 0)) {
+          this.$emit('distribution-change', [])
+          return
+        }
+        let max = Math.max(this.avg_size, this.stats.max || 0, 1)
+        for (let step = 0; step < 32 && this.sizeCdf(max) < 1 - 1e-10; step++) max *= 2
+        this.$emit('distribution-change', sampleSizeDistribution(value => this.sizeCdf(value), 0, max))
+      },
+    },
+  },
   props: {
     stats: Object,
     histogram: Object,
@@ -84,6 +101,38 @@ export default {
     FishCurve,
   },
   methods: {
+    sizeCdf(value) {
+      let remaining = 1
+      let probability = 0
+      for (const curve of this.curves) {
+        const amount = curve.amount === 'rest' ? 1 : Number(curve.amount)
+        const weight = remaining * amount
+        remaining -= weight
+        let cdf
+        switch (curve.kind) {
+          case 'Normal':
+            cdf = jStat.normal.cdf(value, curve.mean * this.avg_size, curve.sigma * this.avg_size)
+            break
+          case 'Lognormal':
+            cdf = jStat.lognormal.cdf(value, Math.log(curve.emu * this.avg_size), curve.sigma)
+            break
+          case 'Gamma':
+            cdf = jStat.gamma.cdf(value, curve.at / curve.theta, curve.theta * this.avg_size)
+            break
+          case 'Uniform':
+            cdf = jStat.uniform.cdf(value, (curve.center - curve.width / 2) * this.avg_size,
+              (curve.center + curve.width / 2) * this.avg_size)
+            break
+          case 'Triangular':
+            cdf = jStat.triangular.cdf(value, (curve.center - curve.width) * this.avg_size,
+              (curve.center + curve.width) * this.avg_size, curve.center * this.avg_size)
+            break
+          default: return NaN
+        }
+        probability += weight * cdf
+      }
+      return probability
+    },
     isGoodVal,
     formatFixed,
     makeBinomialArray,

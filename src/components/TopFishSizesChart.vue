@@ -1,5 +1,7 @@
 <script>
-import VChart from 'vue-echarts'
+import VChart, { THEME_KEY } from 'vue-echarts'
+import { inject, unref } from 'vue'
+import { theoreticalLeaderboard } from '../fishLeaderboard.mjs'
 import { use } from 'echarts/core'
 import { DataZoomInsideComponent } from 'echarts/components'
 
@@ -16,21 +18,15 @@ function buildSurvivalData(sortedSizes) {
   return data
 }
 
-function countAtLeast(data, size) {
-  let low = 0
-  let high = data.length
-  while (low < high) {
-    const middle = Math.floor((low + high) / 2)
-    if (data[middle][0] < size) low = middle + 1
-    else high = middle
-  }
-  return data[low]?.[1] ?? 0
-}
-
 export default {
   components: { VChart },
+  setup() {
+    return { chartTheme: inject(THEME_KEY, null) }
+  },
 
   props: {
+    modelDistribution: { type: Array, default: () => [] },
+    speciesCatchCounts: { type: Array, default: () => [] },
     sizes: {
       type: Array,
       required: true,
@@ -79,21 +75,29 @@ export default {
       return buildSurvivalData(this.personalAnnouncementsSorted)
     },
 
+    theoreticalSurvivalData() {
+      return theoreticalLeaderboard(this.modelDistribution, this.speciesCatchCounts)
+    },
+
     fullYMax() {
-      return Math.max(2, this.survivalData[0]?.[1] ?? 0, this.personalSurvivalData[0]?.[1] ?? 0)
+      return Math.ceil(Math.max(2, this.survivalData[0]?.[1] ?? 0,
+        this.personalSurvivalData[0]?.[1] ?? 0, this.theoreticalSurvivalData[0]?.[1] ?? 0))
     },
 
     chartOption() {
       const data = this.survivalData
       const personalData = this.personalSurvivalData
       const curves = [
-        { name: 'personal', data: personalData },
-        { name: 'region', data },
+        { name: 'model', data: this.theoreticalSurvivalData, expected: true },
+        { name: 'obs.personal', data: personalData },
+        { name: 'obs.region', data },
       ]
+      const palette = unref(this.chartTheme)?.color ?? ['#5470c6', '#91cc75', '#fac858']
       const yMax = Math.ceil(Math.min(this.fullYMax, this.zoomedYMax ?? this.fullYMax))
       return {
         animation: false,
-        legend: { data: ['personal', 'region'] },
+        color: [palette[1], palette[0], palette[2]],
+        legend: { data: ['model', 'obs.personal', 'obs.region'] },
         grid: { left: 46, right: 14, top: 30, bottom: 25 },
         tooltip: {
           trigger: 'axis',
@@ -103,9 +107,9 @@ export default {
             const size = Number(params[0]?.axisValue)
             if (!Number.isFinite(size)) return ''
             const counts = params.map(item => {
-              const personal = item.seriesName === 'personal'
-              const count = countAtLeast(personal ? personalData : data, size)
-              return `${item.marker} ${item.seriesName}: ${count.toLocaleString()} updates`
+              const count = item.data[1].toLocaleString(undefined, { maximumFractionDigits: 2 })
+              const unit = curves[item.seriesIndex]?.expected ? 'expected updates' : 'updates'
+              return `${item.marker} ${item.seriesName}: ${count} ${unit}`
             })
             return [`size ≥ ${size.toFixed(3)}`, ...counts].join('<br>')
           },
@@ -145,7 +149,7 @@ export default {
           type: 'line',
           data: curve.data,
           sampling: 'none',
-          step: 'start',
+          step: curve.expected ? false : 'start',
           showSymbol: false,
           lineStyle: { width: 1 },
         })),

@@ -2,7 +2,9 @@
 import { formatFixed, isNumber } from '../util.js'
 import FishModel from '../components/droprateModels/FishModel.vue'
 import FishRollModel from '../components/droprateModels/FishRollModel.vue'
-import FishVariableRollModel from '../components/droprateModels/FishVariableRollModel.vue'
+import FishVariableRollSumModel from '../components/droprateModels/FishVariableRollSumModel.vue'
+import FishVariableRollMultModel from '../components/droprateModels/FishVariableRollMultModel.vue'
+import FishSeparateMultipliedModel from '../components/droprateModels/FishSeparateMultipliedModel.vue'
 import TopFishSizesChart from '../components/TopFishSizesChart.vue'
 import { leaderboardAnnouncements } from '../fishLeaderboard.mjs'
 
@@ -50,7 +52,9 @@ export default {
     VChart,
     FishModel,
     FishRollModel,
-    FishVariableRollModel,
+    FishVariableRollSumModel,
+    FishVariableRollMultModel,
+    FishSeparateMultipliedModel,
     TopFishSizesChart,
   },
 
@@ -96,6 +100,7 @@ export default {
       generalSigmas: 4,
       modelTab: 'rolls',
       rollModelTab: 'variable',
+      modelDistributions: { variable: [], variableMult: [], separateMultiplied: [], fixed: [], sum: [] },
 
       fish_info: {},
 
@@ -124,6 +129,14 @@ export default {
   },
 
   computed: {
+    activeModelDistribution() {
+      return this.modelDistributions[this.modelTab === 'sum' ? 'sum' : this.rollModelTab]
+    },
+
+    selectedSpeciesCatchCounts() {
+      return this.selectedItemkeys.map(ik => (this.alldata[ik] || []).length)
+    },
+
     currentDataset() {
       const ret = []
       if (this.selectedFish in this.alldata) {
@@ -613,7 +626,19 @@ export default {
               :class="{ pressed: rollModelTab === 'variable' }"
               @click="rollModelTab = 'variable'"
             >
-              variable
+              var sum
+            </button>
+            <button
+              :class="{ pressed: rollModelTab === 'variableMult' }"
+              @click="rollModelTab = 'variableMult'"
+            >
+              var mult
+            </button>
+            <button
+              :class="{ pressed: rollModelTab === 'separateMultiplied' }"
+              @click="rollModelTab = 'separateMultiplied'"
+            >
+              sep mult
             </button>
             <button
               :class="{ pressed: rollModelTab === 'fixed' }"
@@ -624,7 +649,27 @@ export default {
           </div>
 
           <div v-show="rollModelTab === 'variable'">
-            <FishVariableRollModel
+            <FishVariableRollSumModel
+              @distribution-change="modelDistributions.variable = $event"
+              :stats="stats"
+              :histogram="histogram"
+              :avg_size="currentAvgSize"
+              :mode_relative="relativeSizesActive"
+            />
+          </div>
+
+          <div v-show="rollModelTab === 'variableMult'">
+            <FishVariableRollMultModel
+              @distribution-change="modelDistributions.variableMult = $event"
+              :stats="stats"
+              :histogram="histogram"
+              :avg_size="currentAvgSize"
+              :mode_relative="relativeSizesActive"
+            />
+          </div>
+          <div v-show="rollModelTab === 'separateMultiplied'">
+            <FishSeparateMultipliedModel
+              @distribution-change="modelDistributions.separateMultiplied = $event"
               :stats="stats"
               :histogram="histogram"
               :avg_size="currentAvgSize"
@@ -634,6 +679,7 @@ export default {
 
           <div v-show="rollModelTab === 'fixed'">
             <FishRollModel
+              @distribution-change="modelDistributions.fixed = $event"
               :stats="stats"
               :histogram="histogram"
               :avg_size="currentAvgSize"
@@ -643,6 +689,7 @@ export default {
         </div>
         <div v-show="modelTab === 'sum'">
           <FishModel
+            @distribution-change="modelDistributions.sum = $event"
             :stats="stats" 
             :histogram="histogram"
             :avg_size="currentAvgSize"
@@ -652,6 +699,8 @@ export default {
       </div>
 
       <TopFishSizesChart
+        :model-distribution="activeModelDistribution"
+        :species-catch-counts="selectedSpeciesCatchCounts"
         :sizes="selectedTopSizes"
         :personal-announcements-sorted="selectedPersonalAnnouncements"
         :itemkey-count="selectedItemkeys.length"

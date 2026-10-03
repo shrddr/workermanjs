@@ -1,6 +1,7 @@
 <script>
 import { formatFixed } from '../../util.js'
 import { loss } from '../../stats.js'
+import { sampleSizeDistribution } from '../../fishLeaderboard.mjs'
 
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -28,6 +29,7 @@ use([
 ])
 
 export default {
+  emits: ['distribution-change'],
   components: {
     VChart,
   },
@@ -44,6 +46,17 @@ export default {
     square: false,
     offset: 1,
   }),
+
+  watch: {
+    model: {
+      immediate: true,
+      handler() {
+        this.$emit('distribution-change', sampleSizeDistribution(
+          value => this.sizeCdf(value), this.valueFromRollSum(0), this.valueFromRollSum(this.rollCount),
+        ))
+      },
+    },
+  },
 
   computed: {
     modelName() {
