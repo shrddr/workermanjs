@@ -450,6 +450,10 @@ export default {
         @panAnywhere="panPaPos = null"
         :highlightNodes="highlightNodes"
       />
+        
+      <div class="topcenter" v-if="userStore.error">
+        ERROR: {{ userStore.error }}
+      </div>
 
       <div v-if="hoverInfo && hoverInfo.object" id="tooltip" :style="{left:hoverInfo.x+'px', top:hoverInfo.y+'px'}">
         {{ hoverInfo.object.key }} {{ gameStore.uloc.node[hoverInfo.object.key] }} {{ hoverInfo.object.thisCpCost }}CP
@@ -794,6 +798,15 @@ summary {
 }
 .draggable:hover {
   background: var(--color-background-soft);
+}
+.topcenter {
+  position: absolute;
+  top: 0;
+  background-color: var(--color-background);
+  padding: 0 5px 5px 5px;
+  left: 50%;
+  transform: translate(-50%, 0);
+  overflow: auto;
 }
 
 </style>

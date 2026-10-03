@@ -90,7 +90,11 @@ export default {
         ret.push('F')
       }
       return ret
-    }
+    },
+
+    displaySlotsCount() {
+      return Math.max(this.storageViewCount, this.ingameSortedItems.length)
+    },
   },
 
   methods: {
@@ -221,15 +225,15 @@ and `empire > best untaken`">ℹ</abbr>
           - <input type="number" class="w42em" min="0" max="192" v-model.number="userStore.storageP2W[tk]">
           {{ ' ' }}<span class="markP2W underline">from P2W</span><br/>
           = {{ userStore.townsInfra[tk].wantStorage }} <span class="markProvided underline">required</span>
-          <span v-if="userStore.townsInfra[tk].warnS">← max possible</span>
-          <span v-if="userStore.townsInfra[tk].errS" class="red">← too much!</span>
+          <span v-if="userStore.townsInfra[tk].warnS"> ← max possible</span>
+          <span v-if="userStore.townsInfra[tk].errS" class="red"> ← too much!</span>
           <br/>
           <strong>{{ userStore.townsInfra[tk].storage }} found</strong>
           {{ userStore.townsInfra[tk].storage - userStore.townsInfra[tk].wantStorage }} <span class="markExtra underline">extra</span>
           
         </div>
         <div id="storageItemList">
-          <template v-for="n in storageViewCount">
+          <template v-for="n in displaySlotsCount">
             <br v-if="n > 1 && (n-1) % 9 == 0"/>
             <div class="storageCell" :class="{ 
               'markInnate' : 0 <= n && n <= userStore.baseStorage, 

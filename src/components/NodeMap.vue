@@ -599,10 +599,8 @@ export default {
   
   <canvas id="deck-canvas" ref="canvas"></canvas>
   <div id="hack">{{ iconsCalc.length }} icons</div>
-  
-  
 
-  <div id="topcenter" v-if="userStore.mapHideInactive">
+  <div class="topcenter" v-if="userStore.mapHideInactive">
     {{ hiddenNodesCount }} inactive nodes hidden (<a href="#" @click="userStore.mapHideInactive = false">show</a>)
   </div>
 
@@ -616,7 +614,7 @@ export default {
   position: absolute;
   left: -9999px;
 }
-#topcenter {
+.topcenter {
   position: absolute;
   top: 0;
   background-color: var(--color-background);

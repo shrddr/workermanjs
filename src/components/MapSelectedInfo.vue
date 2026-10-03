@@ -134,7 +134,7 @@ export default {
       />
       
     </div>
-    <div id="clickedTownInfo" v-else-if="gameStore.townsWithRentableStorageSet.has(clickedNode.key)" class="vscrollable">
+    <div id="clickedTownInfo" v-else-if="gameStore.configurableTownsSet.has(clickedNode.key)" class="vscrollable">
       <button @click="this.$emit('selectHouses', gameStore.tnk2tk(clickedNode.key))" :class="{ 'unresolved': gameStore.ready && userStore.townsInfra[gameStore.tnk2tk(clickedNode.key)].success == false }">
         config
       </button>

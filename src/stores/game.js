@@ -245,9 +245,11 @@ export const useGameStore = defineStore({
 
       // the notion of "town" is highly ambiguous
       // 1) a node which is activated automatically by visiting (Tarif = yes, Abun = no)
-      // 2) a node that has rentable worker lodging
-      // 3) a node that has rentable item storage
-      // 3a) ..and can be a target of lvl40 worker "stash redirect" feature (will ancado be a valid target when activated?)
+      // 2) a node that can house workers (has a worker manager NPC)
+      // 2a) 2 + worker slots can be expanded (has rentable houses of Lodging type)
+      // 3) a node that can store items (has a storage manager NPC)
+      // 3a) 3 + storage slots can be expanded (has rentable houses of Storage type)
+      // 3b) 3 + can be a target of worker "stash redirect" feature (will Ancado be a valid target when activated?)
       // 4) a node that has ANY kind of rentable housing (residence, workshop...)
 
       // town(1) can be used as grind node connection root
@@ -282,8 +284,7 @@ export const useGameStore = defineStore({
       // town(1+2) again, but tk-based (TODO: unify)
       this.lodgingPerTown = await (await fetch(`data/lodging_per_town.json`)).json()
 
-
-      // town(3) has config button where you can enter "Personal items" value
+      // town(3a) has a Config button for adjusting autorented houses via "Personal items" input
       // vel, olv, hei, gli, cal, kep
       // eph, tre, ili, alt, tar, val
       // sha, baz, anc, are, owt, gra
@@ -303,7 +304,7 @@ export const useGameStore = defineStore({
         2001,2057
       ]
 
-      // town(3a) can be a target of "stash redirect" feature, filled manually
+      // town(3b) can be a target of "stash redirect" feature, filled manually
       // vel, olv, hei, gli, cal, kep
       // eph, tre, ili, alt, tar, val
       // sha, baz, anc, are, owt, gra
@@ -1331,8 +1332,12 @@ export const useGameStore = defineStore({
     townsWithLodgingSet() {
       return new Set(this.townsWithLodging)
     },
-    townsWithRentableStorageSet() {
-      return new Set(this.townsWithRentableStorage)
+    configurableTownsSet() {
+      // the Config button might be used:
+      return new Set([
+        ...this.townsWithRentableStorage,     // to autorent more storage for "Personal Items"
+        ...this.townsWithRedirectableStorage, // to see incoming item sources
+      ])
     },
     townsWithRedirectableStorageSet() {
       return new Set(this.townsWithRedirectableStorage)

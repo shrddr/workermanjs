@@ -892,25 +892,33 @@ export const useUserStore = defineStore({
       }
     },
 
-    townsInfra(state) {
-      const ret = {}
+    townsInfrastructure(state) {
+      const ret = { perTown: {}, sum: 0, error: null }
       const gameStore = useGameStore()
       if (!gameStore.ready) return ret
       gameStore.townsWithRedirectableStorage.forEach(tnk => {
         const tk = gameStore.tnk2tk(tnk)
-        ret[tk] = this.townInfra(tk, 
+        const townInfra = this.townInfra(tk, 
           state.townWorkingWorkers(tk).length, 
           state.townsStoreItemkeys[tk] ? state.townsStoreItemkeys[tk].size : 0
         )
-        //if (isNaN(ret[tk].cost)) throw Error(`no infra for tk=${tk}`)
+        ret.perTown[tk] = townInfra
+        ret.sum += townInfra.cost
+        if (isNaN(townInfra.cost)) {
+          const townName = gameStore.uloc.town[tk]
+          ret.error = `unable to resolve housing at ${townName}`
+        }
       })
-
-      //console.log('townsInfra', ret)
+      //console.log('townsInfrastructure', ret)
       return ret
     },
 
+    townsInfra(state) {
+      return state.townsInfrastructure.perTown
+    },
+
     lodgage(state) {
-      return Object.values(this.townsInfra).reduce((total, ti) => total + ti.cost, 0)
+      return state.townsInfrastructure.sum
     },
 
     townsTopIncomeWorkers(state) {
@@ -1367,7 +1375,11 @@ export const useUserStore = defineStore({
     },
 
     bargainBonus() {
-      return this.tradingLevel * 0.005;
+      return this.tradingLevel * 0.005
+    },
+
+    error(state) {
+      return state.townsInfrastructure.error || null
     },
 
     

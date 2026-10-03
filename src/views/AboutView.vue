@@ -577,6 +577,7 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
 
     <h2>Todo</h2>
     <ul style="padding-left: 16px;">
+      <li>"unable to resolve housing" warning should have the town name clickable</li>
       <li>"how much more $ a lucky cycle brings vs unlucky" is outdated: does not take the giant bonus into account</li>
       <li>make empire > best untaken use existing workers as an option</li>
       <li>workshop name should include node name instead of affiliated town</li>
@@ -608,7 +609,6 @@ import LinkToNode from "../components/lo/LinkToNode.vue";
             C and D should split the remaining half of the resource equally
           </li>
         </ul>
-      <li>more pronounced warning when unable to resolve housing</li>
       <li>home > when hovering an inactive plantzone, show the profit estimate (with optimal worker from optimal town?)</li>
       <li>need to rethink default "random art gob" hire since gobs are not BiS anymore</li>
         <ul>
