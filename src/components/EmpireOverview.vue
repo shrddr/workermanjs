@@ -35,6 +35,7 @@ export default {
   data: () => ({
     activeTab: 'daily',
     selectedRedirect: -1,
+    selectedSearchRange: 12,
   }),
 
   methods: {
@@ -52,38 +53,43 @@ export default {
       this.gameStore.townsWithLodging.forEach(tnk => {
         if (tnk == 1343 && !userStore.activateAncado) return
         // more than needed, discard after sorting
-        const townList = this.gameStore.dijDiscountedNearestPlantzones(tnk, 12)
+        const townList = this.gameStore.dijDiscountedNearestPlantzones(tnk, this.selectedSearchRange)
         //if (tnk == 1) console.log(tnk, townList)
         worldList[tnk] = townList
       })
 
       //console.log('worldList', worldList)
       let ret = []
-      for (const [tnk, townlist] of Object.entries(worldList)) {
-        townlist.forEach(([pzk, mapCp, path]) => {
+      for (const [tnk, townInput] of Object.entries(worldList)) {
+        //const townOutput = []
+        townInput.forEach(([pzk, mapCp, path]) => {
           //if (tnk == 1) console.log(tnk, pzk)
           //if (pzk == 136) console.log('best 136')
           if (this.userStore.workedPlantzones.has(pzk.toString())) return
-          const workData = gameStore.profitPzTownArtisans(pzk, tnk, mapCp)
-          if (!workData.connected) {
+          const candidate = gameStore.profitPzTownArtisans(pzk, tnk, mapCp)
+          if (!candidate.connected) {
             return
           }
-          workData.path = path
+          candidate.path = path
           const tk = gameStore.tnk2tk(tnk)
 
           const storageTk = this.selectedRedirect < 0 ? tk : gameStore.tnk2tk(this.selectedRedirect)  // 0 -> undefined -> search for best
           const itemKeys = this.selectedRedirect == -2 ? new Set() : gameStore.plantzones[pzk].itemkeys
           const addInfraInfo = userStore.townInfraAddCost(tk, 1, itemKeys, storageTk)
-          workData.townCp = addInfraInfo.cost
-          workData.townCpTooltip = addInfraInfo.tooltip
-          workData.dailyPerCp = workData.priceDaily / (workData.cp + workData.townCp)
-          //if (tnk == 1 && pzk == 136) console.log('best 136', addInfraInfo, workData.dailyPerCp)
-          if (isNaN(workData.dailyPerCp)) return
-          //workData.deltaEff = userStore.jobEfficiencyDelta(workData.priceDaily, workData.cp + workData.townCp)
-          //if (isNaN(workData.deltaEff)) return
-          ret.push(workData)
-          
+          candidate.townCp = addInfraInfo.cost
+          candidate.townCpTooltip = addInfraInfo.tooltip
+          candidate.dailyPerCp = candidate.priceDaily / (candidate.cp + candidate.townCp)
+          //if (tnk == 1 && pzk == 136) console.log('best 136', addInfraInfo, candidate.dailyPerCp)
+          if (isNaN(candidate.dailyPerCp)) return
+          //candidate.deltaEff = userStore.jobEfficiencyDelta(candidate.priceDaily, candidate.cp + candidate.townCp)
+          //if (isNaN(candidate.deltaEff)) return
+          ret.push(candidate)
+          //townOutput.push(candidate)
         })
+        /*for (const candidate of townOutput) {
+          if (tnk == 1) console.log('cpt: untakenPlantzonesNearestCpTownProfit:', candidate.name, candidate.cp)
+          ret.push(candidate)
+        }*/
       }
       ret.sort((a,b) => b.dailyPerCp-a.dailyPerCp)
       console.log('cpt: untakenPlantzonesNearestCpTownProfit took', Date.now()-start, 'ms')
@@ -196,7 +202,14 @@ export default {
 
   <template v-if="activeTab == 'best'">
     <span class="fsxs">
-      Compares 12 nearest (by CP) untaken nodes of each town. 
+      Compares
+      <select v-model="selectedSearchRange" class="fsxs">
+        <option>12</option>
+        <option>24</option>
+        <option>36</option>
+        <option>48</option>
+      </select>
+      nearest (by CP) untaken nodes of each town. 
       Uses stats of median 40lvl artisans. 
       Stash at:
       <select v-model="selectedRedirect" class="fsxs">
